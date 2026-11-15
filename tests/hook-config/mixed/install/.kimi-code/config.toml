@@ -1,0 +1,65 @@
+default_model = "kimi-test"
+
+[models.kimi-test]
+provider = "fixture"
+api_key = "fixture-not-a-secret"
+[[hooks]]
+event = "Stop"
+command = "say kimi done"
+
+# >>> scyllaui hooks >>>
+[[hooks]]
+event = "SessionStart"
+command = 'if [ -n "${SCYLLAUI_SOCK:-}" ] && [ -x "${SCYLLAUI_BIN:-}" ]; then "$SCYLLAUI_BIN" hook --config kimi; fi'
+timeout = 2
+
+[[hooks]]
+event = "UserPromptSubmit"
+command = 'if [ -n "${SCYLLAUI_SOCK:-}" ] && [ -x "${SCYLLAUI_BIN:-}" ]; then "$SCYLLAUI_BIN" hook --config kimi; fi'
+timeout = 2
+
+[[hooks]]
+event = "TurnStarted"
+command = 'if [ -n "${SCYLLAUI_SOCK:-}" ] && [ -x "${SCYLLAUI_BIN:-}" ]; then "$SCYLLAUI_BIN" hook --config kimi; fi'
+timeout = 2
+
+[[hooks]]
+event = "PermissionRequest"
+command = 'if [ -n "${SCYLLAUI_SOCK:-}" ] && [ -x "${SCYLLAUI_BIN:-}" ]; then "$SCYLLAUI_BIN" hook --config kimi; fi'
+timeout = 2
+
+[[hooks]]
+event = "PermissionResult"
+command = 'if [ -n "${SCYLLAUI_SOCK:-}" ] && [ -x "${SCYLLAUI_BIN:-}" ]; then "$SCYLLAUI_BIN" hook --config kimi; fi'
+timeout = 2
+
+[[hooks]]
+event = "PostToolUse"
+command = 'if [ -n "${SCYLLAUI_SOCK:-}" ] && [ -x "${SCYLLAUI_BIN:-}" ]; then "$SCYLLAUI_BIN" hook --config kimi; fi'
+timeout = 2
+
+[[hooks]]
+event = "Notification"
+command = 'if [ -n "${SCYLLAUI_SOCK:-}" ] && [ -x "${SCYLLAUI_BIN:-}" ]; then "$SCYLLAUI_BIN" hook --config kimi; fi'
+timeout = 2
+
+[[hooks]]
+event = "Stop"
+command = 'if [ -n "${SCYLLAUI_SOCK:-}" ] && [ -x "${SCYLLAUI_BIN:-}" ]; then "$SCYLLAUI_BIN" hook --config kimi; fi'
+timeout = 2
+
+[[hooks]]
+event = "StopFailure"
+command = 'if [ -n "${SCYLLAUI_SOCK:-}" ] && [ -x "${SCYLLAUI_BIN:-}" ]; then "$SCYLLAUI_BIN" hook --config kimi; fi'
+timeout = 2
+
+[[hooks]]
+event = "Interrupt"
+command = 'if [ -n "${SCYLLAUI_SOCK:-}" ] && [ -x "${SCYLLAUI_BIN:-}" ]; then "$SCYLLAUI_BIN" hook --config kimi; fi'
+timeout = 2
+
+[[hooks]]
+event = "SessionEnd"
+command = 'if [ -n "${SCYLLAUI_SOCK:-}" ] && [ -x "${SCYLLAUI_BIN:-}" ]; then "$SCYLLAUI_BIN" hook --config kimi; fi'
+timeout = 2
+# <<< scyllaui hooks <<<

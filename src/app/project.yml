@@ -1,0 +1,210 @@
+# ScyllaUI S0 工程描述，由 XcodeGen 生成 ScyllaUI.xcodeproj（不入库）。
+# 用法：src/scripts/build-app.sh
+name: ScyllaUI
+options:
+  bundleIdPrefix: dev.scyllaui
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  # 界面文字的源语言为中文，英文为翻译（M2 第 6 块，docs/design.md 第 5 节「实现（M2 第 6 块）」）。
+  developmentLanguage: zh-Hans
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    ARCHS: arm64
+    ONLY_ACTIVE_ARCH: YES
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    ENABLE_HARDENED_RUNTIME: NO
+    DEAD_CODE_STRIPPING: YES
+    # 供 xcodebuild -exportLocalizations 从 String(localized:) 提取键（M2 第 6 块）。
+    SWIFT_EMIT_LOC_STRINGS: YES
+targets:
+  ScyllaUI:
+    type: application
+    platform: macOS
+    sources:
+      - path: ScyllaUI
+      - path: ../../assets/Scylla.icon
+        type: file
+        buildPhase: resources
+    dependencies:
+      # 由 src/scripts/build-ghosttykit.sh 构建，路径相对本文件
+      - framework: ../../vendor/ghostty/macos/GhosttyKit.xcframework
+        embed: false
+      - sdk: Carbon.framework
+      # 自动更新（M4b 块 3）：由 src/scripts/fetch-sparkle.sh 拉取；内层组件在「Sign Sparkle」里重签。
+      - framework: ../../.tools/sparkle/2.10.1/Sparkle.framework
+        embed: true
+    settings:
+      base:
+        # 自定义 Info.plist 键（更新源、公钥、检查间隔、本机测试源的 ATS 例外），与自动生成的键合并。
+        INFOPLIST_FILE: ScyllaUI-Info.plist
+        SCYLLAUI_UPDATE_FEED: "https://scyllaui.github.io/scyllaui/appcast.xml"
+        # EdDSA 公钥（用户用 .tools/sparkle/2.10.1/bin/generate_keys 生成，私钥只在用户的钥匙串里）。
+        SCYLLAUI_UPDATE_PUBLIC_KEY: "FajA4nNPHthN61juj3S2tUW8cnVlc64/+HTZeiOulAs="
+        # 正式版 ScyllaUI 与测试版 ScyllaUIBeta 共用同一份 Scylla 定稿。
+        ASSETCATALOG_COMPILER_APPICON_NAME: Scylla
+        # 面向用户的名字为 ScyllaUI（2026-11-02 定对外名称，2026-11-05 起内部标识也改为 scyllaui）：包名、菜单栏、程序坞、「关于」与通知都随它；
+        # 包标识、目标名、源码目录与后台程序仍叫 scyllaui（2026-11-05 决定，docs/design.md 10.6 节）。
+        PRODUCT_NAME: ScyllaUI
+        PRODUCT_BUNDLE_IDENTIFIER: dev.scyllaui.app
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: ScyllaUI
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
+        # 版权声明（2026-10-30 用户定稿，写全）：「关于」面板与开屏页脚共用这一句。
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 Siyuan Zhang. All rights reserved."
+        # 版本号规则见 docs/design.md 10.1 节「版本号」；构建号由 build-app.sh 按 git 提交数覆盖，这里的 1 只在直接用 Xcode 构建时生效。
+        MARKETING_VERSION: "0.4.48"
+        CURRENT_PROJECT_VERSION: "1"
+        # 签名（M4b 块 1，docs/design.md 10.6 节「块 1 实现」）：正式版与测试版都用 Developer ID 并开硬化运行时；
+        # 测试版也签，系统按签名认出同一个 App，换构建不再重问「文稿」等授权。Rust 程序在「Copy ScyllaUI core」里用同一身份签。
+        CODE_SIGN_IDENTITY: "Developer ID Application"
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: 94A284J775
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_ENTITLEMENTS: ScyllaUI/ScyllaUI.entitlements
+        # 终端里的程序请求权限时授权框里的用途说明（照 Ghostty.app），英文在 ScyllaUI/InfoPlist.xcstrings。
+        INFOPLIST_KEY_NSAppleEventsUsageDescription: "ScyllaUI 终端里运行的程序想使用 AppleScript 控制其他 App。"
+        INFOPLIST_KEY_NSAudioCaptureUsageDescription: "ScyllaUI 终端里运行的程序想访问系统音频。"
+        INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription: "ScyllaUI 终端里运行的程序想使用蓝牙。"
+        INFOPLIST_KEY_NSCalendarsUsageDescription: "ScyllaUI 终端里运行的程序想访问你的日历。"
+        INFOPLIST_KEY_NSCameraUsageDescription: "ScyllaUI 终端里运行的程序想使用摄像头。"
+        INFOPLIST_KEY_NSContactsUsageDescription: "ScyllaUI 终端里运行的程序想访问你的通讯录。"
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: "ScyllaUI 终端里运行的程序想访问本地网络。"
+        INFOPLIST_KEY_NSLocationUsageDescription: "ScyllaUI 终端里运行的程序想获取你的位置。"
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "ScyllaUI 终端里运行的程序想使用麦克风。"
+        INFOPLIST_KEY_NSMotionUsageDescription: "ScyllaUI 终端里运行的程序想访问运动数据。"
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "ScyllaUI 终端里运行的程序想访问你的照片图库。"
+        INFOPLIST_KEY_NSRemindersUsageDescription: "ScyllaUI 终端里运行的程序想访问你的提醒事项。"
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "ScyllaUI 终端里运行的程序想使用语音识别。"
+        INFOPLIST_KEY_NSSystemAdministrationUsageDescription: "ScyllaUI 终端里运行的程序需要管理员权限。"
+        INFOPLIST_KEY_NSDocumentsFolderUsageDescription: "ScyllaUI 终端里运行的程序想访问「文稿」文件夹。"
+        INFOPLIST_KEY_NSDesktopFolderUsageDescription: "ScyllaUI 终端里运行的程序想访问「桌面」文件夹。"
+        INFOPLIST_KEY_NSDownloadsFolderUsageDescription: "ScyllaUI 终端里运行的程序想访问「下载」文件夹。"
+        INFOPLIST_KEY_NSRemovableVolumesUsageDescription: "ScyllaUI 终端里运行的程序想访问外接磁盘上的文件。"
+        INFOPLIST_KEY_NSNetworkVolumesUsageDescription: "ScyllaUI 终端里运行的程序想访问网络磁盘上的文件。"
+        # 与 Ghostty 官方工程相同：libghostty 静态库需要 C++ 标准库
+        OTHER_LDFLAGS: "-lstdc++"
+        # 链接映射：列出静态库里实际链接进来的对象文件，供 gen-third-party.py 判定第三方依赖（M4b 块 4）。
+        LD_GENERATE_MAP_FILE: YES
+      # Debug（测试实例）与正式版分开通知权限与点击回调（M2 第 1 块，docs/design.md 10.2 节）。
+      configs:
+        Release:
+          # 公证要求时间戳；Debug 明确不加，构建不联网。
+          OTHER_CODE_SIGN_FLAGS: "--timestamp"
+          # 普通构建（非 archive）时 Xcode 默认注入 get-task-allow，公证会拒；Release 不注入（Debug 由 ScyllaUIDebug.entitlements 明确给出）。
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+        Debug:
+          OTHER_CODE_SIGN_FLAGS: "--timestamp=none"
+          CODE_SIGN_ENTITLEMENTS: ScyllaUI/ScyllaUIDebug.entitlements
+          # 测试版的更新源是本机测试源（src/scripts/appcast-local.py，只监听 127.0.0.1）。
+          SCYLLAUI_UPDATE_FEED: "http://127.0.0.1:8766/appcast.xml"
+          PRODUCT_BUNDLE_IDENTIFIER: dev.scyllaui.app.debug
+          # 测试版单独起包名（2026-10-17 用户要求，2026-11-02 起为 ScyllaUIBeta.app）：聚焦搜索与系统设置「文件与文件夹」按包名显示，
+          # 原先两个都叫 ScyllaUI，分不出正式版。包名不带空格，脚本与 Hook 里的路径不必加引号；bundle ID 不变，已给的授权照旧。
+          PRODUCT_NAME: ScyllaUIBeta
+          # 系统设置的「通知」与通知横幅里与正式版区分。
+          INFOPLIST_KEY_CFBundleDisplayName: ScyllaUI Beta
+          # 测试版同样按 -O 编译：开屏的逐像素变形未优化时每帧约 400 ms（M4a 块 4 实测，docs/design.md 10.4 节决策 9）。
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+    postBuildScripts:
+      # 打包 xterm-ghostty terminfo 与 shell 集成脚本（docs/design.md 第 6 节）。
+      # libghostty 以 Contents/Resources/terminfo/78/xterm-ghostty 为标记定位资源目录。
+      - name: Copy Ghostty resources
+        basedOnDependencyAnalysis: false
+        script: |
+          set -eu
+          SHARE="$SRCROOT/../../vendor/ghostty/zig-out/share"
+          DEST="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+          [ -f "$SHARE/terminfo/78/xterm-ghostty" ] || { echo "error: 缺少 $SHARE/terminfo，先运行 src/scripts/build-ghostty-app.sh"; exit 1; }
+          rm -rf "$DEST/ghostty" "$DEST/terminfo"
+          mkdir -p "$DEST"
+          cp -R "$SHARE/ghostty" "$DEST/ghostty"
+          cp -R "$SHARE/terminfo" "$DEST/terminfo"
+      # 开源许可（D15，2026-11-07）：根目录的 LICENSE（GPL-3.0 全文）只保留一份，构建时复制进包，「设置 › 关于 › 开源许可…」打开它；
+      # 加 .txt 扩展名，系统才会用文本程序打开。
+      - name: Copy license
+        basedOnDependencyAnalysis: false
+        script: |
+          set -eu
+          SRC="$SRCROOT/../../LICENSE"
+          [ -f "$SRC" ] || { echo "error: 缺少 $SRC"; exit 1; }
+          cp "$SRC" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/LICENSE.txt"
+      # 打包 Rust 内核（scyllauid、scyllaui）到 Contents/Helpers，由 src/scripts/build-app.sh 先行 cargo build --release。
+      # 不放 Contents/MacOS：文件系统不区分大小写，scyllaui 会覆盖主程序 ScyllaUI。
+      - name: Copy ScyllaUI core
+        basedOnDependencyAnalysis: false
+        script: |
+          set -eu
+          CORE="$SRCROOT/../core/target/release"
+          DEST="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers"
+          mkdir -p "$DEST"
+          # 用与 App 相同的身份签名并开硬化运行时（M4b 块 1）；Release 另加时间戳（公证要求）。
+          # Debug 明确不加时间戳：Developer ID 身份默认会向 Apple 时间服务器要时间戳，测试版不需要，也不让构建联网。
+          TS="--timestamp=none"
+          [ "$CONFIGURATION" = "Release" ] && TS="--timestamp"
+          for bin in scyllauid scyllaui; do
+            [ -x "$CORE/$bin" ] || { echo "error: 缺少 $CORE/${bin}，先运行 src/scripts/build-app.sh"; exit 1; }
+            # 先删再拷，换新 inode：原地覆盖时，正在运行的旧 scyllauid 让内核留着旧的签名缓存，
+            # 之后从这个文件启动的进程都被以「Code Signature Invalid」杀掉（2026-10-10 实测）。
+            rm -f "$DEST/$bin"
+            cp "$CORE/$bin" "$DEST/$bin"
+            codesign --force --sign "$EXPANDED_CODE_SIGN_IDENTITY" --options runtime $TS "$DEST/$bin"
+          done
+          # scyllauid 给登录 zsh 用的入口（定义 codex 函数，M4b 块 5 P3，docs/design.md 10.6 节 D11）。
+          RES="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+          rm -rf "$RES/scyllaui-shell"
+          cp -R "$SRCROOT/../core/scyllauid/shell" "$RES/scyllaui-shell"
+      # Sparkle 的内层组件（M4b 块 3，docs/design.md 10.6 节「块 3 实现」）：xcodebuild build 不像 archive / export 那样重签它们。
+      # App 不在沙盒里，用不到 XPC 服务，删掉（官方：可删）；其余按官方给的顺序用同一身份、硬化运行时重签，不用 --deep。
+      - name: Sign Sparkle
+        basedOnDependencyAnalysis: false
+        script: |
+          set -eu
+          FW="$TARGET_BUILD_DIR/$FRAMEWORKS_FOLDER_PATH/Sparkle.framework"
+          [ -d "$FW" ] || { echo "error: 缺少 ${FW}，先运行 src/scripts/fetch-sparkle.sh"; exit 1; }
+          TS="--timestamp=none"
+          [ "$CONFIGURATION" = "Release" ] && TS="--timestamp"
+          rm -rf "$FW/Versions/B/XPCServices" "$FW/XPCServices"
+          for part in "$FW/Versions/B/Autoupdate" "$FW/Versions/B/Updater.app" "$FW"; do
+            codesign --force --sign "$EXPANDED_CODE_SIGN_IDENTITY" --options runtime $TS "$part"
+          done
+  # 侧栏模型单测（M1 第 3 块）：只编译 SidebarModel.swift，不依赖 GhosttyKit，无宿主 App。
+  # 用法：src/scripts/test-app.sh
+  ScyllaUITests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: ScyllaUITests
+      - path: ScyllaUI/Sidebar/SidebarModel.swift
+      - path: ScyllaUI/Sidebar/SidebarCells.swift
+      - path: ScyllaUI/Sidebar/ScyllaUIStyle.swift
+      - path: ScyllaUI/PromptHistoryPanel.swift
+      # PromptHistoryPanel 的边缘悬停蓝线（fa16c7f 起引用，测试目标漏了这个文件导致 test-app.sh 编译失败）
+      - path: ScyllaUI/DividerHighlight.swift
+      - path: ScyllaUI/AppLog.swift
+      # 设置的纯逻辑（M4a）：主题清单、外观覆盖文件。
+      - path: ScyllaUI/Settings/ThemeCatalog.swift
+      # 开屏的时间线、字标数据与欢迎窗口的显示策略（M4a 块 4）。
+      - path: ScyllaUI/Welcome/SplashTimeline.swift
+      - path: ScyllaUI/Welcome/WelcomePolicy.swift
+      # 上次意外退出的判定与 App 菜单的日志入口（M4b 块 7）。
+      - path: ScyllaUI/UnexpectedExit.swift
+      - path: ScyllaUI/AppMenu.swift
+      # 报告问题的诊断包（2026-11-02，10.6 节「问题反馈」）。
+      - path: ScyllaUI/ProblemReport.swift
+      # 是否需要先拖到「应用程序」（M4b 块 2）。
+      - path: ScyllaUI/InstallLocation.swift
+      - path: ScyllaUI/Resources/wordmark-cells.json
+        buildPhase: resources
+      # 工具图标：测任务行图标与文字的实际间距要用真实图标（SidebarCellsTests）。
+      - path: ScyllaUI/ToolIcons.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.scyllaui.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+    scheme:
+      testTargets: [ScyllaUITests]

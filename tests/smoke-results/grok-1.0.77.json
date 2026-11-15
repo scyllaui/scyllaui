@@ -1,0 +1,36 @@
+{
+  "tool": "grok",
+  "version": "1.0.77",
+  "date": "2026-11-06",
+  "runs": [
+    {
+      "cmd": "grok -p 只回复 OK …",
+      "exit": 0,
+      "seconds": 8.1,
+      "stdout_tail": "OK",
+      "stderr_tail": ""
+    },
+    {
+      "cmd": "grok -p 再回复一次 OK …",
+      "exit": 0,
+      "seconds": 6.0,
+      "stdout_tail": "OK",
+      "stderr_tail": ""
+    }
+  ],
+  "checks": {
+    "hooks_installed": true,
+    "frames": 10,
+    "missing_events": [],
+    "unknown_events": [],
+    "sessions": [
+      "5cccf661-05ae-4fc0-94c8-d5b9b42cafcd"
+    ],
+    "resume_keeps_id": true,
+    "preassigned_id_used": true,
+    "env_report_ok": true
+  },
+  "hooks_install_exit": 0,
+  "ok": true,
+  "sample": "tests/hook-samples/grok-1.0.77-smoke.jsonl"
+}

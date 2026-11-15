@@ -1,0 +1,36 @@
+{
+  "theme": "dark",
+  "statusLine": {
+    "type": "command",
+    "command": "~/bin/状态栏.sh"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "say done",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"${SCYLLAUI_SOCK:-}\" ] && [ -x \"${SCYLLAUI_BIN:-}\" ]; then \"$SCYLLAUI_BIN\" hook --config claude; fi",
+            "timeout": 2
+          }
+        ]
+      }
+    ]
+  },
+  "model": "opus",
+  "ratio": 0.5,
+  "emptyList": [],
+  "emptyObj": {}
+}

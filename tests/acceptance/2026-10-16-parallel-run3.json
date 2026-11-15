@@ -1,0 +1,651 @@
+{
+  "started": "2026-10-16 01:08:42",
+  "phases": [
+    {
+      "phase": "P0 启动后、提问前",
+      "at": "01:09:09",
+      "rows": [
+        {
+          "pane": "b8-00-96f84",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "c79819bb-fcbd-41ea-9ffb-a0ff36ac367a"
+        },
+        {
+          "pane": "b8-01-91905",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "b8-02-1e427",
+          "tool": "kimi",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "b8-03-80429",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "01a14089-a7b7-71f3-ba70-fb2e14db4563"
+        },
+        {
+          "pane": "b8-04-ed00c",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "597fe31c-8d99-4211-8a96-965fb3e1d0ee"
+        },
+        {
+          "pane": "b8-05-a5d9e",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "b8-06-d368d",
+          "tool": "kimi",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "b8-07-17700",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "01a14089-b77d-7732-8e63-e575c293c15e"
+        },
+        {
+          "pane": "b8-08-bf516",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "a9c42cbb-942c-4ca6-84ef-c676a629a867"
+        },
+        {
+          "pane": "b8-09-27bd8",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "b8-10-b8165",
+          "tool": "kimi",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "b8-11-cb09b",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "01a14089-c74b-7931-a0d0-1f5cd48dc112"
+        }
+      ],
+      "mismatch": 0,
+      "recent_total": 0
+    },
+    {
+      "phase": "P1 12 个会话同时提问、回答完毕",
+      "at": "01:10:01",
+      "rows": [
+        {
+          "pane": "b8-00-96f84",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "c79819bb-fcbd-41ea-9ffb-a0ff36ac367a"
+        },
+        {
+          "pane": "b8-01-91905",
+          "tool": "codex",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-a1ff-7f53-aa54-50f71919f7ec"
+        },
+        {
+          "pane": "b8-02-1e427",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_62f9e5ec-c6f2-42bd-930a-d477a29a38fc"
+        },
+        {
+          "pane": "b8-03-80429",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-a7b7-71f3-ba70-fb2e14db4563"
+        },
+        {
+          "pane": "b8-04-ed00c",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "597fe31c-8d99-4211-8a96-965fb3e1d0ee"
+        },
+        {
+          "pane": "b8-05-a5d9e",
+          "tool": "codex",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-b1a9-77f3-ba1f-a76a09b2fbfc"
+        },
+        {
+          "pane": "b8-06-d368d",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_a83349a6-16ea-435f-9a3f-51f37f99e2e8"
+        },
+        {
+          "pane": "b8-07-17700",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-b77d-7732-8e63-e575c293c15e"
+        },
+        {
+          "pane": "b8-08-bf516",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "a9c42cbb-942c-4ca6-84ef-c676a629a867"
+        },
+        {
+          "pane": "b8-09-27bd8",
+          "tool": "codex",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-c1d7-7b11-8712-df3b160f6026"
+        },
+        {
+          "pane": "b8-10-b8165",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_580517c4-f274-4b44-9ec0-88b913651c85"
+        },
+        {
+          "pane": "b8-11-cb09b",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-c74b-7931-a0d0-1f5cd48dc112"
+        }
+      ],
+      "mismatch": 0,
+      "recent_total": 0
+    },
+    {
+      "phase": "P2 每款 1 个会话等待审批",
+      "at": "01:10:43",
+      "rows": [
+        {
+          "pane": "b8-00-96f84",
+          "tool": "claude",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "c79819bb-fcbd-41ea-9ffb-a0ff36ac367a"
+        },
+        {
+          "pane": "b8-01-91905",
+          "tool": "codex",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "01a14089-a1ff-7f53-aa54-50f71919f7ec"
+        },
+        {
+          "pane": "b8-02-1e427",
+          "tool": "kimi",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "session_62f9e5ec-c6f2-42bd-930a-d477a29a38fc"
+        },
+        {
+          "pane": "b8-03-80429",
+          "tool": "grok",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "01a14089-a7b7-71f3-ba70-fb2e14db4563"
+        },
+        {
+          "pane": "b8-04-ed00c",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "597fe31c-8d99-4211-8a96-965fb3e1d0ee"
+        },
+        {
+          "pane": "b8-05-a5d9e",
+          "tool": "codex",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-b1a9-77f3-ba1f-a76a09b2fbfc"
+        },
+        {
+          "pane": "b8-06-d368d",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_a83349a6-16ea-435f-9a3f-51f37f99e2e8"
+        },
+        {
+          "pane": "b8-07-17700",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-b77d-7732-8e63-e575c293c15e"
+        },
+        {
+          "pane": "b8-08-bf516",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "a9c42cbb-942c-4ca6-84ef-c676a629a867"
+        },
+        {
+          "pane": "b8-09-27bd8",
+          "tool": "codex",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-c1d7-7b11-8712-df3b160f6026"
+        },
+        {
+          "pane": "b8-10-b8165",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_580517c4-f274-4b44-9ec0-88b913651c85"
+        },
+        {
+          "pane": "b8-11-cb09b",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-c74b-7931-a0d0-1f5cd48dc112"
+        }
+      ],
+      "mismatch": 0,
+      "recent_total": 0
+    },
+    {
+      "phase": "P3 拒绝审批后",
+      "at": "01:10:56",
+      "rows": [
+        {
+          "pane": "b8-00-96f84",
+          "tool": "claude",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "c79819bb-fcbd-41ea-9ffb-a0ff36ac367a"
+        },
+        {
+          "pane": "b8-01-91905",
+          "tool": "codex",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "01a14089-a1ff-7f53-aa54-50f71919f7ec"
+        },
+        {
+          "pane": "b8-02-1e427",
+          "tool": "kimi",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": true,
+          "session": "session_62f9e5ec-c6f2-42bd-930a-d477a29a38fc"
+        },
+        {
+          "pane": "b8-03-80429",
+          "tool": "grok",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "01a14089-a7b7-71f3-ba70-fb2e14db4563"
+        },
+        {
+          "pane": "b8-04-ed00c",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "597fe31c-8d99-4211-8a96-965fb3e1d0ee"
+        },
+        {
+          "pane": "b8-05-a5d9e",
+          "tool": "codex",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-b1a9-77f3-ba1f-a76a09b2fbfc"
+        },
+        {
+          "pane": "b8-06-d368d",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_a83349a6-16ea-435f-9a3f-51f37f99e2e8"
+        },
+        {
+          "pane": "b8-07-17700",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-b77d-7732-8e63-e575c293c15e"
+        },
+        {
+          "pane": "b8-08-bf516",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "a9c42cbb-942c-4ca6-84ef-c676a629a867"
+        },
+        {
+          "pane": "b8-09-27bd8",
+          "tool": "codex",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-c1d7-7b11-8712-df3b160f6026"
+        },
+        {
+          "pane": "b8-10-b8165",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_580517c4-f274-4b44-9ec0-88b913651c85"
+        },
+        {
+          "pane": "b8-11-cb09b",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-c74b-7931-a0d0-1f5cd48dc112"
+        }
+      ],
+      "mismatch": 0,
+      "recent_total": 0
+    },
+    {
+      "phase": "P4 修复后新开的 Codex 提问",
+      "at": "01:11:38",
+      "rows": [
+        {
+          "pane": "b8-12-be50e",
+          "tool": "codex",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a1408b-b041-7bb1-9485-0d0b88c7da34"
+        }
+      ],
+      "mismatch": 0,
+      "recent_total": 0
+    },
+    {
+      "phase": "P5 每款 1 个会话退出",
+      "at": "01:12:05",
+      "rows": [
+        {
+          "pane": "b8-00-96f84",
+          "tool": "claude",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "c79819bb-fcbd-41ea-9ffb-a0ff36ac367a"
+        },
+        {
+          "pane": "b8-01-91905",
+          "tool": "codex",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "01a14089-a1ff-7f53-aa54-50f71919f7ec"
+        },
+        {
+          "pane": "b8-02-1e427",
+          "tool": "kimi",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": true,
+          "session": "session_62f9e5ec-c6f2-42bd-930a-d477a29a38fc"
+        },
+        {
+          "pane": "b8-03-80429",
+          "tool": "grok",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "01a14089-a7b7-71f3-ba70-fb2e14db4563"
+        },
+        {
+          "pane": "b8-04-ed00c",
+          "tool": "claude",
+          "state": "ended",
+          "want": "ended",
+          "ok": true,
+          "unseen": true,
+          "session": "597fe31c-8d99-4211-8a96-965fb3e1d0ee"
+        },
+        {
+          "pane": "b8-05-a5d9e",
+          "tool": "codex",
+          "state": "ended",
+          "want": "ended",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-b1a9-77f3-ba1f-a76a09b2fbfc"
+        },
+        {
+          "pane": "b8-06-d368d",
+          "tool": "kimi",
+          "state": "ended",
+          "want": "ended",
+          "ok": true,
+          "unseen": true,
+          "session": "session_a83349a6-16ea-435f-9a3f-51f37f99e2e8"
+        },
+        {
+          "pane": "b8-07-17700",
+          "tool": "grok",
+          "state": "ended",
+          "want": "ended",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-b77d-7732-8e63-e575c293c15e"
+        },
+        {
+          "pane": "b8-08-bf516",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "a9c42cbb-942c-4ca6-84ef-c676a629a867"
+        },
+        {
+          "pane": "b8-09-27bd8",
+          "tool": "codex",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-c1d7-7b11-8712-df3b160f6026"
+        },
+        {
+          "pane": "b8-10-b8165",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_580517c4-f274-4b44-9ec0-88b913651c85"
+        },
+        {
+          "pane": "b8-11-cb09b",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a14089-c74b-7931-a0d0-1f5cd48dc112"
+        },
+        {
+          "pane": "b8-12-be50e",
+          "tool": "codex",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a1408b-b041-7bb1-9485-0d0b88c7da34"
+        }
+      ],
+      "mismatch": 0,
+      "recent_total": 4
+    }
+  ],
+  "hooks": {
+    "after_delete": {
+      "claude": "ok",
+      "codex": "missing",
+      "kimi": "missing",
+      "grok": "ok"
+    },
+    "repair_tools": [
+      "codex",
+      "kimi"
+    ],
+    "repair_ok": true,
+    "after_repair": {
+      "claude": "ok",
+      "codex": "ok",
+      "kimi": "ok",
+      "grok": "ok"
+    }
+  },
+  "restarts": [],
+  "finished": "2026-10-16 01:12:24",
+  "note": "M1 第 8 块验收第 3 轮（2026-10-16，锁屏期间，夹具终端 + 伪终端里的真实 CLI；Claude 用真实 HOME、其余三款用临时 HOME）。"
+}

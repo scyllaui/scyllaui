@@ -1,0 +1,94 @@
+ScyllaUI Privacy and Data Notice
+
+Version: 2026-11-08
+
+In short: ScyllaUI goes online only to check for updates, and does not collect or upload any usage data. Your data stays on your own Mac; we receive something from you only when you choose to report a problem (see sections 6 and 7).
+
+This English version is a translation. If it differs from the Chinese version, the Chinese version prevails.
+
+
+1. Data Stored on Your Mac
+
+1. Projects, terminals and conversation records (task titles, latest prompts, last replies, status events, CLI versions)
+   Location: ~/Library/Application Support/ScyllaUI/
+   Deleting: adjust the retention period in Settings › Data (default 30 days, 200 entries), or click "Clear History…".
+   Before anything is written to the database, common secret patterns (sk-…, ghp_…, Bearer …, password: …, PEM private keys, etc.) are replaced with [REDACTED].
+
+2. Logs: only events, states and process IDs — no prompts, replies or secrets
+   Location: ~/Library/Logs/ScyllaUI/
+   Deleting: one file per day, kept for 14 days automatically; you can also delete them directly.
+
+3. Crash reports: written on your Mac when the app crashes, never uploaded
+   They are sent only if you choose to attach them in "Report a Problem…", and then by you.
+
+4. Diagnostic packages: created only when you click "Report a Problem…"
+   Location: ~/Library/Caches/ScyllaUI/reports/
+   Deleting: packages older than 7 days are removed the next time you report a problem; you can also delete them directly.
+
+
+2. What ScyllaUI Reads but Does Not Change
+
+- Each CLI's own session records: conversation titles, your prompts, the last reply and token usage, shown in the sidebar.
+- The path and arguments of the foreground process in ScyllaUI terminals: used to recognize which agent, and which version, is running.
+
+
+3. Files ScyllaUI Changes
+
+Only two kinds:
+
+- Status sync (hooks): ScyllaUI adds its own entries to each CLI's configuration, such as ~/.claude/settings.json and ~/.codex/hooks.json. ScyllaUI first lists the changes in the app and writes them only after you confirm. You can undo them per agent in Settings › Agent.
+- The Claude Code statusline bridge: used to show Claude's quota; it is written only when you run scyllaui statusline-bridge install yourself, and running the install command means you agree. To see the changes first, run scyllaui statusline-bridge diff. Undo it with scyllaui statusline-bridge uninstall.
+
+In both cases the original files are backed up before anything is written; undoing removes only the entries ScyllaUI wrote and leaves your own settings untouched.
+
+
+4. Network
+
+- Checking for updates is ScyllaUI's only network request: it fetches the update feed https://scyllaui.github.io/scyllaui/appcast.xml, and downloads the installer only when there is a new version and you choose to install it. The request carries only the app's name and version; no system information, usage data or files are sent. The update feed and installers are hosted on GitHub, which, as with any visitor, receives your IP address and standard request information; GitHub's privacy policy applies.
+- ScyllaUI does not check on first launch; on the second launch it asks whether to check automatically, and if you agree it checks once a day. You can turn off "Automatically check for updates" in Settings › About at any time; after that it goes online only when you click "Check for Updates…".
+- Apart from this, the ScyllaUI app and its background process make no requests to the internet.
+- Quota lookups are the exception, and even then ScyllaUI does not go online itself: quotas for Antigravity, Kimi and Grok are looked up by running those CLIs' own programs, which use their own sign-ins to reach their own services. For Kimi, its own local service is started first, and ScyllaUI's background process then asks that service on your Mac (127.0.0.1) for the quota once, using a one-time token the service provides when it starts; the request does not leave your Mac. ScyllaUI does not read or store your sign-in information and sends none of your content to these services.
+- CLIs running in the terminal go online as usual, just as they would in any other terminal; ScyllaUI does not handle those requests.
+
+
+5. System Permissions
+
+- Access to Documents, Desktop, Downloads and similar folders: lets terminals and agents running in those folders read and write files normally.
+- Notifications: alerts you when a task finishes or needs your confirmation.
+- Permissions requested by programs in the terminal: when programs running in ScyllaUI (including agents) ask for the camera, microphone, location, contacts, control of other apps and similar permissions, macOS asks in ScyllaUI's name, because they run inside ScyllaUI. ScyllaUI itself does not use these permissions; whether to allow them is up to you.
+
+You can turn off any of these at any time in System Settings › Privacy & Security and System Settings › Notifications.
+
+
+6. When You Report a Problem
+
+Help › Report a Problem… creates a diagnostic package on your Mac:
+
+- Included: version information, each agent's status sync, the last 3 days of logs, crash reports from the last 30 days, and your description.
+- Not included: prompts, replies, secrets, the ScyllaUI database or any agent's configuration. Your home folder is written as ~ in the files; folder names are still visible.
+- Crash reports are optional: they may contain text that was in memory at the moment of the crash, such as what a terminal was showing.
+- You send it: you can open each file in Finder before deciding to send. It is sent with your own email or GitHub account; issues on GitHub are public. ScyllaUI itself still does not go online.
+- After we receive it: the package and related emails are used only to investigate and fix problems. Packages are deleted once the problem is resolved; related emails are kept for at most 12 months after the problem is resolved and then deleted.
+- Third parties: when you send it by email or on GitHub, the content is transmitted and stored by your email provider or by GitHub, and their privacy policies apply. Emails sent to support@thinkfarlabs.com or security@thinkfarlabs.com are forwarded by Cloudflare and stored in a Gmail (Google) mailbox used by the maintainer; the servers of these services may be located outside your country or region.
+
+
+7. Who Handles What You Send
+
+- Handler: Siyuan Zhang, the maintainer of ScyllaUI. Contact: support@thinkfarlabs.com.
+- Basis: you send it to us, and we use it to respond to your request and to investigate and fix problems.
+- Your rights: you can email us at any time to ask to access, copy, correct or delete the packages and emails you sent, and we will reply within 30 days.
+
+
+8. Removing Everything
+
+1. Undo status sync for each agent in Settings › Agent; if you installed the statusline bridge, also run scyllaui statusline-bridge uninstall.
+2. Quit ScyllaUI, then right-click it in the Dock and choose "Stop Running in Background" to end the background process, then delete the app.
+3. Delete the data, log and diagnostic package folders listed above, as well as ~/Library/Caches/dev.scyllaui.app, ~/Library/Caches/dev.scyllaui.app.sparkle (caches left by checking for and downloading updates) and ~/Library/HTTPStorages/dev.scyllaui.app, then run defaults delete dev.scyllaui.app in Terminal to clear preferences.
+
+
+9. Changes to This Notice
+
+If we ever add a feature that sends data (such as anonymous usage statistics), we will update this notice first and ask for your consent in the app; if you do not consent, ScyllaUI will send nothing.
+
+
+Contact: support@thinkfarlabs.com

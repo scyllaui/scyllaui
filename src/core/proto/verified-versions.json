@@ -1,0 +1,247 @@
+{
+  "_说明": "已验证的 CLI 版本（docs/design.md 4.7 节）：按版本号精确匹配。每条的样本文件在 tests/hook-samples/ 下；冒烟测试（src/scripts/smoke-cli.py）通过后由开发者追加并提交。",
+  "claude": [
+    {
+      "version": "2.1.292",
+      "verified": "2026-10-08",
+      "sample": "claude-2.1.292.jsonl"
+    },
+    {
+      "version": "2.1.296",
+      "verified": "2026-10-10",
+      "sample": "claude-2.1.296.jsonl"
+    },
+    {
+      "version": "2.1.300",
+      "verified": "2026-10-15",
+      "sample": "claude-2.1.300-smoke.jsonl"
+    },
+    {
+      "version": "2.1.301",
+      "verified": "2026-10-16",
+      "sample": "claude-2.1.301-smoke.jsonl"
+    },
+    {
+      "version": "2.1.302",
+      "verified": "2026-10-17",
+      "sample": "claude-2.1.302-smoke.jsonl"
+    },
+    {
+      "version": "2.1.310",
+      "verified": "2026-10-25",
+      "sample": "claude-2.1.310-smoke.jsonl"
+    },
+    {
+      "version": "2.1.311",
+      "verified": "2026-10-28",
+      "sample": "claude-2.1.311-smoke.jsonl"
+    },
+    {
+      "version": "2.1.314",
+      "verified": "2026-10-31",
+      "sample": "claude-2.1.314-smoke.jsonl"
+    },
+    {
+      "version": "2.1.316",
+      "verified": "2026-10-31",
+      "sample": "claude-2.1.316-smoke.jsonl"
+    },
+    {
+      "version": "2.1.318",
+      "verified": "2026-11-05",
+      "sample": "claude-2.1.318-smoke.jsonl"
+    },
+    {
+      "version": "2.1.325",
+      "verified": "2026-11-14",
+      "sample": "claude-2.1.325-smoke.jsonl"
+    }
+  ],
+  "codex": [
+    {
+      "version": "0.160.0",
+      "verified": "2026-10-08",
+      "sample": "codex-0.160.0.jsonl"
+    },
+    {
+      "version": "0.161.0",
+      "verified": "2026-10-08",
+      "sample": "codex-0.161.0.jsonl"
+    },
+    {
+      "version": "0.162.0",
+      "verified": "2026-10-10",
+      "sample": "codex-0.162.0.jsonl"
+    },
+    {
+      "version": "0.162.1",
+      "verified": "2026-10-12",
+      "sample": "codex-0.162.1-daemon.jsonl"
+    },
+    {
+      "version": "0.163.0",
+      "verified": "2026-10-16",
+      "sample": "codex-0.163.0-smoke.jsonl"
+    },
+    {
+      "version": "0.164.0",
+      "verified": "2026-10-25",
+      "sample": "codex-0.164.0-smoke.jsonl"
+    },
+    {
+      "version": "0.165.0",
+      "verified": "2026-10-31",
+      "sample": "codex-0.165.0-smoke.jsonl"
+    },
+    {
+      "version": "0.166.0",
+      "verified": "2026-10-31",
+      "sample": "codex-0.166.0-smoke.jsonl"
+    },
+    {
+      "version": "0.169.0",
+      "verified": "2026-11-14",
+      "sample": "codex-0.169.0-smoke.jsonl"
+    }
+  ],
+  "kimi": [
+    {
+      "version": "2.1.1",
+      "verified": "2026-10-08",
+      "sample": "kimi-2.1.1.jsonl"
+    },
+    {
+      "version": "2.2.0",
+      "verified": "2026-10-15",
+      "sample": "kimi-2.2.0-smoke.jsonl"
+    },
+    {
+      "version": "2.3.1",
+      "verified": "2026-10-25",
+      "sample": "kimi-2.3.1-smoke.jsonl"
+    },
+    {
+      "version": "2.3.2",
+      "verified": "2026-10-25",
+      "sample": "kimi-2.3.2-smoke.jsonl"
+    },
+    {
+      "version": "2.4.1",
+      "verified": "2026-10-31",
+      "sample": "kimi-2.4.1-smoke.jsonl"
+    },
+    {
+      "version": "2.5.0",
+      "verified": "2026-11-05",
+      "sample": "kimi-2.5.0-smoke.jsonl"
+    },
+    {
+      "version": "2.5.1",
+      "verified": "2026-11-06",
+      "sample": "kimi-2.5.1-smoke.jsonl"
+    },
+    {
+      "version": "2.6.1",
+      "verified": "2026-11-14",
+      "sample": "kimi-2.6.1-smoke.jsonl"
+    }
+  ],
+  "grok": [
+    {
+      "version": "1.0.46",
+      "verified": "2026-10-08",
+      "sample": "grok-1.0.46.jsonl"
+    },
+    {
+      "version": "1.0.50",
+      "verified": "2026-10-10",
+      "sample": "grok-1.0.50.jsonl"
+    },
+    {
+      "version": "1.0.52",
+      "verified": "2026-10-15",
+      "sample": "grok-1.0.52-smoke.jsonl"
+    },
+    {
+      "version": "1.0.60",
+      "verified": "2026-10-16",
+      "sample": "grok-1.0.60-smoke.jsonl"
+    },
+    {
+      "version": "1.0.62",
+      "verified": "2026-10-17",
+      "sample": "grok-1.0.62-smoke.jsonl"
+    },
+    {
+      "version": "1.0.70",
+      "verified": "2026-10-25",
+      "sample": "grok-1.0.70-smoke.jsonl"
+    },
+    {
+      "version": "1.0.77",
+      "verified": "2026-11-06",
+      "sample": "grok-1.0.77-smoke.jsonl"
+    }
+  ],
+  "opencode": [
+    {
+      "version": "1.19.5",
+      "verified": "2026-10-29",
+      "sample": "opencode-1.19.5-smoke.jsonl"
+    },
+    {
+      "version": "2.2.4",
+      "verified": "2026-10-31",
+      "sample": "opencode-2.2.4-smoke.jsonl"
+    },
+    {
+      "version": "2.2.5",
+      "verified": "2026-10-31",
+      "sample": "opencode-2.2.5-smoke.jsonl"
+    },
+    {
+      "version": "2.3.0",
+      "verified": "2026-11-14",
+      "sample": "opencode-2.3.0-smoke.jsonl"
+    }
+  ],
+  "copilot": [
+    {
+      "version": "1.0.105",
+      "verified": "2026-10-30",
+      "sample": "copilot-1.0.105-smoke.jsonl"
+    },
+    {
+      "version": "1.0.106",
+      "verified": "2026-11-06",
+      "sample": "copilot-1.0.106-smoke.jsonl"
+    },
+    {
+      "version": "1.0.112",
+      "verified": "2026-11-14",
+      "sample": "copilot-1.0.112-smoke.jsonl"
+    }
+  ],
+  "antigravity": [
+    {
+      "version": "1.4.12",
+      "verified": "2026-11-01",
+      "sample": "antigravity-1.4.12-smoke.jsonl"
+    },
+    {
+      "version": "1.5.1",
+      "verified": "2026-11-05",
+      "sample": "antigravity-1.5.1-smoke.jsonl"
+    },
+    {
+      "version": "1.5.2",
+      "verified": "2026-11-06",
+      "sample": "antigravity-1.5.2-smoke.jsonl"
+    },
+    {
+      "version": "1.5.9",
+      "verified": "2026-11-14",
+      "sample": "antigravity-1.5.9-smoke.jsonl"
+    }
+  ]
+}

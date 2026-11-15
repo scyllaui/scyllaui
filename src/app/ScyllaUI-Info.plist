@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- ScyllaUI 目标的自定义 Info.plist 键（M4b 块 3，docs/design.md 10.6 节「块 3 实现」），与 GENERATE_INFOPLIST_FILE 生成的键合并。
+     不设 SUEnableAutomaticChecks：沿用 Sparkle 的「第二次打开时询问是否自动检查」（用户确认）。 -->
+<plist version="1.0">
+<dict>
+	<key>SUFeedURL</key>
+	<string>$(SCYLLAUI_UPDATE_FEED)</string>
+	<key>SUPublicEDKey</key>
+	<string>$(SCYLLAUI_UPDATE_PUBLIC_KEY)</string>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- 只放行本机地址，供本机测试源用 http；正式更新源是 https。 -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+</dict>
+</plist>

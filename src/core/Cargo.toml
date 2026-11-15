@@ -1,0 +1,20 @@
+# ScyllaUI 内核（docs/design.md 第 3 节）。S0 第 3 项的最小实现：Hook 桥与后台。
+# 构建：src/scripts/with-rust.sh cargo build --release --manifest-path src/core/Cargo.toml
+[workspace]
+resolver = "2"
+members = ["proto", "scyllaui", "scyllauid"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2021"
+license = "UNLICENSED"
+publish = false
+
+[workspace.dependencies]
+# preserve_order：修复 Hook 时保留用户配置文件原有的键顺序（docs/design.md 4.7、9 节，2026-10-15 用户确认）
+serde_json = { version = "1", features = ["preserve_order"] }
+# PTY、termios、ioctl、tcgetpgrp：标准库没有（S0 第 4 项保活实验；docs/design.md 第 9 节已列入计划依赖）
+libc = "0.2"
+# scyllauid 元数据存储（docs/design.md 4.6、8 节）。不启用 bundled，链接系统自带的 SQLite（2026-10-10 用户确认）
+rusqlite = { version = "0.40.2", default-features = false }
+scyllaui-proto = { path = "proto" }

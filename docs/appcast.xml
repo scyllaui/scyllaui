@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+<channel>
+<title>ScyllaUI</title>
+<link>https://github.com/scyllaui/scyllaui</link>
+<description>ScyllaUI release feed</description>
+<language>en</language>
+<item>
+    <title>ScyllaUI 0.4.48</title>
+    <pubDate>Sun, 15 Nov 2026 05:55:21 +0000</pubDate>
+    <sparkle:version>672</sparkle:version>
+    <sparkle:shortVersionString>0.4.48</sparkle:shortVersionString>
+    <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+    <enclosure url="https://github.com/scyllaui/scyllaui/releases/download/v0.4.48/ScyllaUI-0.4.48.dmg" sparkle:edSignature="u0thqWW5A5otMK92EfOGk7Uskdz/KW3Afy1tQAHAEq1GuIGGIC4ywNnZPnJufly1pQ5KIwssdGqtPctZ7mtoAw==" length="12569240" type="application/octet-stream"/>
+</item>
+</channel>
+</rss>

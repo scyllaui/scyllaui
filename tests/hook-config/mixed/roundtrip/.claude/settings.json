@@ -1,0 +1,25 @@
+{
+  "theme": "dark",
+  "statusLine": {
+    "type": "command",
+    "command": "~/bin/状态栏.sh"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "say done",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "model": "opus",
+  "ratio": 0.5,
+  "emptyList": [],
+  "emptyObj": {}
+}

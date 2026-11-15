@@ -1,0 +1,36 @@
+{
+  "tool": "codex",
+  "version": "0.169.0",
+  "date": "2026-11-14",
+  "runs": [
+    {
+      "cmd": "codex exec --dangerously-bypass-hook-trust …",
+      "exit": 0,
+      "seconds": 22.3,
+      "stdout_tail": "OK",
+      "stderr_tail": "ew for this invocation.\nwarning: `--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation.\nhook: SessionStart\nhook: SessionStart Completed\nhook: UserPromptSubmit\nhook: UserPromptSubmit Completed\ncodex\nOK\nhook: Stop\nhook: Stop Completed\ntokens used\n10,833"
+    },
+    {
+      "cmd": "codex exec resume …",
+      "exit": 0,
+      "seconds": 17.6,
+      "stdout_tail": "OK",
+      "stderr_tail": "ew for this invocation.\nwarning: `--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation.\nhook: SessionStart\nhook: SessionStart Completed\nhook: UserPromptSubmit\nhook: UserPromptSubmit Completed\ncodex\nOK\nhook: Stop\nhook: Stop Completed\ntokens used\n11,057"
+    }
+  ],
+  "checks": {
+    "hooks_installed": true,
+    "frames": 10,
+    "missing_events": [],
+    "unknown_events": [],
+    "sessions": [
+      "01a1d983-00a3-75b3-87d9-6d555aaaaa36"
+    ],
+    "resume_keeps_id": true,
+    "preassigned_id_used": true,
+    "env_report_ok": true
+  },
+  "hooks_install_exit": 0,
+  "ok": true,
+  "sample": "tests/hook-samples/codex-0.169.0-smoke.jsonl"
+}

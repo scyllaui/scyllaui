@@ -1,0 +1,2440 @@
+{
+  "started": "2026-10-30 02:26:50",
+  "minutes": 60.0,
+  "rounds": [
+    {
+      "round": 1,
+      "at": "02:28:22",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 2,
+      "at": "02:33:20",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 3,
+      "at": "02:39:03",
+      "kind": "审批",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 4,
+      "at": "02:43:26",
+      "kind": "中断",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 5,
+      "at": "02:48:23",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 6,
+      "at": "02:54:00",
+      "kind": "审批",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 7,
+      "at": "02:58:24",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 8,
+      "at": "03:03:28",
+      "kind": "中断",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 9,
+      "at": "03:09:06",
+      "kind": "审批",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 10,
+      "at": "03:13:22",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 11,
+      "at": "03:18:25",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 12,
+      "at": "03:24:02",
+      "kind": "审批",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-3aa53b33",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-e4599ead",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-7c568792",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-20d89834",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-421d1c22",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-25a424bd",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "opencode",
+          "pane": "fx-9c0ba080",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-c7ab070c",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    }
+  ],
+  "samples": [
+    {
+      "at": "02:26:50",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 6.7,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 199.3,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:27:51",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 9.2,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 110.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:28:52",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 8.2,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 97.9,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:29:52",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 6.1,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 97.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:30:53",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 5.9,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 96.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:31:53",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.6,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 96.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:32:54",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 7.2,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 107.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:33:54",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 4.9,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 62.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:34:55",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 60.7,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:35:55",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 60.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:36:56",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 59.9,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:37:56",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 9.6,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 74.6,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:38:57",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 9.9,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 74.7,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:39:57",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 6.1,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 60.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:40:58",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 5.6,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 60.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:41:58",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 5.5,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 60.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:42:59",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 7.0,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 73.6,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:43:59",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 7.0,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 72.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:45:00",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.5,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 60.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:46:00",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 60.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:47:01",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 60.3,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:48:01",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 8.9,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 71.6,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:49:02",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 4.9,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 56.0,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:50:02",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 4.8,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 55.7,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:51:03",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 4.8,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 58.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:52:04",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 4.8,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 58.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:53:04",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 7.4,
+        "cpu": 0.4,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 71.9,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:54:05",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 7.3,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 71.7,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:55:05",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.6,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 58.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:56:06",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.5,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 58.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:57:06",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 58.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:58:07",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 9.5,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 71.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "02:59:07",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 6.2,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 55.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:00:08",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 5.9,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 55.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:01:08",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 5.9,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 54.7,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:02:09",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 5.9,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 57.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:03:09",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 6.9,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 70.0,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:04:10",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 4.1,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 61.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:05:10",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 55.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:06:11",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 53.9,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:07:11",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 55.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:08:12",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 9.9,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 71.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:09:12",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 9.9,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 69.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:10:13",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 4.8,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 54.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:11:13",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 4.8,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 54.3,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:12:14",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 54.0,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:13:14",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 6.8,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 69.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:14:15",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 54.1,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:15:16",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 55.9,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:16:16",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 55.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:17:17",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 55.9,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:18:17",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 9.0,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 70.1,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:19:18",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 6.5,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 57.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:20:18",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 4.1,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 55.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:21:19",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.5,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 54.1,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:22:19",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 54.0,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:23:20",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 7.3,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 69.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:24:20",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 6.0,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 54.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "03:25:21",
+      "daemon": {
+        "pid": 18820,
+        "rss_mb": 3.4,
+        "cpu": 0.0,
+        "ppid": 18817
+      },
+      "app": {
+        "pid": 18817,
+        "rss_mb": 54.6,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    }
+  ],
+  "errors": [],
+  "crashes": [],
+  "latency": [
+    {
+      "tool": "claude",
+      "ms": 9.894
+    },
+    {
+      "tool": "grok",
+      "ms": 11.619
+    },
+    {
+      "tool": "claude",
+      "ms": 214.941
+    },
+    {
+      "tool": "kimi",
+      "ms": 92.21
+    },
+    {
+      "tool": "kimi",
+      "ms": 19.381
+    },
+    {
+      "tool": "grok",
+      "ms": 214.609
+    },
+    {
+      "tool": "opencode",
+      "ms": 219.522
+    },
+    {
+      "tool": "opencode",
+      "ms": 210.08
+    },
+    {
+      "tool": "copilot",
+      "ms": 15.605
+    },
+    {
+      "tool": "codex",
+      "ms": 37.448
+    },
+    {
+      "tool": "codex",
+      "ms": 29.83
+    },
+    {
+      "tool": "grok",
+      "ms": 218.691
+    },
+    {
+      "tool": "opencode",
+      "ms": 39.745
+    },
+    {
+      "tool": "opencode",
+      "ms": 52.348
+    },
+    {
+      "tool": "copilot",
+      "ms": 18.623
+    },
+    {
+      "tool": "kimi",
+      "ms": 24.209
+    },
+    {
+      "tool": "copilot",
+      "ms": 189.223
+    },
+    {
+      "tool": "opencode",
+      "ms": 214.497
+    },
+    {
+      "tool": "copilot",
+      "ms": 160.009
+    },
+    {
+      "tool": "opencode",
+      "ms": 58.648
+    },
+    {
+      "tool": "codex",
+      "ms": 153.779
+    },
+    {
+      "tool": "opencode",
+      "ms": 62.906
+    },
+    {
+      "tool": "opencode",
+      "ms": 206.728
+    },
+    {
+      "tool": "copilot",
+      "ms": 209.405
+    },
+    {
+      "tool": "claude",
+      "ms": 226.171
+    },
+    {
+      "tool": "copilot",
+      "ms": 144.268
+    },
+    {
+      "tool": "opencode",
+      "ms": 61.039
+    },
+    {
+      "tool": "opencode",
+      "ms": 227.827
+    },
+    {
+      "tool": "opencode",
+      "ms": 39.942
+    },
+    {
+      "tool": "copilot",
+      "ms": 179.036
+    },
+    {
+      "tool": "copilot",
+      "ms": 213.706
+    },
+    {
+      "tool": "opencode",
+      "ms": 216.101
+    },
+    {
+      "tool": "copilot",
+      "ms": 210.483
+    },
+    {
+      "tool": "copilot",
+      "ms": 219.92
+    },
+    {
+      "tool": "claude",
+      "ms": 38.214
+    },
+    {
+      "tool": "codex",
+      "ms": 214.499
+    },
+    {
+      "tool": "kimi",
+      "ms": 211.566
+    },
+    {
+      "tool": "grok",
+      "ms": 216.958
+    },
+    {
+      "tool": "opencode",
+      "ms": 232.883
+    },
+    {
+      "tool": "copilot",
+      "ms": 89.152
+    },
+    {
+      "tool": "grok",
+      "ms": 211.69
+    },
+    {
+      "tool": "opencode",
+      "ms": 217.636
+    },
+    {
+      "tool": "codex",
+      "ms": 47.338
+    },
+    {
+      "tool": "kimi",
+      "ms": 34.674
+    },
+    {
+      "tool": "copilot",
+      "ms": 17.0
+    },
+    {
+      "tool": "claude",
+      "ms": 221.577
+    },
+    {
+      "tool": "opencode",
+      "ms": 9.962
+    },
+    {
+      "tool": "opencode",
+      "ms": 18.996
+    },
+    {
+      "tool": "copilot",
+      "ms": 9.645
+    },
+    {
+      "tool": "copilot",
+      "ms": 11.025
+    },
+    {
+      "tool": "opencode",
+      "ms": 41.102
+    },
+    {
+      "tool": "opencode",
+      "ms": 24.723
+    },
+    {
+      "tool": "copilot",
+      "ms": 17.477
+    },
+    {
+      "tool": "opencode",
+      "ms": 31.846
+    },
+    {
+      "tool": "opencode",
+      "ms": 18.805
+    },
+    {
+      "tool": "copilot",
+      "ms": 12.671
+    },
+    {
+      "tool": "copilot",
+      "ms": 208.157
+    },
+    {
+      "tool": "copilot",
+      "ms": 210.754
+    },
+    {
+      "tool": "opencode",
+      "ms": 51.659
+    },
+    {
+      "tool": "copilot",
+      "ms": 16.326
+    },
+    {
+      "tool": "opencode",
+      "ms": 150.8
+    },
+    {
+      "tool": "copilot",
+      "ms": 127.837
+    },
+    {
+      "tool": "opencode",
+      "ms": 213.131
+    },
+    {
+      "tool": "opencode",
+      "ms": 214.663
+    },
+    {
+      "tool": "copilot",
+      "ms": 2.514
+    },
+    {
+      "tool": "copilot",
+      "ms": 3.887
+    },
+    {
+      "tool": "claude",
+      "ms": 43.531
+    },
+    {
+      "tool": "codex",
+      "ms": 220.49
+    },
+    {
+      "tool": "kimi",
+      "ms": 5.346
+    },
+    {
+      "tool": "grok",
+      "ms": 214.757
+    },
+    {
+      "tool": "claude",
+      "ms": 26.699
+    },
+    {
+      "tool": "opencode",
+      "ms": 77.634
+    },
+    {
+      "tool": "grok",
+      "ms": 217.514
+    },
+    {
+      "tool": "codex",
+      "ms": 150.924
+    },
+    {
+      "tool": "opencode",
+      "ms": 211.696
+    },
+    {
+      "tool": "kimi",
+      "ms": 67.625
+    },
+    {
+      "tool": "copilot",
+      "ms": 208.495
+    },
+    {
+      "tool": "opencode",
+      "ms": 69.575
+    },
+    {
+      "tool": "copilot",
+      "ms": 78.151
+    },
+    {
+      "tool": "opencode",
+      "ms": 219.954
+    },
+    {
+      "tool": "copilot",
+      "ms": 211.839
+    },
+    {
+      "tool": "copilot",
+      "ms": 216.677
+    },
+    {
+      "tool": "opencode",
+      "ms": 52.259
+    },
+    {
+      "tool": "copilot",
+      "ms": 211.43
+    },
+    {
+      "tool": "opencode",
+      "ms": 220.732
+    },
+    {
+      "tool": "copilot",
+      "ms": 213.731
+    },
+    {
+      "tool": "opencode",
+      "ms": 12.914
+    },
+    {
+      "tool": "opencode",
+      "ms": 12.692
+    },
+    {
+      "tool": "copilot",
+      "ms": 19.394
+    },
+    {
+      "tool": "copilot",
+      "ms": 11.476
+    },
+    {
+      "tool": "opencode",
+      "ms": 70.494
+    },
+    {
+      "tool": "opencode",
+      "ms": 78.87
+    },
+    {
+      "tool": "copilot",
+      "ms": 35.384
+    },
+    {
+      "tool": "copilot",
+      "ms": 34.149
+    },
+    {
+      "tool": "opencode",
+      "ms": 89.421
+    },
+    {
+      "tool": "opencode",
+      "ms": 217.676
+    },
+    {
+      "tool": "claude",
+      "ms": 27.252
+    },
+    {
+      "tool": "codex",
+      "ms": 208.009
+    },
+    {
+      "tool": "kimi",
+      "ms": 6.517
+    },
+    {
+      "tool": "grok",
+      "ms": 94.504
+    },
+    {
+      "tool": "opencode",
+      "ms": 217.053
+    },
+    {
+      "tool": "grok",
+      "ms": 32.199
+    },
+    {
+      "tool": "copilot",
+      "ms": 18.986
+    },
+    {
+      "tool": "opencode",
+      "ms": 213.339
+    },
+    {
+      "tool": "kimi",
+      "ms": 56.807
+    },
+    {
+      "tool": "copilot",
+      "ms": 214.613
+    },
+    {
+      "tool": "opencode",
+      "ms": 32.285
+    },
+    {
+      "tool": "codex",
+      "ms": 129.749
+    },
+    {
+      "tool": "copilot",
+      "ms": 215.355
+    },
+    {
+      "tool": "opencode",
+      "ms": 225.942
+    },
+    {
+      "tool": "copilot",
+      "ms": 21.739
+    },
+    {
+      "tool": "claude",
+      "ms": 277.053
+    },
+    {
+      "tool": "opencode",
+      "ms": 29.876
+    },
+    {
+      "tool": "copilot",
+      "ms": 208.924
+    },
+    {
+      "tool": "opencode",
+      "ms": 216.795
+    },
+    {
+      "tool": "copilot",
+      "ms": 212.811
+    },
+    {
+      "tool": "opencode",
+      "ms": 218.444
+    },
+    {
+      "tool": "copilot",
+      "ms": 4.44
+    },
+    {
+      "tool": "opencode",
+      "ms": 2.864
+    },
+    {
+      "tool": "copilot",
+      "ms": 13.967
+    },
+    {
+      "tool": "claude",
+      "ms": 52.283
+    },
+    {
+      "tool": "codex",
+      "ms": 128.287
+    },
+    {
+      "tool": "kimi",
+      "ms": 3.743
+    },
+    {
+      "tool": "grok",
+      "ms": 214.795
+    },
+    {
+      "tool": "opencode",
+      "ms": 215.95
+    },
+    {
+      "tool": "copilot",
+      "ms": 197.795
+    },
+    {
+      "tool": "claude",
+      "ms": 14.298
+    },
+    {
+      "tool": "opencode",
+      "ms": 190.252
+    },
+    {
+      "tool": "copilot",
+      "ms": 44.604
+    },
+    {
+      "tool": "grok",
+      "ms": 27.668
+    },
+    {
+      "tool": "codex",
+      "ms": 213.284
+    },
+    {
+      "tool": "kimi",
+      "ms": 210.045
+    },
+    {
+      "tool": "opencode",
+      "ms": 17.41
+    },
+    {
+      "tool": "copilot",
+      "ms": 11.406
+    },
+    {
+      "tool": "copilot",
+      "ms": 9.534
+    },
+    {
+      "tool": "opencode",
+      "ms": 12.14
+    },
+    {
+      "tool": "opencode",
+      "ms": 33.432
+    },
+    {
+      "tool": "opencode",
+      "ms": 21.266
+    },
+    {
+      "tool": "copilot",
+      "ms": 11.026
+    },
+    {
+      "tool": "opencode",
+      "ms": 22.044
+    },
+    {
+      "tool": "opencode",
+      "ms": 15.959
+    },
+    {
+      "tool": "copilot",
+      "ms": 24.206
+    },
+    {
+      "tool": "copilot",
+      "ms": 65.132
+    },
+    {
+      "tool": "copilot",
+      "ms": 154.951
+    },
+    {
+      "tool": "opencode",
+      "ms": 193.821
+    },
+    {
+      "tool": "opencode",
+      "ms": 22.875
+    },
+    {
+      "tool": "opencode",
+      "ms": 216.947
+    },
+    {
+      "tool": "copilot",
+      "ms": 209.494
+    },
+    {
+      "tool": "copilot",
+      "ms": 214.63
+    },
+    {
+      "tool": "opencode",
+      "ms": 249.159
+    },
+    {
+      "tool": "copilot",
+      "ms": 209.778
+    },
+    {
+      "tool": "copilot",
+      "ms": 19.243
+    },
+    {
+      "tool": "claude",
+      "ms": 34.61
+    },
+    {
+      "tool": "codex",
+      "ms": 190.955
+    },
+    {
+      "tool": "kimi",
+      "ms": 5.991
+    },
+    {
+      "tool": "grok",
+      "ms": 212.214
+    },
+    {
+      "tool": "opencode",
+      "ms": 41.88
+    },
+    {
+      "tool": "copilot",
+      "ms": 87.659
+    },
+    {
+      "tool": "codex",
+      "ms": 100.715
+    },
+    {
+      "tool": "opencode",
+      "ms": 54.991
+    },
+    {
+      "tool": "copilot",
+      "ms": 212.185
+    },
+    {
+      "tool": "opencode",
+      "ms": 26.897
+    },
+    {
+      "tool": "claude",
+      "ms": 52.23
+    },
+    {
+      "tool": "grok",
+      "ms": 158.116
+    },
+    {
+      "tool": "kimi",
+      "ms": 118.821
+    },
+    {
+      "tool": "opencode",
+      "ms": 221.188
+    },
+    {
+      "tool": "copilot",
+      "ms": 210.695
+    },
+    {
+      "tool": "copilot",
+      "ms": 237.232
+    },
+    {
+      "tool": "opencode",
+      "ms": 70.734
+    },
+    {
+      "tool": "copilot",
+      "ms": 210.166
+    },
+    {
+      "tool": "opencode",
+      "ms": 229.281
+    },
+    {
+      "tool": "copilot",
+      "ms": 210.862
+    },
+    {
+      "tool": "opencode",
+      "ms": 11.145
+    },
+    {
+      "tool": "opencode",
+      "ms": 10.848
+    },
+    {
+      "tool": "copilot",
+      "ms": 18.953
+    },
+    {
+      "tool": "copilot",
+      "ms": 20.933
+    },
+    {
+      "tool": "opencode",
+      "ms": 49.051
+    },
+    {
+      "tool": "opencode",
+      "ms": 94.057
+    },
+    {
+      "tool": "copilot",
+      "ms": 56.866
+    },
+    {
+      "tool": "copilot",
+      "ms": 55.252
+    },
+    {
+      "tool": "opencode",
+      "ms": 214.669
+    },
+    {
+      "tool": "opencode",
+      "ms": 220.242
+    }
+  ],
+  "restarts": [],
+  "finished": "2026-10-30 03:25:42",
+  "summary": {
+    "rounds": 12,
+    "mismatch": 0,
+    "rss_mb": {
+      "daemon": {
+        "first": 6.7,
+        "last": 3.4,
+        "max": 9.9
+      },
+      "app": {
+        "first": 199.3,
+        "last": 54.6,
+        "max": 199.3
+      }
+    },
+    "cpu_median": {
+      "daemon": 0.0,
+      "app": 0.0
+    },
+    "pids_changed": {
+      "daemon": false,
+      "app": false
+    },
+    "errors": 0,
+    "crashes": 0,
+    "latency_ms": {
+      "n": 182,
+      "p50": 87.659,
+      "p95": 221.188,
+      "max": 277.053
+    }
+  },
+  "note": "M4b 块 9c 小型稳定性测试（用户要求「适配完成后持续运行一个小时」）：隔离测试版（Debug 01b79c2-dirty.4bd02b50，未提交的只有 acceptance-parallel.py 与本脚本），8 个真 CLI 由后台持有的终端运行 60 分钟、12 轮：Claude 2.1.312、Codex 0.165.0、Kimi 2.4.0、Grok 1.0.70 各 1 个，OpenCode 1.19.5、Copilot 1.0.105 各 2 个。全部 12 轮状态比对 0 处不一致；新两款 4 轮审批（每轮 2 同意 2 拒绝，前后对调）都先进「需确认」再回到运行中 / Ready，Copilot 的同意 4 次、拒绝 4 次、Esc 中断 4 次都由会话记录认出；OpenCode 中断 4 次中 1 次落在回答中（MessageAbortedError），其余 3 次免费模型已先答完。后台与 App 进程号全程未变、无崩溃报告、后台 Hook 异常 0 条、日志出错行 0 条（原 17 条为匹配过宽误报：notify_latency 的 error=- 与 OpenCode 中断名，脚本已改为区分大小写）。内存：scyllauid 6.7 → 3.4 MB（最大 9.9），App 199.3 → 54.6 MB（启动后回落，无增长）；CPU 中位数均为 0%。全程锁屏：Hook→侧栏 182 个样本 P50 87.7 ms、P95 221.2 ms，App 主线程被节流，不算数。"
+}

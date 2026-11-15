@@ -1,0 +1,2151 @@
+{
+  "started": "2026-11-01 16:05:41",
+  "minutes": 60.0,
+  "rounds": [
+    {
+      "round": 1,
+      "at": "16:07:12",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 2,
+      "at": "16:12:09",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 3,
+      "at": "16:17:52",
+      "kind": "审批",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 4,
+      "at": "16:22:15",
+      "kind": "中断",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 5,
+      "at": "16:27:13",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 6,
+      "at": "16:32:50",
+      "kind": "审批",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 7,
+      "at": "16:37:14",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 8,
+      "at": "16:42:17",
+      "kind": "中断",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 9,
+      "at": "16:47:54",
+      "kind": "审批",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 10,
+      "at": "16:52:12",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 11,
+      "at": "16:57:16",
+      "kind": "提问",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    },
+    {
+      "round": 12,
+      "at": "17:02:53",
+      "kind": "审批",
+      "mismatch": 0,
+      "rows": [
+        {
+          "tool": "claude",
+          "pane": "fx-1e17a6f3",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "codex",
+          "pane": "fx-891f4a78",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "kimi",
+          "pane": "fx-abd70fab",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "grok",
+          "pane": "fx-a9425366",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "copilot",
+          "pane": "fx-f9487f3e",
+          "state": "ready",
+          "waited": null,
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-18e0d93d",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        },
+        {
+          "tool": "antigravity",
+          "pane": "fx-6b66ac19",
+          "state": "ready",
+          "waited": "waiting",
+          "ok": true
+        }
+      ],
+      "recent_total": 0
+    }
+  ],
+  "samples": [
+    {
+      "at": "16:05:41",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 7.1,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 184.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:06:41",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.5,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 126.4,
+        "cpu": 0.2,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:07:42",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.1,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 118.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:08:42",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.1,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.1,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:09:42",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.1,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.1,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:10:43",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.1,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.1,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:11:43",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.3,
+        "cpu": 0.3,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:12:43",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.3,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:13:44",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.3,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:14:44",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.3,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:15:45",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.2,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:16:46",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.9,
+        "cpu": 0.4,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.7,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:17:46",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.9,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.7,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:18:47",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 12.0,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.7,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:19:47",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.9,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.7,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:20:48",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.9,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.7,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:21:48",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 12.3,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.6,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:22:49",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 12.4,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.6,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:23:50",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 12.4,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.6,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:24:50",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.7,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:25:51",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.7,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:26:51",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.9,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 112.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:27:52",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.8,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 112.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:28:52",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.8,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 112.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:29:53",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.8,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 112.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:30:53",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.8,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 112.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:31:54",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.9,
+        "cpu": 0.2,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 113.0,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:32:55",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.8,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 112.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:33:55",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.8,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 112.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:34:56",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.7,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 112.6,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:35:56",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.5,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 112.1,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:36:57",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.4,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 112.3,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:37:57",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.8,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:38:58",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.7,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.1,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:39:58",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.7,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.0,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:40:59",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.6,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.0,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:41:59",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.5,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:43:00",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.6,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:44:01",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.6,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:45:01",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.6,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:46:02",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.4,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:47:02",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.3,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:48:03",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.3,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.5,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:49:03",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.3,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:50:04",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.3,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:51:05",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.2,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.4,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:52:05",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.2,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.9,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:53:06",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.2,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.9,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:54:06",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.1,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:55:07",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.1,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.8,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:56:07",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 10.9,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 116.7,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:57:08",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.9,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.0,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:58:08",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.9,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.0,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "16:59:09",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.9,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "17:00:10",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.9,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "17:01:10",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.9,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.2,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "17:02:11",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.8,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.3,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "17:03:11",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.6,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.0,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    },
+    {
+      "at": "17:04:12",
+      "daemon": {
+        "pid": 94245,
+        "rss_mb": 11.6,
+        "cpu": 0.0,
+        "ppid": 94240
+      },
+      "app": {
+        "pid": 94240,
+        "rss_mb": 117.0,
+        "cpu": 0.0,
+        "ppid": 1
+      }
+    }
+  ],
+  "errors": [],
+  "crashes": [],
+  "latency": [
+    {
+      "tool": "claude",
+      "ms": 10.362
+    },
+    {
+      "tool": "grok",
+      "ms": 10.468
+    },
+    {
+      "tool": "claude",
+      "ms": 11.185
+    },
+    {
+      "tool": "kimi",
+      "ms": 11.168
+    },
+    {
+      "tool": "kimi",
+      "ms": 10.958
+    },
+    {
+      "tool": "grok",
+      "ms": 10.468
+    },
+    {
+      "tool": "copilot",
+      "ms": 11.509
+    },
+    {
+      "tool": "claude",
+      "ms": 11.213
+    },
+    {
+      "tool": "antigravity",
+      "ms": 10.174
+    },
+    {
+      "tool": "antigravity",
+      "ms": 7.024
+    },
+    {
+      "tool": "codex",
+      "ms": 10.187
+    },
+    {
+      "tool": "codex",
+      "ms": 2.796
+    },
+    {
+      "tool": "grok",
+      "ms": 10.299
+    },
+    {
+      "tool": "antigravity",
+      "ms": 10.826
+    },
+    {
+      "tool": "antigravity",
+      "ms": 7.142
+    },
+    {
+      "tool": "copilot",
+      "ms": 9.936
+    },
+    {
+      "tool": "antigravity",
+      "ms": 10.133
+    },
+    {
+      "tool": "antigravity",
+      "ms": 9.36
+    },
+    {
+      "tool": "codex",
+      "ms": 11.009
+    },
+    {
+      "tool": "copilot",
+      "ms": 10.54
+    },
+    {
+      "tool": "kimi",
+      "ms": 10.181
+    },
+    {
+      "tool": "antigravity",
+      "ms": 107.038
+    },
+    {
+      "tool": "antigravity",
+      "ms": 93.553
+    },
+    {
+      "tool": "antigravity",
+      "ms": 94.964
+    },
+    {
+      "tool": "antigravity",
+      "ms": 90.209
+    },
+    {
+      "tool": "claude",
+      "ms": 152.935
+    },
+    {
+      "tool": "codex",
+      "ms": 211.94
+    },
+    {
+      "tool": "kimi",
+      "ms": 198.885
+    },
+    {
+      "tool": "grok",
+      "ms": 198.037
+    },
+    {
+      "tool": "claude",
+      "ms": 19.692
+    },
+    {
+      "tool": "antigravity",
+      "ms": 54.943
+    },
+    {
+      "tool": "antigravity",
+      "ms": 212.014
+    },
+    {
+      "tool": "kimi",
+      "ms": 191.806
+    },
+    {
+      "tool": "copilot",
+      "ms": 212.475
+    },
+    {
+      "tool": "grok",
+      "ms": 211.076
+    },
+    {
+      "tool": "codex",
+      "ms": 109.188
+    },
+    {
+      "tool": "antigravity",
+      "ms": 7.901
+    },
+    {
+      "tool": "antigravity",
+      "ms": 54.815
+    },
+    {
+      "tool": "copilot",
+      "ms": 11.617
+    },
+    {
+      "tool": "antigravity",
+      "ms": 24.804
+    },
+    {
+      "tool": "antigravity",
+      "ms": 10.452
+    },
+    {
+      "tool": "antigravity",
+      "ms": 10.211
+    },
+    {
+      "tool": "antigravity",
+      "ms": 202.151
+    },
+    {
+      "tool": "antigravity",
+      "ms": 169.696
+    },
+    {
+      "tool": "antigravity",
+      "ms": 213.347
+    },
+    {
+      "tool": "antigravity",
+      "ms": 9.194
+    },
+    {
+      "tool": "antigravity",
+      "ms": 199.817
+    },
+    {
+      "tool": "claude",
+      "ms": 191.61
+    },
+    {
+      "tool": "codex",
+      "ms": 193.107
+    },
+    {
+      "tool": "kimi",
+      "ms": 4.742
+    },
+    {
+      "tool": "grok",
+      "ms": 192.395
+    },
+    {
+      "tool": "copilot",
+      "ms": 199.05
+    },
+    {
+      "tool": "codex",
+      "ms": 125.51
+    },
+    {
+      "tool": "antigravity",
+      "ms": 78.745
+    },
+    {
+      "tool": "antigravity",
+      "ms": 201.657
+    },
+    {
+      "tool": "grok",
+      "ms": 205.886
+    },
+    {
+      "tool": "claude",
+      "ms": 191.836
+    },
+    {
+      "tool": "antigravity",
+      "ms": 88.328
+    },
+    {
+      "tool": "copilot",
+      "ms": 208.771
+    },
+    {
+      "tool": "antigravity",
+      "ms": 152.334
+    },
+    {
+      "tool": "kimi",
+      "ms": 212.72
+    },
+    {
+      "tool": "antigravity",
+      "ms": 203.491
+    },
+    {
+      "tool": "antigravity",
+      "ms": 127.826
+    },
+    {
+      "tool": "antigravity",
+      "ms": 3.851
+    },
+    {
+      "tool": "antigravity",
+      "ms": 7.513
+    },
+    {
+      "tool": "antigravity",
+      "ms": 16.235
+    },
+    {
+      "tool": "antigravity",
+      "ms": 13.537
+    },
+    {
+      "tool": "antigravity",
+      "ms": 16.233
+    },
+    {
+      "tool": "antigravity",
+      "ms": 153.686
+    },
+    {
+      "tool": "claude",
+      "ms": 208.651
+    },
+    {
+      "tool": "codex",
+      "ms": 209.633
+    },
+    {
+      "tool": "kimi",
+      "ms": 10.892
+    },
+    {
+      "tool": "grok",
+      "ms": 202.355
+    },
+    {
+      "tool": "copilot",
+      "ms": 200.662
+    },
+    {
+      "tool": "claude",
+      "ms": 136.25
+    },
+    {
+      "tool": "antigravity",
+      "ms": 43.941
+    },
+    {
+      "tool": "antigravity",
+      "ms": 179.48
+    },
+    {
+      "tool": "codex",
+      "ms": 39.607
+    },
+    {
+      "tool": "kimi",
+      "ms": 86.867
+    },
+    {
+      "tool": "antigravity",
+      "ms": 16.223
+    },
+    {
+      "tool": "grok",
+      "ms": 186.12
+    },
+    {
+      "tool": "antigravity",
+      "ms": 210.008
+    },
+    {
+      "tool": "copilot",
+      "ms": 158.149
+    },
+    {
+      "tool": "antigravity",
+      "ms": 209.653
+    },
+    {
+      "tool": "antigravity",
+      "ms": 216.234
+    },
+    {
+      "tool": "antigravity",
+      "ms": 5.638
+    },
+    {
+      "tool": "antigravity",
+      "ms": 211.996
+    },
+    {
+      "tool": "claude",
+      "ms": 215.805
+    },
+    {
+      "tool": "codex",
+      "ms": 164.324
+    },
+    {
+      "tool": "kimi",
+      "ms": 4.774
+    },
+    {
+      "tool": "grok",
+      "ms": 208.029
+    },
+    {
+      "tool": "antigravity",
+      "ms": 210.751
+    },
+    {
+      "tool": "antigravity",
+      "ms": 47.968
+    },
+    {
+      "tool": "codex",
+      "ms": 172.319
+    },
+    {
+      "tool": "copilot",
+      "ms": 217.726
+    },
+    {
+      "tool": "claude",
+      "ms": 115.701
+    },
+    {
+      "tool": "grok",
+      "ms": 14.319
+    },
+    {
+      "tool": "kimi",
+      "ms": 173.381
+    },
+    {
+      "tool": "antigravity",
+      "ms": 8.595
+    },
+    {
+      "tool": "antigravity",
+      "ms": 10.916
+    },
+    {
+      "tool": "copilot",
+      "ms": 217.641
+    },
+    {
+      "tool": "antigravity",
+      "ms": 22.777
+    },
+    {
+      "tool": "antigravity",
+      "ms": 11.329
+    },
+    {
+      "tool": "antigravity",
+      "ms": 10.971
+    },
+    {
+      "tool": "antigravity",
+      "ms": 22.733
+    },
+    {
+      "tool": "antigravity",
+      "ms": 209.696
+    },
+    {
+      "tool": "antigravity",
+      "ms": 27.886
+    },
+    {
+      "tool": "antigravity",
+      "ms": 220.023
+    },
+    {
+      "tool": "antigravity",
+      "ms": 213.981
+    },
+    {
+      "tool": "claude",
+      "ms": 213.606
+    },
+    {
+      "tool": "codex",
+      "ms": 219.021
+    },
+    {
+      "tool": "kimi",
+      "ms": 4.058
+    },
+    {
+      "tool": "grok",
+      "ms": 210.431
+    },
+    {
+      "tool": "claude",
+      "ms": 35.048
+    },
+    {
+      "tool": "copilot",
+      "ms": 214.253
+    },
+    {
+      "tool": "antigravity",
+      "ms": 160.751
+    },
+    {
+      "tool": "antigravity",
+      "ms": 211.206
+    },
+    {
+      "tool": "codex",
+      "ms": 195.941
+    },
+    {
+      "tool": "grok",
+      "ms": 57.839
+    },
+    {
+      "tool": "kimi",
+      "ms": 24.104
+    },
+    {
+      "tool": "antigravity",
+      "ms": 73.766
+    },
+    {
+      "tool": "antigravity",
+      "ms": 126.317
+    },
+    {
+      "tool": "copilot",
+      "ms": 211.634
+    },
+    {
+      "tool": "antigravity",
+      "ms": 213.951
+    },
+    {
+      "tool": "antigravity",
+      "ms": 210.417
+    },
+    {
+      "tool": "antigravity",
+      "ms": 7.459
+    },
+    {
+      "tool": "antigravity",
+      "ms": 11.656
+    },
+    {
+      "tool": "antigravity",
+      "ms": 28.893
+    },
+    {
+      "tool": "antigravity",
+      "ms": 21.802
+    },
+    {
+      "tool": "antigravity",
+      "ms": 30.103
+    },
+    {
+      "tool": "antigravity",
+      "ms": 188.144
+    }
+  ],
+  "restarts": [],
+  "finished": "2026-11-01 17:04:31",
+  "summary": {
+    "rounds": 12,
+    "mismatch": 0,
+    "rss_mb": {
+      "daemon": {
+        "first": 7.1,
+        "last": 11.6,
+        "max": 12.4
+      },
+      "app": {
+        "first": 184.4,
+        "last": 117.0,
+        "max": 184.4
+      }
+    },
+    "cpu_median": {
+      "daemon": 0.0,
+      "app": 0.0
+    },
+    "pids_changed": {
+      "daemon": false,
+      "app": false
+    },
+    "errors": 0,
+    "crashes": 0,
+    "latency_ms": {
+      "n": 131,
+      "p50": 93.553,
+      "p95": 214.253,
+      "max": 220.023
+    }
+  }
+}

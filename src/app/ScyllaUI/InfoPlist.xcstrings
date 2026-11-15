@@ -1,0 +1,348 @@
+{
+  "sourceLanguage": "zh-Hans",
+  "version": "1.0",
+  "strings": {
+    "NSAppleEventsUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to use AppleScript to control other apps."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想使用 AppleScript 控制其他 App。"
+          }
+        }
+      }
+    },
+    "NSAudioCaptureUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access your system's audio."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问系统音频。"
+          }
+        }
+      }
+    },
+    "NSBluetoothAlwaysUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to use Bluetooth."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想使用蓝牙。"
+          }
+        }
+      }
+    },
+    "NSCalendarsUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access your Calendar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问你的日历。"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to use the camera."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想使用摄像头。"
+          }
+        }
+      }
+    },
+    "NSContactsUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access your Contacts."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问你的通讯录。"
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access the local network."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问本地网络。"
+          }
+        }
+      }
+    },
+    "NSLocationUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access your location."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想获取你的位置。"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to use your microphone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想使用麦克风。"
+          }
+        }
+      }
+    },
+    "NSMotionUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access motion data."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问运动数据。"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access your Photo Library."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问你的照片图库。"
+          }
+        }
+      }
+    },
+    "NSRemindersUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access your Reminders."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问你的提醒事项。"
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to use speech recognition."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想使用语音识别。"
+          }
+        }
+      }
+    },
+    "NSSystemAdministrationUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI requires administrator privileges."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序需要管理员权限。"
+          }
+        }
+      }
+    },
+    "NSDocumentsFolderUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access your Documents folder."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问「文稿」文件夹。"
+          }
+        }
+      }
+    },
+    "NSDesktopFolderUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access your Desktop folder."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问「桌面」文件夹。"
+          }
+        }
+      }
+    },
+    "NSDownloadsFolderUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access your Downloads folder."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问「下载」文件夹。"
+          }
+        }
+      }
+    },
+    "NSRemovableVolumesUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access files on a removable volume."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问外接磁盘上的文件。"
+          }
+        }
+      }
+    },
+    "NSNetworkVolumesUsageDescription": {
+      "comment": "系统授权框里的用途说明（M4b 块 1）",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program running in ScyllaUI would like to access files on a network volume."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI 终端里运行的程序想访问网络磁盘上的文件。"
+          }
+        }
+      }
+    }
+  }
+}

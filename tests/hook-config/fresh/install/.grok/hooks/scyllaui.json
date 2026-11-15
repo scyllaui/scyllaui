@@ -1,0 +1,92 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"${SCYLLAUI_SOCK:-}\" ] && [ -x \"${SCYLLAUI_BIN:-}\" ]; then \"${SCYLLAUI_BIN:-}\" hook --config grok; fi",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"${SCYLLAUI_SOCK:-}\" ] && [ -x \"${SCYLLAUI_BIN:-}\" ]; then \"${SCYLLAUI_BIN:-}\" hook --config grok; fi",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"${SCYLLAUI_SOCK:-}\" ] && [ -x \"${SCYLLAUI_BIN:-}\" ]; then \"${SCYLLAUI_BIN:-}\" hook --config grok; fi",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"${SCYLLAUI_SOCK:-}\" ] && [ -x \"${SCYLLAUI_BIN:-}\" ]; then \"${SCYLLAUI_BIN:-}\" hook --config grok; fi",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"${SCYLLAUI_SOCK:-}\" ] && [ -x \"${SCYLLAUI_BIN:-}\" ]; then \"${SCYLLAUI_BIN:-}\" hook --config grok; fi",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"${SCYLLAUI_SOCK:-}\" ] && [ -x \"${SCYLLAUI_BIN:-}\" ]; then \"${SCYLLAUI_BIN:-}\" hook --config grok; fi",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "StopCancelled": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"${SCYLLAUI_SOCK:-}\" ] && [ -x \"${SCYLLAUI_BIN:-}\" ]; then \"${SCYLLAUI_BIN:-}\" hook --config grok; fi",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"${SCYLLAUI_SOCK:-}\" ] && [ -x \"${SCYLLAUI_BIN:-}\" ]; then \"${SCYLLAUI_BIN:-}\" hook --config grok; fi",
+            "timeout": 2
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "tool": "antigravity",
+  "version": "1.5.1",
+  "date": "2026-11-05",
+  "runs": [
+    {
+      "cmd": "agy -p 只回复 OK …",
+      "exit": 0,
+      "seconds": 6.9,
+      "stdout_tail": "OK",
+      "stderr_tail": "（真实 HOME 运行，不记原文，0 字符）"
+    },
+    {
+      "cmd": "agy --conversation=623d3765-9c76-4d7e-a34a-d0f40da91523 -p …",
+      "exit": 0,
+      "seconds": 5.9,
+      "stdout_tail": "OK",
+      "stderr_tail": "（真实 HOME 运行，不记原文，0 字符）"
+    }
+  ],
+  "checks": {
+    "hooks_installed": true,
+    "frames": 5,
+    "missing_events": [],
+    "unknown_events": [],
+    "sessions": [
+      "623d3765-9c76-4d7e-a34a-d0f40da91523"
+    ],
+    "resume_keeps_id": true,
+    "preassigned_id_used": true,
+    "env_report_ok": true
+  },
+  "hooks_install_exit": 0,
+  "ok": true,
+  "sample": "tests/hook-samples/antigravity-1.5.1-smoke.jsonl"
+}

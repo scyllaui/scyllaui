@@ -1,0 +1,36 @@
+{
+  "tool": "claude",
+  "version": "2.1.310",
+  "date": "2026-10-25",
+  "runs": [
+    {
+      "cmd": "claude -p 只回复 OK …",
+      "exit": 0,
+      "seconds": 5.2,
+      "stdout_tail": "OK",
+      "stderr_tail": "（真实 HOME 运行，不记原文，0 字符）"
+    },
+    {
+      "cmd": "claude -p 再回复一次 OK …",
+      "exit": 0,
+      "seconds": 3.4,
+      "stdout_tail": "OK",
+      "stderr_tail": "（真实 HOME 运行，不记原文，0 字符）"
+    }
+  ],
+  "checks": {
+    "hooks_installed": true,
+    "frames": 8,
+    "missing_events": [],
+    "unknown_events": [],
+    "sessions": [
+      "d66598f2-3ac7-41c0-8ceb-a904c1fd6fc3"
+    ],
+    "resume_keeps_id": true,
+    "preassigned_id_used": true,
+    "env_report_ok": true
+  },
+  "hooks_install_exit": 0,
+  "ok": true,
+  "sample": "tests/hook-samples/claude-2.1.310-smoke.jsonl"
+}

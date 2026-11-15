@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -m my_tool prompt-hook",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"${SCYLLAUI_SOCK:-}\" ] && [ -x \"${SCYLLAUI_BIN:-}\" ]; then \"$SCYLLAUI_BIN\" hook --config codex; fi",
+            "timeout": 2
+          }
+        ]
+      }
+    ]
+  }
+}

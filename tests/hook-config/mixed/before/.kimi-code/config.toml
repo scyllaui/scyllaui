@@ -1,0 +1,16 @@
+default_model = "kimi-test"
+
+[models.kimi-test]
+provider = "fixture"
+api_key = "fixture-not-a-secret"
+
+# >>> scyllaui hooks >>>
+[[hooks]]
+event = "SessionStart"
+command = 'old'
+timeout = 2
+# <<< scyllaui hooks <<<
+
+[[hooks]]
+event = "Stop"
+command = "say kimi done"

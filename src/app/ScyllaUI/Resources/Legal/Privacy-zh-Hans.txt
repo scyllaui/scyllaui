@@ -1,0 +1,92 @@
+ScyllaUI 隐私与数据说明
+
+版本：2026-11-08
+
+一句话：ScyllaUI 只在检查更新时联网，不收集、不上传任何使用数据。您的数据只在您自己的 Mac 上；只有您主动报告问题时，您发来的内容才会到我们手里（见第六、七节）。
+
+
+一、存在本机的数据
+
+1. 项目、终端与对话记录（任务标题、最新提示词、最后一条回复、状态事件、CLI 版本）
+   位置：~/Library/Application Support/ScyllaUI/
+   删除：在「设置 › 数据」里调整保留期（默认 30 天、200 条），或点「清除记录…」。
+   写进库之前，常见的密钥写法（sk-…、ghp_…、Bearer …、password: …、PEM 私钥等）会替换成 [REDACTED]。
+
+2. 日志：只有事件、状态与进程号，不记提示词、回复和密钥
+   位置：~/Library/Logs/ScyllaUI/
+   删除：按天一个文件，自动保留 14 天；也可以直接删除。
+
+3. 崩溃报告：App 崩溃时在本机写一份，不上报
+   只有您在「报告问题…」里选择附上时，才会随诊断包由您发出。
+
+4. 诊断包：只在您点「报告问题…」时生成
+   位置：~/Library/Caches/ScyllaUI/reports/
+   删除：下次报告问题时自动清掉 7 天前的；也可以直接删除。
+
+
+二、ScyllaUI 读取、但不改写的内容
+
+- 各款 CLI 自己的会话记录：读取对话标题、您的提示词、最后一条回复和 token 用量，显示在侧栏里。
+- ScyllaUI 终端里前台进程的路径和参数：用来识别终端里运行的是哪款 Agent、哪个版本。
+
+
+三、ScyllaUI 会改写的文件
+
+只有两处：
+
+- 状态同步（Hook）：在各款 CLI 的配置里加一条 ScyllaUI 自己的条目，例如 ~/.claude/settings.json、~/.codex/hooks.json。ScyllaUI 先在 App 里列出改动给您看，您确认后才写。可以在「设置 › Agent」里逐款撤销。
+- Claude Code 的 statusline 桥：用于显示 Claude 的额度，只在您自己运行 scyllaui statusline-bridge install 时写入；运行安装命令即表示您同意。想先看改动，可以先运行 scyllaui statusline-bridge diff。用 scyllaui statusline-bridge uninstall 撤销。
+
+两处写入前都会先备份原文件；撤销只删除 ScyllaUI 写入的条目，不动您自己的设置。
+
+
+四、网络
+
+- 检查更新是 ScyllaUI 唯一的网络请求：请求更新源 https://scyllaui.github.io/scyllaui/appcast.xml，有新版且您选择安装时再下载安装包。请求里只有 App 的名称和版本号，不发送系统信息、使用数据或任何文件。更新源和安装包都放在 GitHub 上，GitHub 会像对待任何访问者一样收到您的 IP 地址和标准请求信息，适用 GitHub 的隐私政策。
+- 第一次打开不检查；第二次打开时询问是否自动检查，同意后每天一次。随时可在「设置 › 关于」里关掉「自动检查更新」，关掉后只在您点「检查更新…」时联网。
+- 除此之外，ScyllaUI 的 App 和后台进程不向互联网发起任何请求。
+- 额度查询是例外，但也不由 ScyllaUI 联网：Antigravity、Kimi、Grok 的额度由 ScyllaUI 调用这几款 CLI 自己的程序查询，它们用自己的登录访问自己的服务。其中 Kimi 是先启动它自带的本机服务，ScyllaUI 的后台再向本机（127.0.0.1）上的这个服务请求一次额度，用的是该服务启动时给出的一次性令牌，请求不出本机。ScyllaUI 不读、不存您的登录信息，也不向这些服务发送您的任何内容。
+- 终端里运行的 CLI 照常联网，和在其他终端里运行一样，ScyllaUI 不经手这些请求。
+
+
+五、系统权限
+
+- 「文稿」「桌面」「下载」等文件夹的访问：让在这些文件夹里运行的终端和 Agent 能正常读写文件。
+- 通知：任务完成、需要您确认时提醒您。
+- 终端里运行的程序申请的权限：这些程序（包括 Agent）申请摄像头、麦克风、位置、通讯录、控制其他 App 等权限时，系统会以 ScyllaUI 的名义询问，因为它们是在 ScyllaUI 里运行的。ScyllaUI 自己不使用这些权限，是否允许由您决定。
+
+以上权限都可以在「系统设置 › 隐私与安全性」和「系统设置 › 通知」里随时关闭。
+
+
+六、您主动报告问题时
+
+菜单「帮助 › 报告问题…」会在本机生成一个诊断包：
+
+- 包含：版本信息、各款 Agent 的状态同步、最近 3 天的日志、30 天内的崩溃报告、您写的问题描述。
+- 不含：提示词、回复、密钥、ScyllaUI 的库和任何 Agent 的配置。文件里的家目录写成 ~，目录名仍看得到。
+- 崩溃报告可以不附：它可能带有崩溃瞬间内存里的文字，例如终端里正在显示的内容。
+- 由您发出：您可以先在 Finder 里逐个查看，再决定是否发送。发送时用的是您自己的邮件或 GitHub 账号；GitHub 上的问题是公开的。ScyllaUI 自己仍然不联网。
+- 收到之后：诊断包和来往邮件只用于排查和修复问题。诊断包在问题处理完后删除；来往邮件在问题处理完后最多保留 12 个月，之后删除。
+- 第三方传输：通过邮件或 GitHub 发送时，内容会经由您所用的邮件服务商或 GitHub 传输和存储，适用它们的隐私政策。发到 support@thinkfarlabs.com、security@thinkfarlabs.com 的邮件会经 Cloudflare 转发，保存在维护者使用的 Gmail（Google）邮箱中；这些服务的服务器可能位于您所在的国家或地区以外。
+
+
+七、谁处理您发来的信息
+
+- 处理者：张思远（Siyuan Zhang），ScyllaUI 的维护者。联系方式：support@thinkfarlabs.com。
+- 处理依据：您主动发来，我们用它回应您的请求、排查和修复问题。
+- 您的权利：您可以随时发邮件，要求查阅、复制、更正或删除您发来的诊断包和邮件，我们会在 30 天内答复。
+
+
+八、彻底删除
+
+1. 在「设置 › Agent」里逐款撤销状态同步；装过 statusline 桥的，再运行 scyllaui statusline-bridge uninstall。
+2. 退出 ScyllaUI，再在程序坞右键选「Stop Running in Background」结束后台进程，然后删除 App。
+3. 删除上面列出的数据目录、日志目录与诊断包目录，以及 ~/Library/Caches/dev.scyllaui.app、~/Library/Caches/dev.scyllaui.app.sparkle（检查和下载更新时留下的缓存）和 ~/Library/HTTPStorages/dev.scyllaui.app，再在终端运行 defaults delete dev.scyllaui.app 清除偏好设置。
+
+
+九、本说明的变更
+
+如果将来要加入任何会发出数据的功能（例如匿名使用统计），会先修改本说明，并在 App 内征得您的同意；不同意时，ScyllaUI 不会发送任何数据。
+
+
+联系方式：support@thinkfarlabs.com

@@ -1,0 +1,4176 @@
+{
+  "sourceLanguage": "zh-Hans",
+  "strings": {
+    "%@ 出错": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ran into an error"
+          }
+        }
+      }
+    },
+    "%@ 已完成": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ finished"
+          }
+        }
+      }
+    },
+    "%@ 的状态同步未生效": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status sync isn't working for %@"
+          }
+        }
+      }
+    },
+    "%@ 需确认": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ needs approval"
+          }
+        }
+      }
+    },
+    "%@：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@：%2$@"
+          }
+        }
+      }
+    },
+    "%lld 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days"
+          }
+        }
+      }
+    },
+    "%lld 天（默认）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days (default)"
+          }
+        }
+      }
+    },
+    "%lld 条": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld tasks"
+          }
+        }
+      }
+    },
+    "%lld 条改为当前写法": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Update %lld entry to the current format"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Update %lld entries to the current format"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld 条（默认）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld tasks (default)"
+          }
+        }
+      }
+    },
+    "7d 周额度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7d weekly quota"
+          }
+        }
+      }
+    },
+    "CPU": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU"
+          }
+        }
+      }
+    },
+    "Dock 角标显示需确认的终端数": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the number of terminals needing approval on the Dock icon"
+          }
+        }
+      }
+    },
+    "Dock：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dock:"
+          }
+        }
+      }
+    },
+    "Hook 尚未在 Codex 里信任": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hooks not yet trusted in Codex"
+          }
+        }
+      }
+    },
+    "Hook 条目缺失": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hook entries missing"
+          }
+        }
+      }
+    },
+    "Hook 被停用": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hooks disabled"
+          }
+        }
+      }
+    },
+    "ScyllaUI 的标记块不完整（缺结束标记），未改动，请检查配置文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI's marker block is incomplete (missing its end marker). Nothing was changed; please check the config file."
+          }
+        }
+      }
+    },
+    "ScyllaUI 靠 Hook 得知各款 Agent 的状态：在它们的配置文件里写入几条命令，Agent 运行时把状态告诉侧栏。修复与撤销前都会先列出改动，写入前备份原文件。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI learns each agent's status through hooks: a few commands written into the agent's config file report status to the sidebar while the agent runs. Repair and Remove always list the changes first and back up the original file before writing."
+          }
+        }
+      }
+    },
+    "scyllauid 已连接，构建标识 %@（与 App 一致）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "scyllauid connected, build %@ (matches the app)"
+          }
+        }
+      }
+    },
+    "scyllauid 已连接，构建标识 %@（与 App 不一致）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "scyllauid connected, build %@ (differs from the app)"
+          }
+        }
+      }
+    },
+    "scyllauid 未连接": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "scyllauid not connected"
+          }
+        }
+      }
+    },
+    "Shell 及其所有子进程（%lld 个）：CPU %@，内存 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shell and all its child processes (%1$lld): CPU %2$@, memory %3$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Shell 及其所有子进程（%1$lld 个）：CPU %2$@，内存 %3$@"
+          }
+        }
+      }
+    },
+    "Total（会话累计 token）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total (session tokens)"
+          }
+        }
+      }
+    },
+    "终端引擎初始化失败": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't start the terminal engine"
+          }
+        }
+      }
+    },
+    "• %@：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• %1$@: %2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "new",
+            "value": "• %1$@：%2$@"
+          }
+        }
+      }
+    },
+    "、": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        }
+      }
+    },
+    "上一个终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous Terminal"
+          }
+        }
+      }
+    },
+    "下一个终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next Terminal"
+          }
+        }
+      }
+    },
+    "不含系统以 root 身份运行的登录进程 login（约 3 MB）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excludes the system login process running as root (about 3 MB)"
+          }
+        }
+      }
+    },
+    "主题：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theme:"
+          }
+        }
+      }
+    },
+    "之后可以在「系统设置 › 隐私与安全性 › 文件与文件夹」里修改。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can change this later in System Settings › Privacy & Security › Files and Folders."
+          }
+        }
+      }
+    },
+    "以后再说": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Now"
+          }
+        }
+      }
+    },
+    "保留": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep"
+          }
+        }
+      }
+    },
+    "保留天数：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep for:"
+          }
+        }
+      }
+    },
+    "修复": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repair"
+          }
+        }
+      }
+    },
+    "修复…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repair…"
+          }
+        }
+      }
+    },
+    "修复后需要在 Codex 里输入 /hooks，按提示信任 ScyllaUI 的 %lld 条 Hook": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "After repairing, type /hooks in Codex and trust ScyllaUI's %lld hook when prompted"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "After repairing, type /hooks in Codex and trust ScyllaUI's %lld hooks when prompted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "修复失败": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repair Failed"
+          }
+        }
+      }
+    },
+    "修复状态同步？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repair Status Sync?"
+          }
+        }
+      }
+    },
+    "允许": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow"
+          }
+        }
+      }
+    },
+    "允许访问「文稿」等文件夹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Access to Documents and Other Folders"
+          }
+        }
+      }
+    },
+    "全选": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select All"
+          }
+        }
+      }
+    },
+    "关于": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        }
+      }
+    },
+    "关掉的段不再显示。CPU 与内存都关掉时不再统计，分支与改动关掉时不再读取改动数。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turned-off items are hidden. With both CPU and memory off, usage is no longer sampled; with branch and changes off, change counts are no longer read."
+          }
+        }
+      }
+    },
+    "关闭": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "关闭终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Terminal"
+          }
+        }
+      }
+    },
+    "关闭这个终端？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close This Terminal?"
+          }
+        }
+      }
+    },
+    "其他": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        }
+      }
+    },
+    "其他：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other: %@"
+          }
+        }
+      }
+    },
+    "内存": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory"
+          }
+        }
+      }
+    },
+    "写入 %@（%lld 条）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write %1$@ (%#@entries@)"
+          },
+          "substitutions": {
+            "entries": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg entry"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg entries"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "new",
+            "value": "写入 %1$@（%2$lld 条）"
+          }
+        }
+      }
+    },
+    "冲突": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conflict"
+          }
+        }
+      }
+    },
+    "分支": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Branch"
+          }
+        }
+      }
+    },
+    "分支与改动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Branch and changes"
+          }
+        }
+      }
+    },
+    "分支：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Branch: %@"
+          }
+        }
+      }
+    },
+    "切换到第 %lld 个终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch to Terminal %lld"
+          }
+        }
+      }
+    },
+    "删除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "删除 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete %@"
+          }
+        }
+      }
+    },
+    "删除 ScyllaUI 库中全部已结束的对话，正在运行的任务与 Agent 自己的会话记录不受影响。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deletes every ended task from ScyllaUI's database. Running tasks and the agent's own session history are not affected."
+          }
+        }
+      }
+    },
+    "删除本项目的 %lld 条": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Remove ScyllaUI's %lld entry"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Remove ScyllaUI's %lld entries"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "删除本项目的标记块": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove ScyllaUI's marker block"
+          }
+        }
+      }
+    },
+    "取消": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "取消置顶": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unpin Project"
+          }
+        }
+      }
+    },
+    "置顶项目": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin Project"
+          }
+        }
+      }
+    },
+    "只删除 ScyllaUI 写入的条目，您自己的 Hook 与其他设置不动。撤销后侧栏收不到 %@ 的状态，只能显示运行或退出。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the entries ScyllaUI wrote are removed; your own hooks and other settings stay as they are. Afterwards the sidebar no longer receives %@'s status and can only show whether it is running or has exited."
+          }
+        }
+      }
+    },
+    "Codex 的信任记录与 Hook 功能开关保留。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex's trust records and hooks feature switch are kept."
+          }
+        }
+      }
+    },
+    "只影响 ScyllaUI 自己的库；侧栏「最近任务」只显示近 14 天内的 20 条。Claude Code 默认 30 天后删除本地会话，超过它的记录多半已无法恢复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Affects only ScyllaUI's own database; Recent in the sidebar shows at most 20 tasks from the last 14 days. Claude Code deletes local sessions after 30 days by default, so older tasks usually can't be resumed anyway."
+          }
+        }
+      }
+    },
+    "只看待处理": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending only"
+          }
+        }
+      }
+    },
+    "只看待处理（需确认、待查看）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show pending only (needs approval, unread)"
+          }
+        }
+      }
+    },
+    "后台没有给出原因。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The background service didn't give a reason."
+          }
+        }
+      }
+    },
+    "后台进不了这个终端的启动目录，Shell 已在其他目录启动，没有代输启动命令。可在「系统设置 › 隐私与安全性 › 文件与文件夹」中允许 ScyllaUI 访问，再新开终端。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI's background service couldn't open this terminal's start folder, so the shell started in another folder and the launch command was not typed. Allow ScyllaUI in System Settings › Privacy & Security › Files and Folders, then open a new terminal."
+          }
+        }
+      }
+    },
+    "后台：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daemon:"
+          }
+        }
+      }
+    },
+    "在 Finder 中显示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in Finder"
+          }
+        }
+      }
+    },
+    "在文件末尾写入本项目的标记块（%lld 条 [[hooks]]）": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Append ScyllaUI's marker block at the end of the file (%lld [[hooks]] entry)"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Append ScyllaUI's marker block at the end of the file (%lld [[hooks]] entries)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "外观": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        }
+      }
+    },
+    "好": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "字号：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font size:"
+          }
+        }
+      }
+    },
+    "完成": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "完成一轮时发通知（您没在看那个终端时）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify when a turn finishes (in a terminal you are not viewing)"
+          }
+        }
+      }
+    },
+    "对话所在的目录已不存在：%@\n%@ 按启动目录保存会话，换到别的目录无法恢复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The conversation's directory no longer exists: %1$@\n%2$@ saves sessions per launch directory, so it can't be resumed from another directory."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "new",
+            "value": "对话所在的目录已不存在：%1$@\n%2$@ 按启动目录保存会话，换到别的目录无法恢复。"
+          }
+        }
+      }
+    },
+    "将从 ScyllaUI 的库里立即删除这些任务的标题、提示词、回复摘要与事件记录，删除后无法在 ScyllaUI 中恢复。正在运行的任务与 Agent 自己的会话记录不受影响。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This immediately deletes their titles, prompts, reply summaries and event history from ScyllaUI's database. They can't be restored in ScyllaUI. Running tasks and the agent's own session history are not affected."
+          }
+        }
+      }
+    },
+    "将立即从 ScyllaUI 的库里删除 %lld 条已结束的对话": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ended task will be deleted from ScyllaUI's database now"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ended tasks will be deleted from ScyllaUI's database now"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "已停用": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled"
+          }
+        }
+      }
+    },
+    "已结束的对话：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended tasks:"
+          }
+        }
+      }
+    },
+    "已置顶，点按取消置顶": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinned. Click to unpin."
+          }
+        }
+      }
+    },
+    "开始使用 →": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get Started →"
+          }
+        }
+      }
+    },
+    "当前任务": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current"
+          }
+        }
+      }
+    },
+    "待查看": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unread"
+          }
+        }
+      }
+    },
+    "恢复默认": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Defaults"
+          }
+        }
+      }
+    },
+    "打开": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        }
+      }
+    },
+    "打开 Hook 功能（config.toml 的 %@ 改为 true）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on hooks (set %@ to true in config.toml)"
+          }
+        }
+      }
+    },
+    "打开全局开关（disableAllHooks 改为 false）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on the global switch (set disableAllHooks to false)"
+          }
+        }
+      }
+    },
+    "打开文件夹…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Folder…"
+          }
+        }
+      }
+    },
+    "打开文件夹…（⌘O）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Folder… (⌘O)"
+          }
+        }
+      }
+    },
+    "打开文件夹，新建终端…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open a folder in a new terminal…"
+          }
+        }
+      }
+    },
+    "打开系统设置…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings…"
+          }
+        }
+      }
+    },
+    "打开系统通知设置…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Notification Settings…"
+          }
+        }
+      }
+    },
+    "拒绝": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deny"
+          }
+        }
+      }
+    },
+    "拷贝": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        }
+      }
+    },
+    "按新的保留设置，超出的记录现在就会删除，删除后无法在 ScyllaUI 中恢复。Agent 自己的会话记录不受影响。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tasks beyond the new limits are deleted right away and can't be restored in ScyllaUI. The agent's own session history is not affected."
+          }
+        }
+      }
+    },
+    "推理强度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reasoning effort"
+          }
+        }
+      }
+    },
+    "搜索": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
+        }
+      }
+    },
+    "搜索结果": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Results"
+          }
+        }
+      }
+    },
+    "撤销": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        }
+      }
+    },
+    "撤销 %@ 的状态同步？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Status Sync for %@?"
+          }
+        }
+      }
+    },
+    "撤销…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove…"
+          }
+        }
+      }
+    },
+    "撤销失败": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Failed"
+          }
+        }
+      }
+    },
+    "改写": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modify"
+          }
+        }
+      }
+    },
+    "改名…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename…"
+          }
+        }
+      }
+    },
+    "数据": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data"
+          }
+        }
+      }
+    },
+    "数据目录：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data folder:"
+          }
+        }
+      }
+    },
+    "新会话 · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New session · %@"
+          }
+        }
+      }
+    },
+    "新建": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create"
+          }
+        }
+      }
+    },
+    "新建终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Terminal"
+          }
+        }
+      }
+    },
+    "在终端里输入 claude、codex、kimi、grok（或 agent）、opencode、copilot 或 agy 启动 Agent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type claude, codex, kimi, grok (or agent), opencode, copilot, or agy in a terminal to start an agent"
+          }
+        }
+      }
+    },
+    "新建终端（⌘N）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Terminal (⌘N)"
+          }
+        }
+      }
+    },
+    "无法恢复「%@」": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't Resume “%@”"
+          }
+        }
+      }
+    },
+    "日志目录：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log folder:"
+          }
+        }
+      }
+    },
+    "最多保留：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep at most:"
+          }
+        }
+      }
+    },
+    "最近任务": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent"
+          }
+        }
+      }
+    },
+    "未安装此 Agent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent not installed"
+          }
+        }
+      }
+    },
+    "未知": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown"
+          }
+        }
+      }
+    },
+    "查看改动并安装…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review Changes and Install…"
+          }
+        }
+      }
+    },
+    "标题栏右侧：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right of title bar:"
+          }
+        }
+      }
+    },
+    "标题栏左侧：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left of title bar:"
+          }
+        }
+      }
+    },
+    "模型": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model"
+          }
+        }
+      }
+    },
+    "正常": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working"
+          }
+        }
+      }
+    },
+    "没有匹配的已结束任务": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching finished tasks"
+          }
+        }
+      }
+    },
+    "没有匹配的终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching terminals"
+          }
+        }
+      }
+    },
+    "没有已结束的对话记录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Ended Tasks"
+          }
+        }
+      }
+    },
+    "没有待处理的终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pending terminals"
+          }
+        }
+      }
+    },
+    "没有打开的终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No open terminals"
+          }
+        }
+      }
+    },
+    "没有改成": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't Change the Setting"
+          }
+        }
+      }
+    },
+    "没有要撤销的条目": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to Remove"
+          }
+        }
+      }
+    },
+    "浅色": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        }
+      }
+    },
+    "深浅：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance:"
+          }
+        }
+      }
+    },
+    "深色": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
+          }
+        }
+      }
+    },
+    "清除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        }
+      }
+    },
+    "清除全部 %lld 条已结束的对话记录？": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Clear %lld Ended Task?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Clear All %lld Ended Tasks?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "清除记录…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear History…"
+          }
+        }
+      }
+    },
+    "版本 %@（构建号 %@ · 构建标识 %@）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %1$@ (build %2$@ · %3$@)"
+          }
+        }
+      }
+    },
+    "状态同步未生效": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status Sync Not Working"
+          }
+        }
+      }
+    },
+    "状态栏": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status Bar"
+          }
+        }
+      }
+    },
+    "界面语言：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface language:"
+          }
+        }
+      }
+    },
+    "目录不存在": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder missing"
+          }
+        }
+      }
+    },
+    "这个终端的启动目录已不存在（可能已被删除、改名或移走），Shell 已在主目录打开，没有代输启动命令。目录还在别处时，可在那里新开终端。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This terminal's start folder no longer exists (it may have been deleted, renamed or moved), so the shell opened in your home folder and the launch command was not typed. If the folder is somewhere else now, open a new terminal there."
+          }
+        }
+      }
+    },
+    "目录无权限": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No folder access"
+          }
+        }
+      }
+    },
+    "确认之后配置文件又有变化，没有写入。请重新点「修复…」查看最新的改动。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The config file changed after you confirmed, so nothing was written. Click “Repair…” again to see the latest changes."
+          }
+        }
+      }
+    },
+    "确认之后配置文件又有变化，没有写入。请重新点「撤销…」查看最新的改动。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The config file changed after you confirmed, so nothing was written. Click “Remove…” again to see the latest changes."
+          }
+        }
+      }
+    },
+    "确认粘贴": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm Paste"
+          }
+        }
+      }
+    },
+    "程序请求写入剪贴板": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Program Wants to Write to the Clipboard"
+          }
+        }
+      }
+    },
+    "程序请求读取剪贴板": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Program Wants to Read the Clipboard"
+          }
+        }
+      }
+    },
+    "稍后": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Later"
+          }
+        }
+      }
+    },
+    "立即重启": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart Now"
+          }
+        }
+      }
+    },
+    "简体中文": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simplified Chinese"
+          }
+        }
+      }
+    },
+    "粘贴": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste"
+          }
+        }
+      }
+    },
+    "系统已允许 ScyllaUI 发送通知。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI is allowed to send notifications."
+          }
+        }
+      }
+    },
+    "系统设置中关闭了 ScyllaUI 的通知，上面两个通知开关不会生效。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications for ScyllaUI are turned off in System Settings, so the two notification options above have no effect."
+          }
+        }
+      }
+    },
+    "系统通知：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications:"
+          }
+        }
+      }
+    },
+    "终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminal"
+          }
+        }
+      }
+    },
+    "终端名称（留空恢复自动）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminal name (leave empty for automatic)"
+          }
+        }
+      }
+    },
+    "终端和其中的 Agent 在后台运行，重启时不受影响，重新打开后自动接回。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminals and the agents in them keep running in the background and are reattached when ScyllaUI reopens."
+          }
+        }
+      }
+    },
+    "终端在「文稿」「桌面」「下载」等文件夹里工作时，macOS 会询问是否允许 ScyllaUI 访问。请选「允许」，否则在这些文件夹里运行的终端和 Agent 会卡住。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a terminal works in Documents, Desktop, Downloads or similar folders, macOS asks whether ScyllaUI may access them. Choose Allow, otherwise terminals and agents running in those folders will get stuck."
+          }
+        }
+      }
+    },
+    "终端字体：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminal font:"
+          }
+        }
+      }
+    },
+    "终端里还有程序在运行（例如 Agent 会话），关闭会结束它。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A program is still running in this terminal (such as an agent session). Closing will end it."
+          }
+        }
+      }
+    },
+    "← 上一步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← Back"
+          }
+        }
+      }
+    },
+    "继续 →": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue →"
+          }
+        }
+      }
+    },
+    "编辑": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        }
+      }
+    },
+    "缺少条目": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entries missing"
+          }
+        }
+      }
+    },
+    "被组织策略禁用（%@），无法修复": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled by organization policy (%@); can't be repaired"
+          }
+        }
+      }
+    },
+    "被组织策略禁用，无法修复": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled by organization policy; can't be repaired"
+          }
+        }
+      }
+    },
+    "被组织策略锁定": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locked by organization policy"
+          }
+        }
+      }
+    },
+    "计算中": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "calculating"
+          }
+        }
+      }
+    },
+    "记录终端尺寸（排查用）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log Terminal Sizes (for Troubleshooting)"
+          }
+        }
+      }
+    },
+    "设置…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings…"
+          }
+        }
+      }
+    },
+    "详情…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details…"
+          }
+        }
+      }
+    },
+    "语言": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        }
+      }
+    },
+    "说明…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details…"
+          }
+        }
+      }
+    },
+    "读不了配置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't read config"
+          }
+        }
+      }
+    },
+    "跟随系统": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Match System"
+          }
+        }
+      }
+    },
+    "跟随系统（当前：%@）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Match System (currently %@)"
+          }
+        }
+      }
+    },
+    "运行命令": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running a command"
+          }
+        }
+      }
+    },
+    "近 %lld 天没有已结束的任务": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No finished tasks in the last %lld days"
+          }
+        }
+      }
+    },
+    "还没有向系统申请通知授权。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI has not asked for notification permission yet."
+          }
+        }
+      }
+    },
+    "这条对话的会话记录已不存在，可能已被 %@ 清理。\n%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This conversation's session log no longer exists; %1$@ may have cleaned it up.\n%2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "new",
+            "value": "这条对话的会话记录已不存在，可能已被 %1$@ 清理。\n%2$@"
+          }
+        }
+      }
+    },
+    "追加 %lld 条：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add %#@entries@: %2$@"
+          },
+          "substitutions": {
+            "entries": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg entry"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg entries"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "new",
+            "value": "追加 %1$lld 条：%2$@"
+          }
+        }
+      }
+    },
+    "关于 ScyllaUI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About ScyllaUI"
+          }
+        }
+      }
+    },
+    "删除「%@」的记录？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the record of “%@”?"
+          }
+        }
+      }
+    },
+    "删除记录…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Record…"
+          }
+        }
+      }
+    },
+    "重启电脑或后台被结束后，下次打开 ScyllaUI 时把终端开回原来的目录，原来跑着的 Agent 对话接着恢复。退出 App 不影响终端，不需要恢复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After a restart or if the background process was stopped, ScyllaUI reopens your terminals in their last directories the next time it opens, and resumes the agent conversations that were running. Quitting the app doesn't affect terminals, so nothing needs restoring."
+          }
+        }
+      }
+    },
+    "这次没有自动恢复 %lld 个终端。它们的 Agent 对话都在「最近任务」里，也可以双击逐个恢复。": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ScyllaUI didn't restore %lld terminal automatically this time. Its agent conversation is in Recent; you can also double-click it there to resume it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ScyllaUI didn't restore %lld terminals automatically this time. Their agent conversations are in Recent; you can also double-click them one by one."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "现在恢复": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Now"
+          }
+        }
+      }
+    },
+    "工作区：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspace:"
+          }
+        }
+      }
+    },
+    "启动时恢复上次的终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore last terminals at launch"
+          }
+        }
+      }
+    },
+    "不恢复": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't Restore"
+          }
+        }
+      }
+    },
+    "上次恢复终端时中途退出了两次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restoring terminals was interrupted twice last time"
+          }
+        }
+      }
+    },
+    "这段对话还没有提示词": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No prompts in this conversation yet"
+          }
+        }
+      }
+    },
+    "筛选": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter"
+          }
+        }
+      }
+    },
+    "没有符合筛选的提示词": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No prompts match the filter"
+          }
+        }
+      }
+    },
+    "更早的提示词未显示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earlier prompts not shown"
+          }
+        }
+      }
+    },
+    "暂时读不到这段对话的提示词": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't read this conversation's prompts right now"
+          }
+        }
+      }
+    },
+    "提示词足迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prompt History"
+          }
+        }
+      }
+    },
+    "填入当前终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insert into Current Terminal"
+          }
+        }
+      }
+    },
+    "关闭提示词足迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Prompt History"
+          }
+        }
+      }
+    },
+    "读取 %@ 的会话记录失败，可能是它升级后格式变了；详情见日志文件夹里的 scyllauid.log": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't read %@'s session log, possibly because its format changed in an update. See scyllauid.log in the logs folder."
+          }
+        }
+      }
+    },
+    "%@ 暂不支持提示词足迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ doesn't support Prompt History yet"
+          }
+        }
+      }
+    },
+    "会话记录已不在，读不到提示词": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The session log is gone, so prompts can't be read"
+          }
+        }
+      }
+    },
+    "打开日志文件夹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Logs Folder"
+          }
+        }
+      }
+    },
+    "已结束": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended"
+          }
+        }
+      }
+    },
+    "当前会话": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current session"
+          }
+        }
+      }
+    },
+    "收起": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapse"
+          }
+        }
+      }
+    },
+    "展开": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expand"
+          }
+        }
+      }
+    },
+    "昨天 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yesterday %@"
+          }
+        }
+      }
+    },
+    "今天 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today %@"
+          }
+        }
+      }
+    },
+    "以下为恢复前的会话": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earlier session below"
+          }
+        }
+      }
+    },
+    "将从 ScyllaUI 中立即删除这条任务的标题、提示词、回复摘要与事件记录，删除后无法在 ScyllaUI 中恢复。Agent 自己的会话记录不受影响，知道会话 ID 仍可在 Agent 里恢复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This immediately deletes the task's title, prompts, reply summary and event history from ScyllaUI. It can't be restored in ScyllaUI. The agent's own session history is not affected; you can still resume it in the agent with its session ID."
+          }
+        }
+      }
+    },
+    "退出 ScyllaUI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit ScyllaUI"
+          }
+        }
+      }
+    },
+    "选定即作用于所有终端。改字号时，用 Cmd+= / Cmd+- 临时调过字号的终端也换成这里的字号。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes apply to all terminals right away. Changing the font size also resets terminals you zoomed with Cmd+= / Cmd+-."
+          }
+        }
+      }
+    },
+    "选择要在其中新建终端的文件夹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a folder to open a new terminal in"
+          }
+        }
+      }
+    },
+    "通知": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
+          }
+        }
+      }
+    },
+    "通知只写项目与任务名，不含命令内容。点通知会把 ScyllaUI 调到前台。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications show only the project and task name, never command contents. Clicking one brings ScyllaUI to the front."
+          }
+        }
+      }
+    },
+    "配置文件刚被改动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Config File Just Changed"
+          }
+        }
+      }
+    },
+    "配置文件格式有误（%@），未改动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The config file is malformed (%@); nothing was changed"
+          }
+        }
+      }
+    },
+    "配置文件读不了（%@），未改动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The config file can't be read (%@); nothing was changed"
+          }
+        }
+      }
+    },
+    "配置文件读不了，未改动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The config file can't be read; nothing was changed"
+          }
+        }
+      }
+    },
+    "重启 ScyllaUI 后生效": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes effect after restarting ScyllaUI"
+          }
+        }
+      }
+    },
+    "重启 ScyllaUI 后生效。终端和其中的 Agent 在后台运行，重启时不受影响。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes effect after restarting ScyllaUI. Terminals and the agents in them keep running in the background through the restart."
+          }
+        }
+      }
+    },
+    "重新启用 %lld 条（从 disabled-hooks 删除本项目的行）": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Re-enable %lld entry (remove ScyllaUI's line from disabled-hooks)"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Re-enable %lld entries (remove ScyllaUI's lines from disabled-hooks)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "重新启用 %lld 条：%@（config.toml 中该条的 enabled 改为 true）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-enable %#@entries@: %2$@ (set enabled to true in config.toml)"
+          },
+          "substitutions": {
+            "entries": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg entry"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg entries"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "new",
+            "value": "重新启用 %1$lld 条：%2$@（config.toml 中该条的 enabled 改为 true）"
+          }
+        }
+      }
+    },
+    "重新载入配置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload Configuration"
+          }
+        }
+      }
+    },
+    "隐藏 / 显示侧栏": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide / Show Sidebar"
+          }
+        }
+      }
+    },
+    "隐藏 / 显示侧栏（⌘\\）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide / Show Sidebar (⌘\\)"
+          }
+        }
+      }
+    },
+    "需在 Codex 中信任": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs trust in Codex"
+          }
+        }
+      }
+    },
+    "需确认": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs approval"
+          }
+        }
+      }
+    },
+    "需确认时发通知": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify when approval is needed"
+          }
+        }
+      }
+    },
+    "需要在 Codex 里输入 /hooks，按提示信任 ScyllaUI 的 %lld 条 Hook": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Type /hooks in Codex and trust ScyllaUI's %lld hook when prompted"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Type /hooks in Codex and trust ScyllaUI's %lld hooks when prompted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "项目": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project"
+          }
+        }
+      }
+    },
+    "项目 %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project %lld"
+          }
+        }
+      }
+    },
+    "项目名": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project name"
+          }
+        }
+      }
+    },
+    "预览：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview:"
+          }
+        }
+      }
+    },
+    "默认配置": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        }
+      }
+    },
+    "，同时恢复您自己的 %lld 条 Hook": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", which also restores %lld of your own hooks"
+          }
+        }
+      }
+    },
+    "，改写前备份为 %@.scyllaui-bak-<时间>": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", backed up first as %@.scyllaui-bak-<time>"
+          }
+        }
+      }
+    },
+    "ScyllaUI 靠 Hook 得知各款 Agent 的状态。同样七个终端，装与不装的区别：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI learns each agent's status through hooks. Here are the same seven terminals with and without them:"
+          }
+        }
+      }
+    },
+    "「最近任务」一键恢复已结束的对话": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume finished conversations from Recent in one click"
+          }
+        }
+      }
+    },
+    "不装": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without Hooks"
+          }
+        }
+      }
+    },
+    "侧栏显示每个任务的提示词": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See each task's prompt in the sidebar"
+          }
+        }
+      }
+    },
+    "修复登录页的报错": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fix the error on the login page"
+          }
+        }
+      }
+    },
+    "写入前先列出改动，确认后才写，并备份原文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows the changes first, writes only after you confirm, and backs up the original file"
+          }
+        }
+      }
+    },
+    "只在各款 Agent 的配置文件里加几条命令，只在 ScyllaUI 的终端里起作用，您在别的终端里照常使用": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adds a few commands to each agent's config file. They only run in ScyllaUI's terminals, so using the agents elsewhere is unaffected"
+          }
+        }
+      }
+    },
+    "安装状态同步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install Status Sync"
+          }
+        }
+      }
+    },
+    "实时状态：运行中、等您确认、已答完、出错": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live status: running, waiting for you, done, or failed"
+          }
+        }
+      }
+    },
+    "整理本周的发布说明": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write this week's release notes"
+          }
+        }
+      }
+    },
+    "把依赖升级到最新版本": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upgrade dependencies to the latest versions"
+          }
+        }
+      }
+    },
+    "解释这段正则表达式": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explain this regular expression"
+          }
+        }
+      }
+    },
+    "没有通知，「最近任务」为空": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No notifications, and Recent stays empty"
+          }
+        }
+      }
+    },
+    "等您确认或答完时发通知，并显示角标": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications when an agent needs you or finishes, plus a Dock badge"
+          }
+        }
+      }
+    },
+    "给接口补上单元测试": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add unit tests for the API"
+          }
+        }
+      }
+    },
+    "装上之后": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With Hooks"
+          }
+        }
+      }
+    },
+    "装好后还要在 Codex 里输入 /hooks，把 ScyllaUI 的 Hook 设为信任，Codex 的状态同步才会生效。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After installing, type /hooks in Codex and trust ScyllaUI's hooks. Codex's status won't sync until you do."
+          }
+        }
+      }
+    },
+    "让侧栏知道每个 Agent 在干什么": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let the Sidebar See What Each Agent Is Doing"
+          }
+        }
+      }
+    },
+    "通知「Codex 需确认」，程序坞角标 1": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification “Codex needs approval”, Dock badge 1"
+          }
+        }
+      }
+    },
+    "随时可以在「设置 › Agent」里撤销": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo anytime in Settings › Agent"
+          }
+        }
+      }
+    },
+    "%@：状态同步未生效（%@），%lld 个终端已恢复为 Shell": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: status sync isn't working (%2$@); %#@terminals@ restored as Shell"
+          },
+          "substitutions": {
+            "terminals": {
+              "argNum": 3,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg terminal"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg terminals"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%@：还没开始对话，%lld 个终端已恢复为 Shell": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: no conversation had started yet; %#@terminals@ restored as Shell"
+          },
+          "substitutions": {
+            "terminals": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg terminal"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg terminals"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "去信任…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trust…"
+          }
+        }
+      }
+    },
+    "在 Codex 里信任 ScyllaUI 的 Hook": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trust ScyllaUI's hooks in Codex"
+          }
+        }
+      }
+    },
+    "在 Codex 里打开 /hooks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open /hooks in Codex"
+          }
+        }
+      }
+    },
+    "在 ScyllaUI 的终端里打开 Codex：它启动时若询问是否信任新的 Hook（Hooks need review），选「Trust all and continue」；没有询问时，侧栏那一行会出现「未同步」，点它即可。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Codex in a ScyllaUI terminal. If it asks whether to trust new hooks (Hooks need review), choose “Trust all and continue”. If it doesn't ask, its sidebar row shows “Not synced” — click that."
+          }
+        }
+      }
+    },
+    "填入 /hooks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insert /hooks"
+          }
+        }
+      }
+    },
+    "将在这个终端的 Codex 输入行填入 /hooks，不回车。按回车打开 Codex 的 Hook 列表，再按 t 信任全部待审核的条目（按回车可逐条审核）；列表里没有时，退出 Codex 再打开，它会询问是否信任。这一步只能由您在 Codex 里确认，ScyllaUI 不代写信任记录。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI will type /hooks into Codex's input line in this terminal without pressing Return. Press Return to open Codex's hook list, then press t to trust all hooks awaiting review (or Return to review them one by one). If they aren't listed, quit Codex and open it again; it will ask whether to trust them. Only you can confirm this in Codex — ScyllaUI never writes trust records for you."
+          }
+        }
+      }
+    },
+    "有终端没能接回 Agent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some terminals couldn't bring their agents back"
+          }
+        }
+      }
+    },
+    "未同步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not synced"
+          }
+        }
+      }
+    },
+    "没有正在运行的 Codex": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex isn't running"
+          }
+        }
+      }
+    },
+    "还差一步：在 Codex 里信任 ScyllaUI 的 Hook": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One more step: trust ScyllaUI's hooks in Codex"
+          }
+        }
+      }
+    },
+    "这款 Agent 的状态同步未生效，侧栏看不到它在做什么。点按查看并修复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status sync isn't working for this agent, so the sidebar can't see what it's doing. Click to review and fix."
+          }
+        }
+      }
+    },
+    "收到无法解析的 Hook 数据": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Received hook data that couldn't be parsed"
+          }
+        }
+      }
+    },
+    "Hook 数据缺少事件名": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hook data is missing the event name"
+          }
+        }
+      }
+    },
+    "收到不认识的事件 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Received an unrecognized event: %@"
+          }
+        }
+      }
+    },
+    "%@ 事件缺少会话 ID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The %@ event is missing the session ID"
+          }
+        }
+      }
+    },
+    "状态可能不准：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status may be inaccurate: %@"
+          }
+        }
+      }
+    },
+    "状态可能不准：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status may be inaccurate: "
+          }
+        }
+      }
+    },
+    "已验证": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verified"
+          }
+        }
+      }
+    },
+    "未验证": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not verified"
+          }
+        }
+      }
+    },
+    "正在终端里运行的版本。「已验证」表示 ScyllaUI 测过这个版本的状态同步；未验证的版本通常也能正常使用。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The version running in a terminal. “Verified” means ScyllaUI has tested status sync with this version; unverified versions usually work fine too."
+          }
+        }
+      }
+    },
+    "最近一次对话时的版本。「已验证」表示 ScyllaUI 测过这个版本的状态同步；未验证的版本通常也能正常使用。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The version from the most recent conversation. “Verified” means ScyllaUI has tested status sync with this version; unverified versions usually work fine too."
+          }
+        }
+      }
+    },
+    "；": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "; "
+          }
+        }
+      }
+    },
+    "：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ": "
+          }
+        }
+      }
+    },
+    "只影响侧栏显示状态、通知与「待查看」，Agent 本身和终端不影响，可能 Agent 新版本更改了 Hook 数据格式。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the sidebar status, notifications and “To review” are affected; the agent itself and the terminal are not. A new agent version may have changed its hook data format."
+          }
+        }
+      }
+    },
+    "待 ScyllaUI 版本升级，如在意，可先安装回状态提示前的 Agent 版本：%@（做法见使用说明「状态同步」一节）。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Until ScyllaUI is updated, if this matters to you, you can reinstall the agent version from before this warning: %@ (see “Status Sync” in the user guide for how)."
+          }
+        }
+      }
+    },
+    "ScyllaUI 上次意外退出（约 %@）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI quit unexpectedly last time (around %@)"
+          }
+        }
+      }
+    },
+    "后台也已结束，终端按设置恢复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The background service ended too; terminals are restored according to your settings."
+          }
+        }
+      }
+    },
+    "终端和任务都在后台保管着，已经接回。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your terminals and tasks were kept in the background and have been reconnected."
+          }
+        }
+      }
+    },
+    "第三方许可…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Third-Party Notices…"
+          }
+        }
+      }
+    },
+    "窗口": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Window"
+          }
+        }
+      }
+    },
+    "最小化": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimize"
+          }
+        }
+      }
+    },
+    "缩放": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoom"
+          }
+        }
+      }
+    },
+    "进入全屏幕": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter Full Screen"
+          }
+        }
+      }
+    },
+    "前置全部窗口": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring All to Front"
+          }
+        }
+      }
+    },
+    "写入插件 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write plugin %@"
+          }
+        }
+      }
+    },
+    "删除插件 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete plugin %@"
+          }
+        }
+      }
+    },
+    "打开全局开关（settings.json 的 disableAllHooks 改为 false）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on the global switch (set disableAllHooks to false in settings.json)"
+          }
+        }
+      }
+    },
+    "模型：ScyllaUI 暂不读取 %@ 的模型": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model: ScyllaUI doesn't read %@'s model yet"
+          }
+        }
+      }
+    },
+    "Total：ScyllaUI 暂不读取 %@ 的用量": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total: ScyllaUI doesn't read %@'s token usage yet"
+          }
+        }
+      }
+    },
+    "ScyllaUI 暂不读取 %@ 的回复": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI doesn't read %@'s replies yet"
+          }
+        }
+      }
+    },
+    "同一对话同时在 %lld 个终端打开": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The same conversation is open in %lld terminals"
+          }
+        }
+      }
+    },
+    "这款 Agent 发来的 Hook 数据与 ScyllaUI 认识的不一致，侧栏显示的状态可能不准。版本与原因点「详情…」查看。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This agent sent hook data that doesn't match what ScyllaUI expects, so the sidebar status may be inaccurate. Click “Details…” for versions and reasons."
+          }
+        }
+      }
+    },
+    "%@ 的状态同步未生效，对不上它的会话；点侧栏这一行的「未同步」修复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status sync isn't working for %@, so ScyllaUI can't match its session. Click “Not synced” on its sidebar row to fix it."
+          }
+        }
+      }
+    },
+    "还没对上 %@ 的这次会话，发出一条提示词后显示。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI hasn't matched this %@ session yet. Prompts appear here after you send one."
+          }
+        }
+      }
+    },
+    "前台运行的 %@ 不是 ScyllaUI 已接入的 Agent，没有提示词足迹。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ in the foreground isn't an agent that ScyllaUI supports, so there's no Prompt History."
+          }
+        }
+      }
+    },
+    "当前是 Shell，在这个终端启动 Agent 后，这里显示它的历史提示词。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a shell. Start an agent in this terminal and its prompt history will appear here."
+          }
+        }
+      }
+    },
+    "5h 额度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5h quota"
+          }
+        }
+      }
+    },
+    "额度：Claude 的 5 小时与 7 天额度只在官方 statusline 里，未接入（scyllaui statusline-bridge install）；非 Pro / Max 订阅没有此项": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota: Claude only reports its 5-hour and 7-day quotas to its official statusline, which isn't connected (scyllaui statusline-bridge install). Not available without a Pro / Max plan."
+          }
+        }
+      }
+    },
+    "额度：ScyllaUI 暂不读取 OpenCode 的额度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota: ScyllaUI doesn't read OpenCode's quota yet"
+          }
+        }
+      }
+    },
+    "从 %@ 删除「scyllaui」一项，您自己的 Hook 不动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove the “scyllaui” entry from %@; your own hooks stay as they are"
+          }
+        }
+      }
+    },
+    "在 %@ 写入「scyllaui」一项（%lld 条）；这份文件 Antigravity 的 App、IDE 也读，这几条只在 ScyllaUI 的终端里起作用": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write the “scyllaui” entry to %1$@ (%#@hooks@); the Antigravity app and IDE read this file too, but these hooks only take effect in ScyllaUI's terminals"
+          },
+          "substitutions": {
+            "hooks": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg hook"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg hooks"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "重新启用「scyllaui」一项（去掉 \"enabled\": false）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-enable the “scyllaui” entry (remove \"enabled\": false)"
+          }
+        }
+      }
+    },
+    "重构支付模块的回调": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refactor the payment callbacks"
+          }
+        }
+      }
+    },
+    "给首页换一套配色": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Give the home page a new color scheme"
+          }
+        }
+      }
+    },
+    "支付回调已改好，测试全部通过": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The payment callbacks are fixed and all tests pass"
+          }
+        }
+      }
+    },
+    "月额度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly quota"
+          }
+        }
+      }
+    },
+    "按量计费，没有 5 小时、7 天或月额度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pay-as-you-go: no 5-hour, 7-day, or monthly quota"
+          }
+        }
+      }
+    },
+    "推理强度：ScyllaUI 暂不读取 %@ 的推理强度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reasoning effort: ScyllaUI doesn't read %@'s reasoning effort yet"
+          }
+        }
+      }
+    },
+    "重置时间：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resets: %@"
+          }
+        }
+      }
+    },
+    "按当前登录的 grok.com 账号": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the grok.com account currently signed in"
+          }
+        }
+      }
+    },
+    "额度：查 Grok 的额度要先登录 grok.com（在终端运行 grok login）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota: sign in to grok.com first to read Grok's quota (run grok login in a terminal)"
+          }
+        }
+      }
+    },
+    "额度：还没读到。Agent 启动或一轮结束后读取；用第三方 API 时没有额度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota: not read yet. It is read when the agent starts or after each turn; third-party APIs have no quota"
+          }
+        }
+      }
+    },
+    "按量计费（API）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pay-as-you-go (API)"
+          }
+        }
+      }
+    },
+    " 问题反馈": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " problem report"
+          }
+        }
+      }
+    },
+    "summary.txt：版本、各 Agent 的状态同步与您的描述": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "summary.txt: versions, each agent’s status sync, and your description"
+          }
+        }
+      }
+    },
+    "反馈时点「报告问题…」，诊断包会带上日志、崩溃报告和这个时间。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To report it, click “Report a Problem…”. The diagnostic package includes the logs, crash reports and this time."
+          }
+        }
+      }
+    },
+    "反馈问题时点「报告问题…」，诊断包会带上日志和各 Agent 的版本。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To report it, click “Report a Problem…”. The diagnostic package includes the logs and each agent’s version."
+          }
+        }
+      }
+    },
+    "可以点「在 Finder 中显示」，把文件夹里的文件直接附上。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click “Show in Finder” and attach the files in the folder directly."
+          }
+        }
+      }
+    },
+    "可以点「打开日志文件夹」，把日志直接发给开发者。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click “Open Logs Folder” and send the logs to the developer directly."
+          }
+        }
+      }
+    },
+    "在 GitHub 提交…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Submit on GitHub…"
+          }
+        }
+      }
+    },
+    "在本机生成诊断包，您看过、确认后，用您自己的邮件或 GitHub 账号发出；ScyllaUI 不会自动上传任何内容。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A diagnostic package is created on this Mac. After you review it, send it with your own email or GitHub account; ScyllaUI never uploads anything on its own."
+          }
+        }
+      }
+    },
+    "将附上的文件：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files to attach:"
+          }
+        }
+      }
+    },
+    "崩溃报告可能带有崩溃瞬间内存里的文字，例如终端里正在显示的内容。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crash reports may contain text that was in memory at the moment of the crash, such as what a terminal was showing."
+          }
+        }
+      }
+    },
+    "帮助": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help"
+          }
+        }
+      }
+    },
+    "报告问题": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report a Problem"
+          }
+        }
+      }
+    },
+    "报告问题…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report a Problem…"
+          }
+        }
+      }
+    },
+    "日志里只有事件与状态，不含提示词、回复和密钥；家目录已写成 ~，目录名仍可见。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logs contain only events and states — no prompts, replies or keys. Your home folder is written as ~; folder names are still visible."
+          }
+        }
+      }
+    },
+    "没有找到可用的邮件账户": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No email account available"
+          }
+        }
+      }
+    },
+    "版本：%@（构建标识 %@）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version: %1$@ (build ID %2$@)"
+          }
+        }
+      }
+    },
+    "用邮件发送…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send by Email…"
+          }
+        }
+      }
+    },
+    "系统：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System: %@"
+          }
+        }
+      }
+    },
+    "诊断包已在 Finder 中显示。请用您常用的邮箱把它发到 %@，或改用「在 GitHub 提交…」。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The diagnostic package is shown in Finder. Send it to %@ from your usual email, or use “Submit on GitHub…” instead."
+          }
+        }
+      }
+    },
+    "诊断包打包失败": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t package the diagnostics"
+          }
+        }
+      }
+    },
+    "诊断包生成失败": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t create the diagnostic package"
+          }
+        }
+      }
+    },
+    "诊断包：%@（见附件）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostics: %@ (attached)"
+          }
+        }
+      }
+    },
+    "诊断包：请把 %@ 拖到这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostics: please drag %@ here"
+          }
+        }
+      }
+    },
+    "问题描述（发生了什么、大约几点、怎么复现）：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Describe the problem (what happened, roughly when, how to reproduce it):"
+          }
+        }
+      }
+    },
+    "附上崩溃报告（%lld 份）": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Attach %lld crash report"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Attach %lld crash reports"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "（请描述发生了什么、大约几点、怎么复现）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(Please describe what happened, roughly when, and how to reproduce it)"
+          }
+        }
+      }
+    },
+    "遇到问题，告诉我们": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run into a problem? Let us know"
+          }
+        }
+      }
+    },
+    "您的每一条反馈对我们都非常宝贵和重要。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every piece of feedback you send is valuable and important to us."
+          }
+        }
+      }
+    },
+    "这些情况都欢迎报告": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please report any of these"
+          }
+        }
+      }
+    },
+    "侧栏的状态和 Agent 实际不一致，比如已经答完还显示 Running": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The sidebar status doesn’t match what the agent is actually doing — for example, it still shows Running after the agent has finished"
+          }
+        }
+      }
+    },
+    "终端显示错乱、卡住，或者输入没反应": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A terminal shows garbled output, freezes, or doesn’t respond to typing"
+          }
+        }
+      }
+    },
+    "App 闪退，或者下次打开时提示「上次意外退出」": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app crashes, or says it “quit unexpectedly” the next time you open it"
+          }
+        }
+      }
+    },
+    "用着别扭、看不懂的地方，或者您希望有的功能": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anything awkward or confusing, or a feature you’d like to have"
+          }
+        }
+      }
+    },
+    "怎么报告": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to report"
+          }
+        }
+      }
+    },
+    "点菜单栏「帮助 › 报告问题…」。出问题时弹出的提示框里也有同名按钮。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Help › Report a Problem… in the menu bar. Alerts about problems have the same button."
+          }
+        }
+      }
+    },
+    "写下发生了什么、大约几点、怎么复现。时间最重要，日志靠时间对上。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Describe what happened, roughly when, and how to reproduce it. The time matters most — logs are matched by time."
+          }
+        }
+      }
+    },
+    "先看一眼诊断包：里面有版本、各 Agent 的状态同步、最近 3 天的日志和崩溃报告，可以在 Finder 里逐个打开查看。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a look at the diagnostic package first: it has versions, each agent’s status sync, the last 3 days of logs and crash reports, and you can open each file in Finder."
+          }
+        }
+      }
+    },
+    "选用邮件或 GitHub 发出。用的是您自己的账号；GitHub 上的问题是公开的。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send it by email or on GitHub, using your own account. Issues on GitHub are public."
+          }
+        }
+      }
+    },
+    "诊断包在您的 Mac 上生成，不含提示词、回复和密钥，ScyllaUI 不会自动上传任何内容。也可以直接发邮件到 %@，或在 %@ 提交。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The diagnostic package is created on your Mac and contains no prompts, replies or keys; ScyllaUI never uploads anything on its own. You can also email %1$@ directly, or open an issue at %2$@."
+          }
+        }
+      }
+    },
+    "隐私说明…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Notice…"
+          }
+        }
+      }
+    },
+    "请先把 ScyllaUI 拖到「应用程序」": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move ScyllaUI to Applications First"
+          }
+        }
+      }
+    },
+    "ScyllaUI 现在是从下载的磁盘映像或临时位置打开的。这样运行时，终端后台会从临时位置启动，系统也记不住你给的授权。请退出后，把 ScyllaUI 拖到「应用程序」文件夹，再从那里打开。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI is running from a downloaded disk image or a temporary location. Run this way, its terminal background process starts from a temporary place and macOS can't remember the permissions you grant. Quit, drag ScyllaUI into the Applications folder, and open it from there."
+          }
+        }
+      }
+    },
+    "退出": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit"
+          }
+        }
+      }
+    },
+    "仍然打开": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Anyway"
+          }
+        }
+      }
+    },
+    "上次检查：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last checked: %@"
+          }
+        }
+      }
+    },
+    "从「应用程序」打开 ScyllaUI 后才能检查更新。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI can check for updates once it is opened from the Applications folder."
+          }
+        }
+      }
+    },
+    "更新：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates:"
+          }
+        }
+      }
+    },
+    "检查更新…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for Updates…"
+          }
+        }
+      }
+    },
+    "自动检查更新": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically check for updates"
+          }
+        }
+      }
+    },
+    "还没有检查过更新。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not checked for updates yet."
+          }
+        }
+      }
+    },
+    "使用须知": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notice"
+          }
+        }
+      }
+    },
+    "ScyllaUI 是开源软件，按 GPL-3.0-or-later 发布。使用前请了解以下几点。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI is open-source software released under GPL-3.0-or-later. Here are a few things to know before you use it."
+          }
+        }
+      }
+    },
+    "之后可在「设置 › 关于」里查看使用须知与开源许可全文。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can view this notice and the full open-source license later in Settings › About."
+          }
+        }
+      }
+    },
+    "ScyllaUI 是自由软件，按 GNU GPL 3.0 或更高版本发布，不提供任何担保。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI is free software released under the GNU GPL version 3 or later, with no warranty."
+          }
+        }
+      }
+    },
+    "开源许可…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open-Source License…"
+          }
+        }
+      }
+    },
+    "使用须知…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notice…"
+          }
+        }
+      }
+    },
+    "没有安装更新": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update Not Installed"
+          }
+        }
+      }
+    },
+    "安装更新需要管理员授权：ScyllaUI 在「应用程序」里，当前账户无权替换它。刚才弹出的英文授权框（ScyllaUI wants permission to update）就是这一步。\n\n需要更新时，请再点「ScyllaUI › 检查更新…」，由管理员输入名称和密码；或请管理员登录后更新。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installing the update needs an administrator's approval: ScyllaUI is in the Applications folder, and this account can't replace it. The prompt that just appeared (ScyllaUI wants permission to update) is that step.\n\nTo update, choose ScyllaUI › Check for Updates… again and have an administrator enter their name and password, or ask an administrator to update while logged in."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

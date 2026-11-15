@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -m my_tool prompt-hook",
+            "timeout": 2
+          }
+        ]
+      }
+    ]
+  }
+}

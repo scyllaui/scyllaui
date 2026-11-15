@@ -1,0 +1,1086 @@
+{
+  "started": "2026-11-06 01:16:34",
+  "phases": [
+    {
+      "phase": "P0 启动后、提问前",
+      "at": "01:17:17",
+      "rows": [
+        {
+          "pane": "fx-de540849",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "c0e55416-3461-4b05-b7bf-b2856c732eff"
+        },
+        {
+          "pane": "fx-041c5cf9",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-af3a3d6f",
+          "tool": "kimi",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-6260a31b",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "01a1acb6-e8c7-7a33-a4ba-508603552b9c"
+        },
+        {
+          "pane": "fx-95e73e08",
+          "tool": "opencode",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-f37ad6b5",
+          "tool": "copilot",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-03367237",
+          "tool": "antigravity",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-bc84454d",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "2920e0f6-f762-4f37-a06b-a11d9728cdf9"
+        },
+        {
+          "pane": "fx-a190a495",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-77db0d49",
+          "tool": "kimi",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-d75cfae0",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "01a1acb6-eddc-7ea1-9ec3-fb02575b0653"
+        },
+        {
+          "pane": "fx-0576715c",
+          "tool": "opencode",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-c4ec0591",
+          "tool": "copilot",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-90dff4cb",
+          "tool": "antigravity",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-f788dc62",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "f3377e6b-c8b7-4513-80fe-f018cec0acc9"
+        },
+        {
+          "pane": "fx-bfbe760a",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-ba1450ec",
+          "tool": "kimi",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-0819955c",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": false,
+          "session": "01a1acb6-f2f6-7a33-a9a4-7851f902441c"
+        },
+        {
+          "pane": "fx-0bf3e2a2",
+          "tool": "opencode",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-8b59c2c6",
+          "tool": "copilot",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-fefc3056",
+          "tool": "antigravity",
+          "state": "unknown",
+          "want": "unknown",
+          "ok": true,
+          "unseen": false,
+          "session": null
+        }
+      ],
+      "mismatch": 0,
+      "recent_total": 0
+    },
+    {
+      "phase": "P1 21 个会话同时提问、回答完毕",
+      "at": "01:18:15",
+      "rows": [
+        {
+          "pane": "fx-de540849",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "c0e55416-3461-4b05-b7bf-b2856c732eff"
+        },
+        {
+          "pane": "fx-041c5cf9",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "ready",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-af3a3d6f",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_71b20e40-6d72-49ca-a855-320b9a939643"
+        },
+        {
+          "pane": "fx-6260a31b",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a1acb6-e8c7-7a33-a4ba-508603552b9c"
+        },
+        {
+          "pane": "fx-95e73e08",
+          "tool": "opencode",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "ses_e5348f101ffeK1BQOzLukA7SQu"
+        },
+        {
+          "pane": "fx-f37ad6b5",
+          "tool": "copilot",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "5f5fbbea-8a97-410c-b771-33848d59e439"
+        },
+        {
+          "pane": "fx-03367237",
+          "tool": "antigravity",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "fee6b59c-44cd-46c8-99c5-aa9eb7a165db"
+        },
+        {
+          "pane": "fx-bc84454d",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "2920e0f6-f762-4f37-a06b-a11d9728cdf9"
+        },
+        {
+          "pane": "fx-a190a495",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "ready",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-77db0d49",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_80a54f8b-347a-4b8e-9a54-111370fb5b0d"
+        },
+        {
+          "pane": "fx-d75cfae0",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a1acb6-eddc-7ea1-9ec3-fb02575b0653"
+        },
+        {
+          "pane": "fx-0576715c",
+          "tool": "opencode",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "ses_e5348e06fffesLoG7BbhSil8qJ"
+        },
+        {
+          "pane": "fx-c4ec0591",
+          "tool": "copilot",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "2dbf2719-aba7-4f20-a4f0-9d25c2f9165d"
+        },
+        {
+          "pane": "fx-90dff4cb",
+          "tool": "antigravity",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "7ba9bfb1-f8af-41e1-b051-7e17452f85fb"
+        },
+        {
+          "pane": "fx-f788dc62",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "f3377e6b-c8b7-4513-80fe-f018cec0acc9"
+        },
+        {
+          "pane": "fx-bfbe760a",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "ready",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-ba1450ec",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_4eca9157-cf15-40ce-8e14-da9e4c88dc6a"
+        },
+        {
+          "pane": "fx-0819955c",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a1acb6-f2f6-7a33-a9a4-7851f902441c"
+        },
+        {
+          "pane": "fx-0bf3e2a2",
+          "tool": "opencode",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "ses_e5348cfd9ffeHSm9BuspEgQSoR"
+        },
+        {
+          "pane": "fx-8b59c2c6",
+          "tool": "copilot",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "a08b1c28-a67a-404e-821b-3b00f5fcccd0"
+        },
+        {
+          "pane": "fx-fefc3056",
+          "tool": "antigravity",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "e7cbef3a-238a-4a20-ae51-e7135591ad87"
+        }
+      ],
+      "mismatch": 3,
+      "recent_total": 0
+    },
+    {
+      "phase": "P2 每款 1 个会话等待审批",
+      "at": "01:18:58",
+      "rows": [
+        {
+          "pane": "fx-de540849",
+          "tool": "claude",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "c0e55416-3461-4b05-b7bf-b2856c732eff"
+        },
+        {
+          "pane": "fx-041c5cf9",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "waiting",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-af3a3d6f",
+          "tool": "kimi",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "session_71b20e40-6d72-49ca-a855-320b9a939643"
+        },
+        {
+          "pane": "fx-6260a31b",
+          "tool": "grok",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "01a1acb6-e8c7-7a33-a4ba-508603552b9c"
+        },
+        {
+          "pane": "fx-95e73e08",
+          "tool": "opencode",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "ses_e5348f101ffeK1BQOzLukA7SQu"
+        },
+        {
+          "pane": "fx-f37ad6b5",
+          "tool": "copilot",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "5f5fbbea-8a97-410c-b771-33848d59e439"
+        },
+        {
+          "pane": "fx-03367237",
+          "tool": "antigravity",
+          "state": "waiting",
+          "want": "waiting",
+          "ok": true,
+          "unseen": false,
+          "session": "fee6b59c-44cd-46c8-99c5-aa9eb7a165db"
+        },
+        {
+          "pane": "fx-bc84454d",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "2920e0f6-f762-4f37-a06b-a11d9728cdf9"
+        },
+        {
+          "pane": "fx-a190a495",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "ready",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-77db0d49",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_80a54f8b-347a-4b8e-9a54-111370fb5b0d"
+        },
+        {
+          "pane": "fx-d75cfae0",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a1acb6-eddc-7ea1-9ec3-fb02575b0653"
+        },
+        {
+          "pane": "fx-0576715c",
+          "tool": "opencode",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "ses_e5348e06fffesLoG7BbhSil8qJ"
+        },
+        {
+          "pane": "fx-c4ec0591",
+          "tool": "copilot",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "2dbf2719-aba7-4f20-a4f0-9d25c2f9165d"
+        },
+        {
+          "pane": "fx-90dff4cb",
+          "tool": "antigravity",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "7ba9bfb1-f8af-41e1-b051-7e17452f85fb"
+        },
+        {
+          "pane": "fx-f788dc62",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "f3377e6b-c8b7-4513-80fe-f018cec0acc9"
+        },
+        {
+          "pane": "fx-bfbe760a",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "ready",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-ba1450ec",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_4eca9157-cf15-40ce-8e14-da9e4c88dc6a"
+        },
+        {
+          "pane": "fx-0819955c",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a1acb6-f2f6-7a33-a9a4-7851f902441c"
+        },
+        {
+          "pane": "fx-0bf3e2a2",
+          "tool": "opencode",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "ses_e5348cfd9ffeHSm9BuspEgQSoR"
+        },
+        {
+          "pane": "fx-8b59c2c6",
+          "tool": "copilot",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "a08b1c28-a67a-404e-821b-3b00f5fcccd0"
+        },
+        {
+          "pane": "fx-fefc3056",
+          "tool": "antigravity",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "e7cbef3a-238a-4a20-ae51-e7135591ad87"
+        }
+      ],
+      "mismatch": 3,
+      "recent_total": 0
+    },
+    {
+      "phase": "P3 拒绝审批后",
+      "at": "01:19:11",
+      "rows": [
+        {
+          "pane": "fx-de540849",
+          "tool": "claude",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "c0e55416-3461-4b05-b7bf-b2856c732eff"
+        },
+        {
+          "pane": "fx-041c5cf9",
+          "tool": "codex",
+          "state": "unknown",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-af3a3d6f",
+          "tool": "kimi",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": true,
+          "session": "session_71b20e40-6d72-49ca-a855-320b9a939643"
+        },
+        {
+          "pane": "fx-6260a31b",
+          "tool": "grok",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "01a1acb6-e8c7-7a33-a4ba-508603552b9c"
+        },
+        {
+          "pane": "fx-95e73e08",
+          "tool": "opencode",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "ses_e5348f101ffeK1BQOzLukA7SQu"
+        },
+        {
+          "pane": "fx-f37ad6b5",
+          "tool": "copilot",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "5f5fbbea-8a97-410c-b771-33848d59e439"
+        },
+        {
+          "pane": "fx-03367237",
+          "tool": "antigravity",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "fee6b59c-44cd-46c8-99c5-aa9eb7a165db"
+        },
+        {
+          "pane": "fx-bc84454d",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "2920e0f6-f762-4f37-a06b-a11d9728cdf9"
+        },
+        {
+          "pane": "fx-a190a495",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "ready",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-77db0d49",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_80a54f8b-347a-4b8e-9a54-111370fb5b0d"
+        },
+        {
+          "pane": "fx-d75cfae0",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a1acb6-eddc-7ea1-9ec3-fb02575b0653"
+        },
+        {
+          "pane": "fx-0576715c",
+          "tool": "opencode",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "ses_e5348e06fffesLoG7BbhSil8qJ"
+        },
+        {
+          "pane": "fx-c4ec0591",
+          "tool": "copilot",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "2dbf2719-aba7-4f20-a4f0-9d25c2f9165d"
+        },
+        {
+          "pane": "fx-90dff4cb",
+          "tool": "antigravity",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "7ba9bfb1-f8af-41e1-b051-7e17452f85fb"
+        },
+        {
+          "pane": "fx-f788dc62",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "f3377e6b-c8b7-4513-80fe-f018cec0acc9"
+        },
+        {
+          "pane": "fx-bfbe760a",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "ready",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-ba1450ec",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_4eca9157-cf15-40ce-8e14-da9e4c88dc6a"
+        },
+        {
+          "pane": "fx-0819955c",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a1acb6-f2f6-7a33-a9a4-7851f902441c"
+        },
+        {
+          "pane": "fx-0bf3e2a2",
+          "tool": "opencode",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "ses_e5348cfd9ffeHSm9BuspEgQSoR"
+        },
+        {
+          "pane": "fx-8b59c2c6",
+          "tool": "copilot",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "a08b1c28-a67a-404e-821b-3b00f5fcccd0"
+        },
+        {
+          "pane": "fx-fefc3056",
+          "tool": "antigravity",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "e7cbef3a-238a-4a20-ae51-e7135591ad87"
+        }
+      ],
+      "mismatch": 3,
+      "recent_total": 0
+    },
+    {
+      "phase": "P4 修复后新开的 Codex 提问",
+      "at": "01:19:53",
+      "rows": [
+        {
+          "pane": "fx-d435e8c9",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "ready",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        }
+      ],
+      "mismatch": 1,
+      "recent_total": 0
+    },
+    {
+      "phase": "P5 每款 1 个会话退出",
+      "at": "01:20:21",
+      "rows": [
+        {
+          "pane": "fx-de540849",
+          "tool": "claude",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "c0e55416-3461-4b05-b7bf-b2856c732eff"
+        },
+        {
+          "pane": "fx-041c5cf9",
+          "tool": "codex",
+          "state": "unknown",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-af3a3d6f",
+          "tool": "kimi",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": true,
+          "session": "session_71b20e40-6d72-49ca-a855-320b9a939643"
+        },
+        {
+          "pane": "fx-6260a31b",
+          "tool": "grok",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "01a1acb6-e8c7-7a33-a4ba-508603552b9c"
+        },
+        {
+          "pane": "fx-95e73e08",
+          "tool": "opencode",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "ses_e5348f101ffeK1BQOzLukA7SQu"
+        },
+        {
+          "pane": "fx-f37ad6b5",
+          "tool": "copilot",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "5f5fbbea-8a97-410c-b771-33848d59e439"
+        },
+        {
+          "pane": "fx-03367237",
+          "tool": "antigravity",
+          "state": "ready",
+          "want": [
+            "error",
+            "ready"
+          ],
+          "ok": true,
+          "unseen": false,
+          "session": "fee6b59c-44cd-46c8-99c5-aa9eb7a165db"
+        },
+        {
+          "pane": "fx-bc84454d",
+          "tool": "claude",
+          "state": "ended",
+          "want": "ended",
+          "ok": true,
+          "unseen": true,
+          "session": "2920e0f6-f762-4f37-a06b-a11d9728cdf9"
+        },
+        {
+          "pane": "fx-a190a495",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "ended",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-77db0d49",
+          "tool": "kimi",
+          "state": "ended",
+          "want": "ended",
+          "ok": true,
+          "unseen": true,
+          "session": "session_80a54f8b-347a-4b8e-9a54-111370fb5b0d"
+        },
+        {
+          "pane": "fx-d75cfae0",
+          "tool": "grok",
+          "state": "ended",
+          "want": "ended",
+          "ok": true,
+          "unseen": true,
+          "session": "01a1acb6-eddc-7ea1-9ec3-fb02575b0653"
+        },
+        {
+          "pane": "fx-0576715c",
+          "tool": "opencode",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "ses_e5348e06fffesLoG7BbhSil8qJ"
+        },
+        {
+          "pane": "fx-c4ec0591",
+          "tool": "copilot",
+          "state": "ended",
+          "want": "ended",
+          "ok": true,
+          "unseen": true,
+          "session": "2dbf2719-aba7-4f20-a4f0-9d25c2f9165d"
+        },
+        {
+          "pane": "fx-90dff4cb",
+          "tool": "antigravity",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "7ba9bfb1-f8af-41e1-b051-7e17452f85fb"
+        },
+        {
+          "pane": "fx-f788dc62",
+          "tool": "claude",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "f3377e6b-c8b7-4513-80fe-f018cec0acc9"
+        },
+        {
+          "pane": "fx-bfbe760a",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "ready",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        },
+        {
+          "pane": "fx-ba1450ec",
+          "tool": "kimi",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "session_4eca9157-cf15-40ce-8e14-da9e4c88dc6a"
+        },
+        {
+          "pane": "fx-0819955c",
+          "tool": "grok",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "01a1acb6-f2f6-7a33-a9a4-7851f902441c"
+        },
+        {
+          "pane": "fx-0bf3e2a2",
+          "tool": "opencode",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "ses_e5348cfd9ffeHSm9BuspEgQSoR"
+        },
+        {
+          "pane": "fx-8b59c2c6",
+          "tool": "copilot",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "a08b1c28-a67a-404e-821b-3b00f5fcccd0"
+        },
+        {
+          "pane": "fx-fefc3056",
+          "tool": "antigravity",
+          "state": "ready",
+          "want": "ready",
+          "ok": true,
+          "unseen": true,
+          "session": "e7cbef3a-238a-4a20-ae51-e7135591ad87"
+        },
+        {
+          "pane": "fx-d435e8c9",
+          "tool": "codex",
+          "state": "unknown",
+          "want": "ready",
+          "ok": false,
+          "unseen": false,
+          "session": null
+        }
+      ],
+      "mismatch": 4,
+      "recent_total": 4
+    }
+  ],
+  "hooks": {
+    "after_delete": {
+      "claude": "ok",
+      "codex": "missing",
+      "kimi": "missing",
+      "grok": "ok",
+      "opencode": "ok",
+      "copilot": "ok",
+      "antigravity": "missing"
+    },
+    "repair_tools": [
+      "codex",
+      "kimi",
+      "antigravity"
+    ],
+    "repair_ok": true,
+    "after_repair": {
+      "claude": "ok",
+      "codex": "untrusted",
+      "kimi": "ok",
+      "grok": "ok",
+      "opencode": "ok",
+      "copilot": "ok",
+      "antigravity": "ok"
+    }
+  },
+  "restarts": [],
+  "finished": "2026-11-06 01:20:43"
+}

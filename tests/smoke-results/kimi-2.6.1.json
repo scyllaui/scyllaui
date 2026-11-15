@@ -1,0 +1,37 @@
+{
+  "tool": "kimi",
+  "version": "2.6.1",
+  "date": "2026-11-14",
+  "runs": [
+    {
+      "cmd": "kimi -p 只回复 OK …",
+      "exit": 0,
+      "seconds": 4.4,
+      "stdout_tail": "• OK",
+      "stderr_tail": "（真实 HOME 运行，不记原文，119 字符）"
+    },
+    {
+      "cmd": "kimi -r session_f4158f87-2b55-4e9e-8e7a-b27b3023240f …",
+      "exit": 0,
+      "seconds": 3.1,
+      "stdout_tail": "• OK",
+      "stderr_tail": "（真实 HOME 运行，不记原文，136 字符）"
+    }
+  ],
+  "checks": {
+    "hooks_installed": true,
+    "frames": 6,
+    "missing_events": [],
+    "unknown_events": [],
+    "sessions": [
+      "session_f4158f87-2b55-4e9e-8e7a-b27b3023240f"
+    ],
+    "resume_keeps_id": true,
+    "preassigned_id_used": true,
+    "env_report_ok": true,
+    "turn_ended_records": 2
+  },
+  "hooks_install_exit": 0,
+  "ok": true,
+  "sample": "tests/hook-samples/kimi-2.6.1-smoke.jsonl"
+}

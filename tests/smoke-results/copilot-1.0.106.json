@@ -1,0 +1,36 @@
+{
+  "tool": "copilot",
+  "version": "1.0.106",
+  "date": "2026-11-06",
+  "runs": [
+    {
+      "cmd": "copilot -p 只回复 OK …",
+      "exit": 0,
+      "seconds": 15.9,
+      "stdout_tail": "● Copilot Fusion selected MAI-Code-1.1-Flash because it was the best choice out of the models\n   available in your plan.\n\nOK",
+      "stderr_tail": "（真实 HOME 运行，不记原文，142 字符）"
+    },
+    {
+      "cmd": "copilot -p 再回复一次 OK …",
+      "exit": 0,
+      "seconds": 16.0,
+      "stdout_tail": "OK",
+      "stderr_tail": "（真实 HOME 运行，不记原文，143 字符）"
+    }
+  ],
+  "checks": {
+    "hooks_installed": true,
+    "frames": 8,
+    "missing_events": [],
+    "unknown_events": [],
+    "sessions": [
+      "14d4cfbd-a213-4f30-9058-9691e15e5c7a"
+    ],
+    "resume_keeps_id": true,
+    "preassigned_id_used": true,
+    "env_report_ok": true
+  },
+  "hooks_install_exit": 0,
+  "ok": true,
+  "sample": "tests/hook-samples/copilot-1.0.106-smoke.jsonl"
+}

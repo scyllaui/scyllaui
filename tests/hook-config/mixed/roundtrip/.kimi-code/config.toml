@@ -1,0 +1,8 @@
+default_model = "kimi-test"
+
+[models.kimi-test]
+provider = "fixture"
+api_key = "fixture-not-a-secret"
+[[hooks]]
+event = "Stop"
+command = "say kimi done"

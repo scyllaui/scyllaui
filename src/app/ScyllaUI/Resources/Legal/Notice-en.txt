@@ -1,0 +1,65 @@
+ScyllaUI Notice
+
+Version: 2026-11-15
+Copyright holder: Siyuan Zhang (张思远)
+Contact: support@thinkfarlabs.com
+
+ScyllaUI is open-source software. This notice explains how it is licensed and points out a few things you should know when using it. It is not a separate agreement, and it does not add any restriction beyond the open-source license; the rights you have under that license are governed by the license itself.
+
+This English version is a translation. If it differs from the Chinese version, the Chinese version prevails.
+
+
+1. Open-source license
+
+ScyllaUI is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+- Full license text: Settings › About › Open-Source License… in the app, or the LICENSE file at the root of the source code.
+- Source code: https://github.com/scyllaui/scyllaui
+- You do not need to accept any agreement to use ScyllaUI. Using, copying and modifying it for yourself is not subject to the GPL's conditions; they apply only when you provide ScyllaUI, or a modified version of it, to others.
+
+
+2. No warranty
+
+ScyllaUI is distributed in the hope that it will be useful, but, to the extent permitted by applicable law, WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. To the extent permitted by applicable law, neither the copyright holders nor anyone who modifies or distributes the software is liable for damages arising out of the use or inability to use the software. Sections 15, 16 and 17 of the GPL govern.
+
+Rights that the laws of your country or region give you as a consumer and that cannot be excluded by agreement are not affected.
+
+
+3. Third-party CLIs and AI services
+
+ScyllaUI is a terminal and status panel; it does not itself provide any AI service. The AI coding tools you run in its terminals (such as Claude Code, Codex, Kimi Code, Grok Build, OpenCode, GitHub Copilot CLI and Antigravity CLI, "Third-Party CLIs") and the AI services they connect to are provided by their respective providers under their own terms; accounts, fees and quotas are between you and those providers.
+
+ScyllaUI is not part of any Third-Party CLI and is not affiliated with or endorsed by their developers. Third-party names and marks shown in ScyllaUI only identify the corresponding tools, and the trademarks belong to their respective owners.
+
+
+4. You decide what Agents do
+
+- Commands that the AI in a Third-Party CLI ("Agent") runs in the terminal, files it modifies or deletes, network requests it makes and any resulting costs are decided by, and are the responsibility of, you and the relevant Third-Party CLI.
+- Statuses, notifications, quotas, prompts and reply summaries shown by ScyllaUI come from information provided by Third-Party CLIs. They may be delayed, incomplete or inaccurate, are for reference only, and should not be your only basis for judging whether an Agent is acting safely.
+- Approval requests are issued by the Third-Party CLI and decided by you personally; ScyllaUI never approves any action on your behalf.
+- We recommend using version control and regular backups for important code and data.
+
+
+5. Changes to your system
+
+To sync Agent status and show usage, ScyllaUI writes its own entries into the configuration files of Third-Party CLIs: status sync (hooks) lists the changes in the app and is written only after you confirm; the Claude Code statusline bridge is written only when you run its install command yourself (you can run the command that shows the changes first). The original files are always backed up before writing, and you can undo the changes at any time. Apart from this, ScyllaUI does not modify the configuration of Third-Party CLIs.
+
+
+6. Privacy
+
+How ScyllaUI handles data is described in the ScyllaUI Privacy and Data Notice (Settings › About › Privacy Notice…). ScyllaUI does not collect or upload your usage data.
+
+
+7. Name and logo
+
+ScyllaUI's source code is licensed under the GPL. The app icon, the splash artwork, the ">_ ScyllaUI" wordmark, the tool icons drawn for ScyllaUI and other original artwork are not covered by the GPL; all rights in them are reserved by the copyright holder, and they may not be copied, modified, distributed or used to create derivative works without permission. ARTWORK.md in the source repository lists them. As permitted by Section 7(e) of the GPL, the GPL does not grant trademark rights in the name "ScyllaUI" or its logo. You may modify and distribute ScyllaUI's source code under the GPL; when you do, you must remove this artwork and replace it with your own, and when you distribute a modified version, please use a name and logo that will not lead people to mistake it for an official ScyllaUI release. Truthfully stating that your work is "based on ScyllaUI" is not restricted.
+
+
+8. Third-party components
+
+ScyllaUI includes third-party components provided under their own open-source licenses; the list and full license texts are in Settings › About › Third-Party Notices…. Those components are governed by their own licenses.
+
+
+9. Other
+
+This notice is available in Chinese and English; if they differ, the Chinese version prevails. If you have any questions, please email support@thinkfarlabs.com.

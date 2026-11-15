@@ -1,0 +1,11 @@
+[package]
+name = "scyllaui-proto"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+# hookcfg：备份文件名的本地时间（localtime_r）与 CommonCrypto 的 SHA-256 声明用到的 C 类型
+libc.workspace = true
