@@ -26,7 +26,9 @@ pub fn events(tool: Tool) -> &'static [&'static str] {
                           "Notification", "Stop", "StopFailure", "SessionEnd"],
         Tool::Codex => &["SessionStart", "UserPromptSubmit", "PermissionRequest", "PostToolUse",
                          "Stop", "Interrupt", "SessionEnd"],
-        Tool::Kimi => &["SessionStart", "UserPromptSubmit", "TurnStarted", "PermissionRequest", "PermissionResult",
+        // 不装 TurnStarted：Kimi 改设置时的严格校验（node-sdk `HookDefSchema`）不认它，装上后 `/login`、`/logout` 报
+        // `config.invalid`（2026-11-15 新用户验收，2.5.3、2.6.1 实测；上游 MoonshotAI/kimi-code#4962）。见 KIMI_STRICT_EVENTS。
+        Tool::Kimi => &["SessionStart", "UserPromptSubmit", "PermissionRequest", "PermissionResult",
                         "PostToolUse", "Notification", "Stop", "StopFailure", "Interrupt", "SessionEnd"],
         Tool::Grok => &["SessionStart", "UserPromptSubmit", "PostToolUse", "Notification",
                         "Stop", "StopFailure", "StopCancelled", "SessionEnd"],
@@ -1695,6 +1697,40 @@ mod tests {
         // 撤销后与原文一致。
         let s = snap(Tool::Kimi, Some(&text), None);
         assert_eq!(after(&s, &plan(&s, Action::Uninstall).unwrap().unwrap()).main.unwrap().unwrap().trim_end(), user.trim_end());
+    }
+
+    /// Kimi 改设置时（登录写入托管配置、`/logout`）按这份清单严格校验 `[[hooks]].event`，不在其中的整份配置被拒，
+    /// 而运行时与 `kimi doctor` 照常接受（2.6.1 包内 node-sdk `HOOK_EVENT_TYPES`；2026-11-15 新用户验收发现，
+    /// 上游 MoonshotAI/kimi-code#4962）。本机已装版本的实时核对见 `src/scripts/cli-hook-schema-check.py`。
+    const KIMI_STRICT_EVENTS: [&str; 16] = [
+        "PreToolUse", "PostToolUse", "PostToolUseFailure", "PermissionRequest", "PermissionResult", "UserPromptSubmit",
+        "Stop", "StopFailure", "Interrupt", "SessionStart", "SessionEnd", "SubagentStart", "SubagentStop",
+        "PreCompact", "PostCompact", "Notification",
+    ];
+
+    #[test]
+    fn kimi_events_pass_kimi_strict_schema() {
+        for ev in events(Tool::Kimi) {
+            assert!(KIMI_STRICT_EVENTS.contains(ev), "{ev} 不在 Kimi 改设置时的事件清单里，装上后 /login 会失败");
+        }
+    }
+
+    #[test]
+    fn kimi_block_with_turn_started_is_outdated_and_repairable() {
+        // 0.4.48 及更早写入的块多一条 TurnStarted：判为需要更新，修复后不再有它。
+        let fresh = kimi_block_text();
+        let old = fresh.replacen(
+            "event = \"PermissionRequest\"",
+            &format!("event = \"TurnStarted\"\ncommand = '{}'\ntimeout = 2\n\n[[hooks]]\nevent = \"PermissionRequest\"", command(Tool::Kimi)),
+            1,
+        );
+        assert!(old.contains("TurnStarted"));
+        let s = snap(Tool::Kimi, Some(&old), None);
+        let st = analyze(&s);
+        assert_eq!((st.state, st.problems), (State::Missing, vec!["outdated:block".to_owned()]));
+        let fixed = after(&s, &plan(&s, Action::Repair).unwrap().unwrap());
+        assert_eq!(analyze(&fixed).state, State::Ok);
+        assert!(!fixed.main.unwrap().unwrap().contains("TurnStarted"));
     }
 
     #[test]

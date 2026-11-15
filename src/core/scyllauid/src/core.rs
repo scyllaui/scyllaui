@@ -208,6 +208,9 @@ struct Repo {
 
 /// Agent 进程退出后等 SessionEnd 的宽限时间；超时仍未收到，按进程退出结束对话（docs/protocol.md 第 7 节）。
 const EXIT_GRACE: Duration = Duration::from_secs(1);
+/// 终端还开着时对话结束了，后台再活这么久才确认是正常结束（缺陷 B，docs/design.md「重启恢复」）：真实关机时 Agent
+/// 先于后台被结束，后台随后几秒内消失，来不及确认，重建时据此接回这段对话。
+const ENDED_CONFIRM: Duration = Duration::from_secs(30);
 /// 换版本交出状态之前，把已经收到的命令处理完：这么久没有新的为止，最多等这么久。
 /// 每个终端另开监听的子代理记录的个数上限。
 const CHILD_RECORDS_MAX: usize = 8;
@@ -256,6 +259,8 @@ struct Pane {
     watched: Option<(i32, Tool)>,
     /// Agent 进程已退出，到这个时间仍未收到 SessionEnd 就按进程退出处理。
     exit_deadline: Option<(Instant, Tool)>,
+    /// 待确认的结束（`workspace.json` 的 `ended`）到这个时间后台还活着就清掉：这次结束不是关机造成的。只在内存中。
+    ended_until: Option<Instant>,
     /// 「待查看」：一轮结束时用户没在看这个终端（docs/protocol.md 第 7 节）。只在内存中。
     unseen: bool,
     /// 最近一次 `terminal.cwd` 上报的当前目录。只在内存中。
@@ -304,6 +309,7 @@ impl Pane {
             foreground: Foreground::Unknown,
             watched: None,
             exit_deadline: None,
+            ended_until: None,
             unseen: false,
             current_dir: None,
             conflict: Vec::new(),
@@ -368,9 +374,10 @@ pub struct Core {
     real_config_guard: bool,
     /// 正在待审批的终端 → 这次等待；每个终端的等待序号（M2 第 1 块）。
     waits: HashMap<String, Wait>,
-    /// 正在监听会话记录的终端（waitwatch.rs）：待审批，或适配器声明了 `scan_while_running` 时的运行中。
+    /// 正在监听会话记录的终端（waitwatch.rs）：待审批，适配器声明了 `scan_while_running` 时的运行中，声明了
+    /// `turns_by_record` 时会话还在的整段时间。
     watching: HashMap<String, WatchKey>,
-    /// 其中监听线程确认已打开记录的（适配器声明 `turn_end_by_record` 的工具据此决定要不要按 Hook 结束一轮）。
+    /// 其中监听线程确认已打开记录的（适配器声明 `turns_by_record` 的工具据此决定要不要按 Hook 结束一轮）。
     watch_open: HashSet<String>,
     wait_seq: HashMap<String, u64>,
     /// 已发完成通知的终端 → 通知 ID；每个终端的完成序号（M4a，docs/protocol.md 第 7 节「完成通知」）。
@@ -526,7 +533,7 @@ impl Core {
             let next = self
                 .panes
                 .values()
-                .flat_map(|p| [p.exit_deadline.map(|(t, _)| t), p.fg_followup])
+                .flat_map(|p| [p.exit_deadline.map(|(t, _)| t), p.fg_followup, p.ended_until])
                 .flatten()
                 .min();
             let cmd = match next {
@@ -543,6 +550,7 @@ impl Core {
             }
             self.expire_exits(Instant::now());
             self.expire_followups(Instant::now());
+            self.expire_ended(Instant::now());
         }
     }
 
@@ -905,7 +913,11 @@ impl Core {
 
     /// 一个要恢复的终端：断电前的当前目录（没有记录时为启动目录）、启动目录、名称与当时绑定的未结束对话。
     fn restorable(&self, id: &str, row: &Value) -> Result<Value, Fail> {
-        let conversation = self.store.open_conversation_on(id)?.map(|c| c.0);
+        // 没有未结束的对话、但有待确认的结束：上一个后台在确认期内就没了，这段对话是关机时被结束的（缺陷 B）。
+        let conversation = match self.store.open_conversation_on(id)?.map(|c| c.0) {
+            Some(c) => Some(c),
+            None => self.workspace.ended(id).inspect(|c| log!("终端 {id} 在关机时结束的对话 {c}，交给 App 恢复")),
+        };
         let dir = self.workspace.get(id).map(str::to_owned).or_else(|| row["cwd"].as_str().map(str::to_owned));
         Ok(json!({"terminal_id": id, "dir": dir, "cwd": row["cwd"], "name": row["name"],
                   "conversation_id": conversation, "created_at": row["created_at"],
@@ -1341,9 +1353,11 @@ impl Core {
     /// （2026-10-25 实测误判，把恢复命令又打进了正在运行的 Codex）。结束这段对话，请 App 按设置在同一终端代输恢复命令
     /// （docs/design.md 10.5 节决策 21）。App 已订阅推送即推，否则随下一次 `sync` 的快照交出。
     fn respawned_with_conversation(&mut self, id: &str) -> Result<(), Fail> {
-        // 原来前台的 AI 已随旧后台结束，记录随之清除（M4b 块 5 P2）。
+        // 原来前台的 AI 已随旧后台结束，记录随之清除（M4b 块 5 P2）。待确认的结束也清掉：后台崩溃时 Agent 随后才死、
+        // 对话仍未结束，走下面未结束对话的路径；之前已结束的那段是用户自己退出的，不接回。
         let agent = self.workspace.agent(id).map(str::to_owned);
         self.workspace.set_agent(id, None);
+        self.workspace.set_ended(id, None);
         let Some((cid, ..)) = self.store.open_conversation_on(id)? else {
             // 没有可恢复的对话、但前台原来在跑某款 AI（多半状态同步没生效）：也告诉 App，由它说明没能接回的原因
             // （M4b 块 5 P2，docs/design.md 10.6 节）。
@@ -1847,7 +1861,12 @@ impl Core {
         // 轮次结束以会话记录为准的工具（Kimi，docs/design.md 3.1 节）：记录的监听已打开时，Hook 报的一轮结束、出错、
         // 中断只记录、不改状态（它们分不出主代理与子代理），等记录里的。
         let mut ev = ev;
-        if adapter(tool).turn_end_by_record
+        // 提交不带轮次号的（Kimi）：以收到提交的时刻（毫秒）作这一轮的标识。会话记录监听按它重开，补读时只认这一刻之后
+        // 写下的那次提问的结束（`WaitScan::replayed`）。
+        if adapter(tool).turns_by_record && ev.kind == Kind::PromptSubmit && ev.prompt_id.is_none() {
+            ev.prompt_id = Some((recv_us / 1000).to_string());
+        }
+        if adapter(tool).turns_by_record
             && self.watch_open.contains(tid)
             && matches!(ev.kind, Kind::TurnEnd | Kind::TurnFail | Kind::TurnInterrupt)
         {
@@ -1938,6 +1957,18 @@ impl Core {
         if let Some(pane) = self.panes.get_mut(tid) {
             pane.conversation = recorded.conversation;
         }
+        // 待确认的结束（缺陷 B）：SessionEnd 在这个终端上结束了对话（改绑到别的终端的不算）记下；这个终端随后又有了
+        // 别的对话的动静，之前那条作废。
+        match (ev.kind, recorded.conversation) {
+            (Kind::SessionEnd, Some(cid)) if keep_on.is_none() => self.note_ended(tid, cid, Instant::now()),
+            (_, Some(cid)) if self.workspace.ended(tid).is_some_and(|e| e != cid) => {
+                if let Some(p) = self.panes.get_mut(tid) {
+                    p.ended_until = None;
+                }
+                self.workspace.set_ended(tid, None);
+            }
+            _ => {}
+        }
         if let Some(cid) = recorded.conversation {
             self.request_title(tool, cid, ev.kind);
             if let Some(model) = ev.model.clone().filter(|_| ev.kind != Kind::SessionEnd) {
@@ -2003,14 +2034,18 @@ impl Core {
             (AgentState::Running, Kind::PermissionWait) if while_running => "PermissionAsked",
             (AgentState::Running | AgentState::Waiting, Kind::TurnEnd) if while_running => "ExecutionDone",
             (AgentState::Running | AgentState::Waiting, Kind::TurnFail) if while_running => "ExecutionFailed",
+            // 记录里新开了一轮而窗格已回到 Ready 或出错（Kimi：一轮刚结束时插话、排队消息另开一轮，不发提交 Hook）。
+            (AgentState::Ready | AgentState::Error, Kind::PromptSubmit) if adapter(tool).turns_by_record => "ExecutionStarted",
             _ => return,
         };
         log!("会话记录：{name} terminal={tid} tool={}", tool.as_str());
+        // 记录里新开的一轮同样以此刻作轮次标识（同提交 Hook，见 hook()）。
+        let prompt_id = (kind == Kind::PromptSubmit).then(|| now_ms().to_string());
         let ev = HookEvent {
             kind,
             name: name.to_owned(),
             session_id,
-            prompt_id: None,
+            prompt_id,
             notification_type: None,
             title: None,
             transcript_path: None,
@@ -2210,7 +2245,8 @@ impl Core {
     }
 
     /// 会话记录监听的对账：适配器声明了 `waiting_scan` 的工具在待审批时监听，声明了 `scan_while_running` 的在运行中也
-    /// 监听；状态离开这两种即停止。记录路径优先用适配器按会话 ID 推出的位置（在 `cli_home` 下），其次用 Hook 给出的。
+    /// 监听，声明了 `turns_by_record` 的在 Ready、出错时也监听；状态离开这些即停止。记录路径优先用适配器按会话 ID
+    /// 推出的位置（在 `cli_home` 下），其次用 Hook 给出的。
     fn refresh_watches(&mut self) {
         use crate::waitwatch::{Source, Start};
         use scyllaui_proto::adapters::RecordLookup;
@@ -2244,7 +2280,9 @@ impl Core {
                     want.insert(job.key.clone(), (key, job));
                 }
             }
-            let active = waiting || (p.state.state == AgentState::Running && a.scan_while_running);
+            // 轮次以记录为准的工具（Kimi）会话还在就一直看：一轮刚结束时 CLI 可能不发提交 Hook 就另开一轮。
+            let alive = matches!(p.state.state, AgentState::Ready | AgentState::Running | AgentState::Error);
+            let active = waiting || (p.state.state == AgentState::Running && a.scan_while_running) || (alive && a.turns_by_record);
             if !active {
                 continue;
             }
@@ -2288,7 +2326,7 @@ impl Core {
             }
             let Some(source) = source else { continue };
             // 轮次结束以记录为准的工具按轮次重开监听：补读要按新的轮次核对。
-            let turn = a.turn_end_by_record.then(|| p.state.turn().map(str::to_owned)).flatten();
+            let turn = a.turns_by_record.then(|| p.state.turn().map(str::to_owned)).flatten();
             let key = WatchKey { session: p.state.session_id.clone(), turn: turn.clone() };
             let job = Start {
                 key: id.clone(),
@@ -2557,10 +2595,25 @@ impl Core {
             return;
         };
         log!("Shell 退出：terminal={id} pid={pid} exit={code:?}");
-        if let Err(Fail(_, e)) = self.close_terminal(&id, "exit", code.map(i64::from), now_ms()) {
+        self.shell_gone(&id, code);
+        self.host.end(&id, code);
+    }
+
+    /// Shell 没了之后终端的去向。用户自己 `exit` 时 login 不传退出码，总是 0；被信号结束为 128 + 信号。
+    /// App 不在时被信号结束（真实关机、注销时系统几乎同时结束各 Shell 与后台，谁先谁后不定）：不当作用户关闭，
+    /// 终端留在库里、目录与待确认的结束留在 workspace，只丢掉内存里的窗格；后台随后也没了，下次按「随后台丢失」
+    /// 恢复，后台还在，App 下次同步时按「保活终端没有 PTY」恢复（docs/design.md「重启恢复」）。其余照常关闭。
+    fn shell_gone(&mut self, id: &str, code: Option<i32>) {
+        if self.app.is_none() && code.is_some_and(|c| c > 128) {
+            log!("终端 {id} 的 Shell 在 App 不在时被信号结束，留待恢复");
+            self.panes.remove(id);
+            self.wait_seq.remove(id);
+            self.cpu_prev.remove(id);
+            return;
+        }
+        if let Err(Fail(_, e)) = self.close_terminal(id, "exit", code.map(i64::from), now_ms()) {
             log!("关闭终端失败：{e}");
         }
-        self.host.end(&id, code);
     }
 
     /// 被监听的 Agent 进程退出：前台改为未知（等 App 重新上报），开始等 SessionEnd 的宽限。
@@ -2615,7 +2668,11 @@ impl Core {
                     let other = session.and_then(|s| self.bound_runners(*tool, &s, Some(id)).into_iter().next());
                     let changed = match other {
                         Some(o) => self.store.set_conversation_terminal(cid, &o)?,
-                        None => self.store.end_conversation(cid, "process_exit", now_ms())?,
+                        None => {
+                            let ended = self.store.end_conversation(cid, "process_exit", now_ms())?;
+                            self.note_ended(id, cid, now);
+                            ended
+                        }
                     };
                     if changed {
                         self.push_conversation(cid)?;
@@ -2631,6 +2688,32 @@ impl Core {
             self.refresh_conflicts();
             self.refresh_waits();
             self.refresh_dones();
+        }
+    }
+
+    /// 终端还开着时对话结束了（进程退出、SessionEnd）：记为待确认的结束，后台活过 `ENDED_CONFIRM` 再清掉。
+    fn note_ended(&mut self, id: &str, cid: i64, now: Instant) {
+        if let Some(p) = self.panes.get_mut(id) {
+            p.ended_until = Some(now + ENDED_CONFIRM);
+            self.workspace.set_ended(id, Some(cid));
+        }
+    }
+
+    /// 待确认的结束到期：后台还活着，这次结束是正常的，不再作为重启后接回的依据。
+    fn expire_ended(&mut self, now: Instant) {
+        let due: Vec<String> = self
+            .panes
+            .iter_mut()
+            .filter_map(|(id, p)| match p.ended_until {
+                Some(t) if t <= now => {
+                    p.ended_until = None;
+                    Some(id.clone())
+                }
+                _ => None,
+            })
+            .collect();
+        for id in due {
+            self.workspace.set_ended(&id, None);
         }
     }
 
@@ -3495,6 +3578,13 @@ mod tests {
             let frame = json!({"type":"hook","source":source,"dropped":dropped,"pane_id":terminal,
                 "hook_t0_us": 1, "payload": payload});
             self.core.handle(Cmd::Hook { frame, recv_us: 2 });
+        }
+
+        /// 指定后台收到的时刻（微秒）：Kimi 以收到提交的时刻作轮次标识。
+        fn hook_at(&mut self, terminal: &str, source: &str, payload: &Value, recv_us: u64) {
+            let frame = json!({"type":"hook","source":source,"dropped":false,"pane_id":terminal,
+                "hook_t0_us": 1, "payload": payload});
+            self.core.handle(Cmd::Hook { frame, recv_us });
         }
 
         /// 等到符合条件的后台命令并返回（不处理）；其余命令照常交给核心。
@@ -4726,7 +4816,8 @@ mod tests {
             b.hook("t1", "kimi", p);
         };
         kimi(&mut b, "SessionStart", json!({}));
-        kimi(&mut b, "TurnStarted", json!({"turn_id": 2, "origin_kind": "user", "prompt": "跑测试"}));
+        let ask = json!({"hook_event_name": "UserPromptSubmit", "session_id": "session_k1", "cwd": "/w", "prompt": [{"type": "text", "text": "跑测试"}]});
+        b.hook_at("t1", "kimi", &ask, 1_794_668_002_000_000);
         kimi(&mut b, "PermissionRequest", json!({"id": "approval_1", "agent_id": "agent-0", "turn_id": 0}));
         assert_eq!(b.core.panes["t1"].state.state, AgentState::Waiting);
         let fg = || Foreground::Agent { pid: me, path: "/x/kimi".into(), tool: Tool::Kimi };
@@ -4762,7 +4853,7 @@ mod tests {
         b.core.panes.get_mut("t1").unwrap().foreground = fg();
         b.core.restore_agent("t1", &saved);
         assert_eq!(b.core.panes["t1"].state.state, AgentState::Waiting);
-        assert_eq!(b.core.panes["t1"].state.turn(), Some("2"));
+        assert_eq!(b.core.panes["t1"].state.turn(), Some("1794668002000"));
         assert!(b.core.panes["t1"].resync, "下一次监听会话记录按对账处理");
         drain(&rx);
         // 还原后不重发通知；子代理的审批处理完回到等待之前的状态。
@@ -4774,7 +4865,8 @@ mod tests {
     }
 
     /// Kimi 的轮次结束以会话记录为准（2026-11-14，docs/design.md 3.1 节）：监听确认已打开时，Stop、StopFailure、
-    /// Interrupt 这几个 Hook 不改状态（分不出主、子代理），等记录里带轮次号的结束；上一轮的记录不算。监听没打开时照 Hook。
+    /// Interrupt 这几个 Hook 不改状态（分不出主、子代理），等记录里的结束；上一轮的记录不算。监听没打开时照 Hook。
+    /// 轮次标识是后台收到提交的时刻（2026-11-15 起不装 TurnStarted）。
     #[test]
     fn kimi_turn_end_comes_from_session_record() {
         let mut b = bench("kimi-record");
@@ -4791,49 +4883,72 @@ mod tests {
         let opened = |b: &mut Bench, ok: bool| {
             b.core.handle(Cmd::WatchOpened { key: "t1".into(), session_id: Some("session_k1".into()), ok })
         };
+        // 用户提问：后台在第 ms 毫秒收到，轮次标识就是它。
+        let ask = |b: &mut Bench, ms: u64, text: &str| {
+            let p = json!({"hook_event_name": "UserPromptSubmit", "session_id": "session_k1", "cwd": "/w", "is_steer": false,
+                           "prompt": [{"type": "text", "text": text}]});
+            b.hook_at("t1", "kimi", &p, ms * 1000);
+        };
         kimi(&mut b, "SessionStart", json!({}));
-        kimi(&mut b, "UserPromptSubmit", json!({"prompt": "跑测试"}));
-        kimi(&mut b, "TurnStarted", json!({"turn_id": 3, "origin_kind": "user", "prompt": "跑测试"}));
+        ask(&mut b, 1_794_668_003_000, "跑测试");
         assert_eq!(state(&b), AgentState::Running);
-        assert_eq!(b.core.watching["t1"].turn.as_deref(), Some("3"), "运行中监听，按轮次");
+        assert_eq!(b.core.watching["t1"].turn.as_deref(), Some("1794668003000"), "运行中监听，按收到提问的时刻");
         // 监听还没确认打开：照 Hook 处理（2.5.x 及以前有 Stop）。
         kimi(&mut b, "Stop", json!({"stop_hook_active": false}));
         assert_eq!(state(&b), AgentState::Ready);
-        kimi(&mut b, "TurnStarted", json!({"turn_id": 4, "origin_kind": "user", "prompt": "再跑"}));
-        assert_eq!(b.core.watching["t1"].turn.as_deref(), Some("4"), "轮次变了重开监听");
+        ask(&mut b, 1_794_668_004_000, "再跑");
+        assert_eq!(b.core.watching["t1"].turn.as_deref(), Some("1794668004000"), "又问了一次，重开监听");
         assert!(!b.core.watch_open.contains("t1"));
         opened(&mut b, true);
         assert!(b.core.watch_open.contains("t1"));
         drain(&rx);
-        // 子代理收到任务时的 TurnStarted（轮次号是子代理自己的）不改主会话的当前轮次，监听不重开。
+        // 还没修复的旧配置发来的 TurnStarted（含子代理收到任务时的）：认得但不改状态，监听不重开。
         kimi(&mut b, "TurnStarted", json!({"turn_id": 0, "origin_kind": "system_trigger", "origin_name": "subagent", "prompt": "<git-context>"}));
-        assert_eq!(b.core.watching["t1"].turn.as_deref(), Some("4"));
+        assert_eq!(b.core.watching["t1"].turn.as_deref(), Some("1794668004000"));
         assert!(b.core.watch_open.contains("t1"));
+        assert_eq!(state(&b), AgentState::Running);
         // 监听已打开：子代理的 Stop、StopFailure、Interrupt（载荷与主代理的分不出）不改状态。
         kimi(&mut b, "Stop", json!({"stop_hook_active": false}));
         kimi(&mut b, "StopFailure", json!({"error_type": "x"}));
         kimi(&mut b, "Interrupt", json!({"turn_id": 0, "reason": "cancelled"}));
         assert_eq!(state(&b), AgentState::Running);
-        rec(&mut b, Kind::TurnEnd, "3");
-        assert_eq!(state(&b), AgentState::Running, "上一轮的结束记录不算");
-        rec(&mut b, Kind::TurnEnd, "4");
+        rec(&mut b, Kind::TurnEnd, "1794668003000");
+        assert_eq!(state(&b), AgentState::Running, "上一轮监听晚到的结束不算");
+        rec(&mut b, Kind::TurnEnd, "1794668004000");
         assert_eq!(state(&b), AgentState::Ready);
-        assert!(!b.core.watching.contains_key("t1") && !b.core.watch_open.contains("t1"), "回到 Ready 停止监听");
+        assert!(b.core.watching.contains_key("t1"), "回到 Ready 仍监听（记录里可能另开一轮）");
         assert_eq!(b.count("SELECT count(*) FROM event WHERE kind = 'ExecutionDone'"), 1);
         // 出错、取消。
-        kimi(&mut b, "TurnStarted", json!({"turn_id": 5, "origin_kind": "user", "prompt": "三"}));
+        ask(&mut b, 1_794_668_005_000, "三");
         opened(&mut b, true);
-        rec(&mut b, Kind::TurnFail, "5");
+        rec(&mut b, Kind::TurnFail, "1794668005000");
         assert_eq!(state(&b), AgentState::Error);
-        kimi(&mut b, "TurnStarted", json!({"turn_id": 6, "origin_kind": "user", "prompt": "四"}));
+        ask(&mut b, 1_794_668_006_000, "四");
         opened(&mut b, true);
-        rec(&mut b, Kind::TurnInterrupt, "6");
+        rec(&mut b, Kind::TurnInterrupt, "1794668006000");
         assert_eq!(state(&b), AgentState::Ready);
         // 记录打不开：按 Hook。
-        kimi(&mut b, "TurnStarted", json!({"turn_id": 7, "origin_kind": "user", "prompt": "五"}));
+        ask(&mut b, 1_794_668_007_000, "五");
         opened(&mut b, false);
         kimi(&mut b, "Interrupt", json!({"turn_id": 7, "reason": "cancelled"}));
         assert_eq!(state(&b), AgentState::Ready);
+        // 提示词取自内容块（侧栏副标题、提示词足迹用）。
+        assert_eq!(b.count("SELECT count(*) FROM conversation WHERE native_id = 'session_k1' AND last_prompt = '五'"), 1);
+        // 一轮刚结束时的插话另开一轮、不发提交 Hook（2026-11-15 实测）：记录里新开的一轮让 Ready 回到运行中，
+        // 以此刻作新的轮次标识，监听按它重开；这一轮的结束照常从记录认出。
+        assert!(b.core.watching.contains_key("t1"), "Ready 时也在监听");
+        opened(&mut b, true);
+        rec(&mut b, Kind::PromptSubmit, "1794668007000");
+        assert_eq!(state(&b), AgentState::Running);
+        let turn = b.core.panes["t1"].state.turn().unwrap().to_owned();
+        assert_ne!(turn, "1794668007000");
+        assert_eq!(b.core.watching["t1"].turn.as_deref(), Some(turn.as_str()));
+        rec(&mut b, Kind::PromptSubmit, &turn);
+        assert_eq!(state(&b), AgentState::Running, "运行中再读到开始不重复处理");
+        opened(&mut b, true);
+        rec(&mut b, Kind::TurnEnd, &turn);
+        assert_eq!(state(&b), AgentState::Ready);
+        assert_eq!(b.count("SELECT count(*) FROM event WHERE kind = 'ExecutionStarted'"), 1);
     }
 
     /// 用量（M2 第 2 块）：Hook 带来的模型与会话记录读到的模型都推送 `usage.upsert`，相同不重复推送；快照带未结束对话的用量；
@@ -4940,6 +5055,79 @@ mod tests {
         assert_eq!(b.core.workspace.get("t1"), None, "关闭后不再记目录");
         let (r, _) = b.req(app, &rx, json!({"type": "sync", "terminals": []}));
         assert!(r["snapshot"]["restorable"].is_null(), "只交一次");
+    }
+
+    /// 缺陷 B（2026-11-15，macOS 14.6.1 虚拟机真实重启）：关机时 Agent 先于后台被结束，后台照常把对话记为结束，重启后
+    /// 没有未结束的对话可接。终端还开着时结束的对话记为待确认，后台活过确认期才清掉；丢失终端时还在的据此交回。
+    #[test]
+    fn conversation_ended_just_before_shutdown_is_handed_back() {
+        let mut b = bench("shutdown-ended");
+        let (app, rx, _) = b.app(&["t1", "t2", "t3"]);
+        let kimi = |b: &mut Bench, t: &str, ev: &str, sid: &str| b.hook(t, "kimi", json!({"hook_event_name": ev, "session_id": sid}));
+        // t2：SessionEnd 结束了对话，后台活过确认期 → 正常结束，清掉。
+        kimi(&mut b, "t2", "SessionStart", "session_b");
+        kimi(&mut b, "t2", "SessionEnd", "session_b");
+        assert!(b.core.workspace.ended("t2").is_some(), "SessionEnd 结束的记为待确认");
+        b.core.expire_ended(Instant::now() + ENDED_CONFIRM + Duration::from_secs(1));
+        assert_eq!(b.core.workspace.ended("t2"), None);
+        // t3：结束后这个终端又开了新对话 → 之前那条作废。
+        kimi(&mut b, "t3", "SessionStart", "session_c");
+        kimi(&mut b, "t3", "SessionEnd", "session_c");
+        kimi(&mut b, "t3", "SessionStart", "session_d");
+        assert_eq!(b.core.workspace.ended("t3"), None, "有了新对话，之前的结束作废");
+        // t1：Agent 进程退出，宽限期满按进程退出结束；确认期内后台就丢了（关机）→ 交回这段对话。
+        kimi(&mut b, "t1", "SessionStart", "session_a");
+        let a = b.core.panes["t1"].conversation.unwrap();
+        let t0 = Instant::now();
+        b.core.panes.get_mut("t1").unwrap().exit_deadline = Some((t0, Tool::Kimi));
+        b.core.expire_exits(t0);
+        assert!(b.core.store.open_conversation_on("t1").unwrap().is_none(), "对话已按进程退出结束");
+        assert_eq!(b.core.workspace.ended("t1"), Some(a));
+        let (r, _) = b.req(app, &rx, json!({"type": "sync", "terminals": []}));
+        let lost = r["snapshot"]["restorable"].as_array().expect("应交回丢失的终端").clone();
+        let conv = |t: &str| lost.iter().find(|x| x["terminal_id"] == t).map(|x| x["conversation_id"].as_i64());
+        assert_eq!(conv("t1"), Some(Some(a)), "关机时结束的对话交回");
+        assert_eq!(conv("t2"), Some(None), "确认期满的正常结束不交回");
+        assert_eq!(b.core.workspace.ended("t1"), None, "终端关闭后一起清掉");
+    }
+
+    /// 2026-11-16（虚拟机第二次真实重启丢了一个终端）：关机时 Shell 与后台几乎同时被结束，Shell 先被处理就当成了
+    /// 用户关闭。App 不在时被信号结束（128 + 信号）的留待恢复；App 在时、或退出码不是信号（用户 exit 总是 0）照常关闭。
+    #[test]
+    fn shell_killed_while_app_away_is_kept_for_restore() {
+        let mut b = bench("shell-killed");
+        let held = |ids: &[&str]| -> Value {
+            json!({"type": "sync", "terminals": ids.iter()
+                .map(|t| json!({"terminal_id": t, "project_dir": "/w/p/", "cwd": "/w/p", "held": true}))
+                .collect::<Vec<_>>()})
+        };
+        let (app, rx, _) = b.app(&[]);
+        for t in ["t1", "t2", "t3"] {
+            let (r, _) = b.req(app, &rx, json!({"type": "terminal.open", "terminal_id": t, "project_dir": "/w/p/", "cwd": "/w/p", "held": true}));
+            assert_eq!(r["ok"], true, "{r}");
+        }
+        b.hook("t1", "claude", json!({"hook_event_name": "SessionStart", "session_id": "s1", "transcript_path": "/t/s1"}));
+        let cid = b.core.panes["t1"].conversation.unwrap();
+        let (r, _) = b.req(app, &rx, json!({"type": "terminal.cwd", "terminal_id": "t1", "cwd": "/w/p/src"}));
+        assert_eq!(r["ok"], true, "{r}");
+        let alive = |b: &Bench, t: &str| b.core.store.terminal(t).unwrap().is_some_and(|r| r["status"] == "alive");
+        // t3：App 在时被信号结束 → 照常关闭。
+        b.core.shell_gone("t3", Some(143));
+        assert!(!alive(&b, "t3"), "App 在时照常关闭");
+        // App 断开（测试台没有真的 PTY，drop_conn 会把这几个终端当非保活关掉，这里只摘掉 App）。
+        b.core.app = None;
+        // t1：App 不在时被 SIGTERM 结束 → 留着；t2：退出码 0（用户 exit）→ 关闭。
+        b.core.shell_gone("t1", Some(143));
+        b.core.shell_gone("t2", Some(0));
+        assert!(alive(&b, "t1"), "App 不在时被信号结束的留待恢复");
+        assert_eq!(b.core.workspace.get("t1"), Some("/w/p/src"), "目录留着");
+        assert!(!alive(&b, "t2"), "退出码 0 照常关闭");
+        // 后台还在、App 回来：按「保活终端没有 PTY」交回，带上对话。
+        let (app, rx, _) = b.connect("app", PROTOCOL_VERSION);
+        let (r, _) = b.req(app, &rx, held(&["t1"]));
+        let lost = r["snapshot"]["restorable"].as_array().expect("应交回 t1").clone();
+        assert_eq!(lost.len(), 1, "{lost:?}");
+        assert_eq!((lost[0]["terminal_id"].as_str(), lost[0]["conversation_id"].as_i64()), (Some("t1"), Some(cid)));
     }
 
     /// 后台崩溃重启后在原终端重起 Shell（决策 21）：绑着的未结束对话被结束，App 已订阅即推 `terminal.respawned`，

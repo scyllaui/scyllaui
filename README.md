@@ -79,7 +79,7 @@ Codex normally runs in daemon mode: the `codex` command connects to one shared b
 - Click a terminal row in the sidebar, or use `Cmd+1…9` and `Cmd+Shift+[` / `]`.
 - Double-click the first line of a terminal row to rename it.
 - `Cmd+W` closes the current terminal; if a program is still running in it, ScyllaUI asks first.
-- `Cmd+Q` or closing the window only quits ScyllaUI; no terminal ends, and reopening reattaches them. To stop the background process as well, quit ScyllaUI, then right-click its Dock icon and choose "Stop Running in Background"; all terminals end with it.
+- `Cmd+Q` or closing the window only quits ScyllaUI; no terminal ends, and reopening reattaches them. To stop the background process as well, quit ScyllaUI, then on macOS 27 or later right-click its Dock icon and choose "Stop Running in Background"; on earlier versions run `/Applications/ScyllaUI.app/Contents/Helpers/scyllaui ctl shutdown --force` in a terminal. All terminals end with it.
 
 #### Recent tasks
 
@@ -110,9 +110,9 @@ More details are in the [user guide](docs/usage.md) (Chinese).
 ### Uninstalling
 
 1. In Settings › Agent, click "Remove…" for each tool to delete the entries ScyllaUI added to its configuration.
-2. Let the agents finish (or `exit` them), quit ScyllaUI, then right-click its Dock icon and choose "Stop Running in Background".
+2. Let the agents finish (or `exit` them) and quit ScyllaUI. Then stop the background process: on macOS 27 or later, right-click its Dock icon and choose "Stop Running in Background"; on earlier versions, run `/Applications/ScyllaUI.app/Contents/Helpers/scyllaui ctl shutdown --force` in a terminal.
 3. Move ScyllaUI from Applications to the Trash.
-4. If you no longer need the history and settings, delete `~/Library/Application Support/ScyllaUI/` and `~/Library/Logs/ScyllaUI/`, and run `defaults delete dev.scyllaui.app` in a terminal.
+4. If you no longer need the history and settings, delete `~/Library/Application Support/ScyllaUI/`, `~/Library/Logs/ScyllaUI/`, `~/Library/Caches/ScyllaUI/`, `~/Library/Caches/dev.scyllaui.app/`, `~/Library/Caches/dev.scyllaui.app.sparkle/` and `~/Library/HTTPStorages/dev.scyllaui.app/`. Then run `defaults delete dev.scyllaui.app` in a terminal and delete `~/Library/Preferences/dev.scyllaui.app.plist` (the command empties the settings but leaves the file).
 
 ### License
 
@@ -201,7 +201,7 @@ Codex 默认以守护进程模式运行：`codex` 命令会连上一个共享的
 - 点侧栏的终端行切换，或用 `Cmd+1…9`、`Cmd+Shift+[` / `]`。
 - 双击终端行的第一行可以改名。
 - `Cmd+W` 关闭当前终端，里面还有程序在运行时会先确认。
-- `Cmd+Q` 或关窗口只是退出 ScyllaUI，不结束任何终端；再次打开即接回。要连后台一起结束，退出后在程序坞右键 ScyllaUI 选「Stop Running in Background」，所有终端会随之结束。
+- `Cmd+Q` 或关窗口只是退出 ScyllaUI，不结束任何终端；再次打开即接回。要连后台一起结束，先退出 ScyllaUI：macOS 27 及以后在程序坞右键 ScyllaUI 选「Stop Running in Background」，更早的系统在终端里运行 `/Applications/ScyllaUI.app/Contents/Helpers/scyllaui ctl shutdown --force`。所有终端会随之结束。
 
 #### 最近任务
 
@@ -232,9 +232,9 @@ Codex 默认以守护进程模式运行：`codex` 命令会连上一个共享的
 ### 卸载
 
 1. 在「设置 › Agent」里逐款点「撤销…」，删掉 ScyllaUI 写进各款 AI 工具配置里的条目。
-2. 结束终端与后台：让各 Agent 答完或在终端里 `exit`，退出 ScyllaUI，再在程序坞右键 ScyllaUI 选「Stop Running in Background」。
+2. 结束终端与后台：让各 Agent 答完或在终端里 `exit`，退出 ScyllaUI；再结束后台：macOS 27 及以后在程序坞右键 ScyllaUI 选「Stop Running in Background」，更早的系统在终端里运行 `/Applications/ScyllaUI.app/Contents/Helpers/scyllaui ctl shutdown --force`。
 3. 把「应用程序」里的 ScyllaUI 移到废纸篓。
-4. 如果也不再需要历史记录与设置，删除 `~/Library/Application Support/ScyllaUI/`、`~/Library/Logs/ScyllaUI/`，并在终端里运行 `defaults delete dev.scyllaui.app`。
+4. 如果也不再需要历史记录与设置，删除 `~/Library/Application Support/ScyllaUI/`、`~/Library/Logs/ScyllaUI/`、`~/Library/Caches/ScyllaUI/`、`~/Library/Caches/dev.scyllaui.app/`、`~/Library/Caches/dev.scyllaui.app.sparkle/`、`~/Library/HTTPStorages/dev.scyllaui.app/`；再在终端里运行 `defaults delete dev.scyllaui.app`，并删除 `~/Library/Preferences/dev.scyllaui.app.plist`（这条命令只清空设置，文件本身还在）。
 
 ### 许可
 

@@ -766,13 +766,13 @@ mod tests {
             )
         };
         p.apply(Tool::Kimi, &k("SessionStart"));
-        p.apply(Tool::Kimi, &k("TurnStarted"));
+        p.apply(Tool::Kimi, &k("UserPromptSubmit"));
+        assert_eq!(p.state, AgentState::Running);
         assert_eq!(
             p.apply(Tool::Kimi, &k("PermissionRequest")),
             Applied::Changed
         );
         assert_eq!(p.state, AgentState::Waiting);
-        assert_eq!(k("TurnStarted").prompt_id.as_deref(), Some("1"));
         p.apply(Tool::Kimi, &k("PermissionResult"));
         p.apply(Tool::Kimi, &k("Stop"));
         assert_eq!(

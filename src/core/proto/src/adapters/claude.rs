@@ -30,7 +30,7 @@ pub static ADAPTER: Adapter = Adapter {
     scan_while_running: false,
     session_record: None,
     record_lookup: None,
-    turn_end_by_record: false,
+    turns_by_record: false,
     pid_status: Some((".claude/sessions", super::waiting::claude_status)),
     child_records: false,
     record_from_approval: false,
@@ -60,11 +60,9 @@ pub static ADAPTER: Adapter = Adapter {
         title_placeholder: None,
         prompt: &["prompt"],
         subagent_empty: None,
-        subagent_when: None,
         // 两种都是 Claude 自己排队投递的消息（transcript 里为 `queued_command` 附件，用户输入的那条带 `origin.kind: human`）：
         // 子代理交回结果 2026-11-05 实测会触发 UserPromptSubmit；后台任务完成通知同一机制，尚未实测到触发，一并排除。
         injected_prompt: &["<agent-message from=\"", "<task-notification>"],
-        prompt_origin: None,
         approval_id: &[],
         approval_command: &[],
     },

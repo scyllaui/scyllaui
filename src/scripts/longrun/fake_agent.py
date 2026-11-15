@@ -24,7 +24,7 @@ OUT = ROOT / "output/longrun"
 GAP = tuple(float(x) for x in os.environ.get("SCYLLAUI_FAKE_GAP", "120,300").split(","))
 
 # 每款：开场事件（None 表示没有，第一轮的提交即开始）、每轮事件（按顺序，样本里有的才发）、结束事件、会话字段。
-FIRST_FOUR = ("SessionStart", ("UserPromptSubmit", "TurnStarted", "Stop"), "SessionEnd", ("session_id", "sessionId"))
+FIRST_FOUR = ("SessionStart", ("UserPromptSubmit", "Stop"), "SessionEnd", ("session_id", "sessionId"))
 TOOLS = {
     "claude": FIRST_FOUR,
     "codex": FIRST_FOUR,

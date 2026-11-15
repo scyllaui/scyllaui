@@ -19,8 +19,8 @@ enum ScyllaUIStyle {
     static let branch = dynamic(light: 0xc15f3c, dark: 0xd97757)
     static let branchBg = NSColor(name: nil) { isDark($0) ? rgb(0xd97757, alpha: 0.15) : rgb(0xc15f3c, alpha: 0.12) }
     // 工具识别色（1.4 节 ScyllaUI 约定，2026-10-18 用户确认）：只给工具图标着色，按工具键查表；不在表里的（Shell 等）不着色。
-    // Kimi 用自绘新月（开口朝左上、凹处三颗四角星，月亮黄深浅各一版，见资源 tool-kimi；docs/design.md 10.6 节 D12），
-    // 按原色显示，不在表里。Claude 用自绘墨迹（D12，2026-10-30 用户选定方案 D），深浅外观都是 #d97757。
+    // Kimi 用自绘蓝色横长方块加相对的 > < 眼睛（眼睛与外观反差：浅色外观深色眼、深色外观白眼，见资源 tool-kimi；
+    // docs/design.md 10.6 节 D12），按原色显示，不在表里。Claude 用自绘墨迹（D12，2026-10-30 用户选定方案 D），深浅外观都是 #d97757。
     // Antigravity 用彩色像素「A」（D13，2026-10-30 用户改定，资源 tool-antigravity），按原色显示，不在表里。
     // Codex 用紫色圆润色块加 >_（D12，2026-11-02 用户给定，深色外观白 >_、浅色外观黑 >_，资源 tool-codex），按原色显示，不在表里。
     // Grok 用 xAI 官方标志，原样引用、不着识别色（2026-11-15 用户决定），与 OpenCode、Copilot 一样跟随文字色，不在表里。

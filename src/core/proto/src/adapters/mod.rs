@@ -71,9 +71,10 @@ pub struct Adapter {
     pub session_record: Option<fn(&str) -> String>,
     /// 会话记录的位置拼不出来、要另查时怎么查（监听会话记录用，在监听线程里查）；`session_record` 优先。
     pub record_lookup: Option<RecordLookup>,
-    /// 轮次结束以会话记录为准（Kimi，docs/design.md 3.1 节）：会话记录的监听确认已打开时，Hook 报的一轮结束、
-    /// 出错、中断不改状态，等记录里的。记录定位不到或打不开时照 Hook 处理。
-    pub turn_end_by_record: bool,
+    /// 轮次的开始与结束以会话记录为准（Kimi，docs/design.md 3.1 节）：会话还在时一直监听记录，记录里新开的一轮
+    /// 也算开始（Kimi 的插话、排队消息有时另开一轮而不发提交 Hook）；监听确认已打开时，Hook 报的一轮结束、出错、
+    /// 中断不改状态，等记录里的。记录定位不到或打不开时照 Hook 处理。提交 Hook 不带轮次号时以后台收到的时刻作标识。
+    pub turns_by_record: bool,
     /// CLI 进程自己的状态文件（Claude，待审批期间监听）：`<家目录>/<目录>/<前台 AI 的进程号>.json`，整份交给判定函数。
     pub pid_status: Option<(&'static str, waiting::LineScan)>,
     /// 子代理有自己的会话记录、它的等待只写在那里（Antigravity：子代理自己的对话库）：核心从子代理的 Hook 得到它的
@@ -213,19 +214,14 @@ struct Fields {
     end_keeps_error: bool,
     /// 以此开头的标题是 CLI 生成标题之前的占位，不算标题（OpenCode：`New session - <时间>`，2026-10-29 实测 1.19.5）。
     title_placeholder: Option<&'static str>,
-    /// 提交的提示词；六款为 `prompt`，Antigravity 为每个事件都带的 `lastUserInput`。
+    /// 提交的提示词；六款为 `prompt`，Antigravity 为每个事件都带的 `lastUserInput`。值可以是字符串，也可以是内容块
+    /// 数组（Kimi：`[{"type":"text","text":…}]`），后者取各文字块拼接。
     prompt: &'static [&'static str],
     /// 这个字段存在且为空字符串时算子代理（Antigravity：子代理的事件 `lastUserInput` 为空，2026-11-01 实测 1.4.12）。
     subagent_empty: Option<&'static str>,
-    /// 这个字段取这个值的事件来自子代理（Kimi 子代理收到任务时的 TurnStarted：`origin_name` 为 `subagent`，不带
-    /// `agent_id`、轮次号是子代理自己的；2026-11-14 实机发现它把主会话的当前轮次改掉，主代理的结束记录就对不上号）。
-    subagent_when: Option<(&'static str, &'static str)>,
     /// 以此开头的提交内容是 CLI 自己投递的，不是用户输入的提示词：事件照常改状态，但不记为提示词、不当标题
     /// （Claude：子代理交回结果时以 `<agent-message from="…">` 开头的排队消息也触发 UserPromptSubmit，2026-11-05 实测 2.1.318）。
     injected_prompt: &'static [&'static str],
-    /// （字段, 用户输入时的取值）：载荷带这个字段且取值不同，这次提交是 CLI 自己发起的，处理同 `injected_prompt`
-    /// （Kimi：子代理收到任务时也发 TurnStarted，`origin_kind` 为 `system_trigger`）。不带这个字段的事件照常算用户输入。
-    prompt_origin: Option<(&'static str, &'static str)>,
     /// 一次审批的 ID：「需确认」与「审批已处理」按它配对，同一子代理同时有几个审批时不提前离开（Kimi `id`；
     /// OpenCode 2 `permission.asked` 的 `id` 与 `permission.replied` 的 `requestID`，提问为 `id`）。没有的为空。
     approval_id: &'static [&'static str],
@@ -332,9 +328,7 @@ impl Adapter {
         let kind = (self.map_event)(&name, notification_type.as_deref()).unwrap_or(Kind::Other);
         let session_id = str_field(payload, f.session);
         let marker = f.subagent.iter().find_map(|k| payload.get(*k).filter(|v| !v.is_null() && *v != "main"));
-        let subagent = marker.is_some()
-            || f.subagent_empty.is_some_and(|k| payload.get(k).and_then(Value::as_str) == Some(""))
-            || f.subagent_when.is_some_and(|(k, v)| payload.get(k).and_then(Value::as_str) == Some(v));
+        let subagent = marker.is_some() || f.subagent_empty.is_some_and(|k| payload.get(k).and_then(Value::as_str) == Some(""));
         Some(HookEvent {
             turn_scoped: f.turn_scoped_end && kind == Kind::TurnEnd,
             keeps_error: f.end_keeps_error && kind == Kind::TurnEnd,
@@ -346,10 +340,9 @@ impl Adapter {
             cwd: str_field(payload, f.cwd),
             model: str_field(payload, f.model),
             prompt: (kind == Kind::PromptSubmit)
-                .then(|| str_field(payload, f.prompt))
+                .then(|| str_field(payload, f.prompt).or_else(|| text_parts(payload, f.prompt)))
                 .flatten()
-                .filter(|p| !f.injected_prompt.iter().any(|x| p.starts_with(x)))
-                .filter(|_| f.prompt_origin.is_none_or(|(k, v)| payload.get(k).and_then(Value::as_str).is_none_or(|o| o == v))),
+                .filter(|p| !f.injected_prompt.iter().any(|x| p.starts_with(x))),
             // 区分各个子代理（记还在等的审批用）：标记字段的取值（Kimi、Claude 的 `agent_id`，Copilot 的 `agentId`）；
             // 标记不是字符串（OpenCode 插件的 `scyllaui_subagent: true`）或按空字段认出的（Antigravity）用它自己的会话 ID。
             agent_key: subagent
@@ -406,6 +399,21 @@ fn str_field(p: &Value, keys: &[&str]) -> Option<String> {
             Value::Number(n) => Some(n.to_string()),
             Value::Bool(b) => Some(b.to_string()),
             _ => None,
+        })
+        .filter(|s| !s.is_empty())
+}
+
+/// 内容块数组里的文字（`[{"type":"text","text":…}, …]`，图片等其他块不算），多块之间换行拼接；没有文字为 None。
+fn text_parts(p: &Value, keys: &[&str]) -> Option<String> {
+    keys.iter()
+        .find_map(|k| p.get(*k)?.as_array())
+        .map(|parts| {
+            parts
+                .iter()
+                .filter(|b| b["type"] == "text")
+                .filter_map(|b| b["text"].as_str())
+                .collect::<Vec<_>>()
+                .join("\n")
         })
         .filter(|s| !s.is_empty())
 }
@@ -601,13 +609,15 @@ mod tests {
     #[test]
     fn maps_native_events_to_unified_kinds() {
         let k = |t: Tool, v: Value| adapter(t).normalize(&v).unwrap();
+        // Kimi 的提交：`prompt` 是内容块数组（2.6.1 冒烟样本），取文字块；不带轮次号（由后台按收到的时刻补）。
         let kimi = k(
             Tool::Kimi,
-            json!({"hook_event_name":"TurnStarted","session_id":"s","prompt":"修 bug","turn_id":2}),
+            json!({"hook_event_name":"UserPromptSubmit","session_id":"s","is_steer":false,
+                   "prompt":[{"type":"text","text":"修 bug"},{"type":"image_url","image_url":{"url":"x"}},{"type":"text","text":"再看下"}]}),
         );
         assert_eq!(
             (kimi.kind, kimi.prompt.as_deref(), kimi.prompt_id.as_deref()),
-            (Kind::PromptSubmit, Some("修 bug"), Some("2"))
+            (Kind::PromptSubmit, Some("修 bug\n再看下"), None)
         );
         assert_eq!(
             k(
@@ -664,22 +674,14 @@ mod tests {
         assert_eq!((a.kind, a.prompt), (Kind::PromptSubmit, None));
         assert_eq!(injected("<task-notification>\n<task-id>b1</task-id>").prompt, None);
         assert_eq!(injected("介绍一下 <agent-message> 这个标记").prompt.as_deref(), Some("介绍一下 <agent-message> 这个标记"));
-        // 回归（2026-11-13 长跑缺陷 B）：Kimi 2.5.2 子代理收到任务时也发 TurnStarted，不带 `agent_id`，`origin_kind` 为
-        // `system_trigger`，正文是 Kimi 加的 `<git-context>…`，侧栏副标题曾显示它。载荷按会话记录 `agents/agent-0/wire.jsonl`
-        // 的 turn.prompt 与 Kimi 的 Hook 字段（TurnStarted 的 turnId、originKind、originName、prompt）重建。
-        let turn = |origin: Option<&str>, prompt: &str| {
-            let mut v = json!({"hook_event_name":"TurnStarted","session_id":"session_k","turn_id":0,"prompt":prompt});
-            if let Some(o) = origin {
-                v["origin_kind"] = json!(o);
-                v["origin_name"] = json!(if o == "user" { "user" } else { "subagent" });
-            }
-            k(Tool::Kimi, v)
-        };
-        let sub = turn(Some("system_trigger"), "<git-context>\nWorking directory: /w\nBranch: main\n</git-context>\n\nTask: …");
-        assert_eq!((sub.kind, sub.prompt, sub.subagent), (Kind::PromptSubmit, None, true), "子代理的轮次开始算子代理事件");
-        assert_eq!(turn(Some("system_trigger"), "Re-check the current directory").prompt, None, "续派的任务没有 <git-context>");
-        assert_eq!(turn(Some("user"), "只回复 OK").prompt.as_deref(), Some("只回复 OK"));
-        assert_eq!(turn(None, "只回复 OK").prompt.as_deref(), Some("只回复 OK"), "UserPromptSubmit 不带 origin_kind");
+        // 0.4.48 及更早装的配置（还没修复）仍会发 TurnStarted：不再认作提交，不改状态，也不记提示词（2026-11-13 长跑
+        // 缺陷 B 中子代理收到任务时发的 TurnStarted 同样落在这里）。
+        let old = k(
+            Tool::Kimi,
+            json!({"hook_event_name":"TurnStarted","session_id":"session_k","turn_id":0,"origin_kind":"system_trigger",
+                   "origin_name":"subagent","prompt":"<git-context>\nWorking directory: /w\n</git-context>\n\nTask: …"}),
+        );
+        assert_eq!((old.kind, old.prompt), (Kind::Other, None));
         let other = k(
             Tool::Claude,
             json!({"hook_event_name":"PreCompact","session_id":"s"}),

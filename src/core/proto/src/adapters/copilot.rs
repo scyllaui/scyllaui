@@ -21,7 +21,7 @@ pub static ADAPTER: Adapter = Adapter {
     scan_while_running: true,
     session_record: Some(|id| format!(".copilot/session-state/{id}/events.jsonl")),
     record_lookup: None,
-    turn_end_by_record: false,
+    turns_by_record: false,
     pid_status: None,
     child_records: false,
     record_from_approval: false,
@@ -48,11 +48,9 @@ pub static ADAPTER: Adapter = Adapter {
         title_placeholder: None,
         prompt: &["prompt"],
         subagent_empty: None,
-        subagent_when: None,
         // 后台子代理结束时 Copilot 以 `<system_notification>` 包着的通知再发一次 userPromptSubmitted（2026-11-13 长跑，
         // 1.0.105 会话记录 `events.jsonl` 的 hook.start 记下了这份载荷）。
         injected_prompt: &["<system_notification>"],
-        prompt_origin: None,
         approval_id: &[],
         approval_command: &[],
     },

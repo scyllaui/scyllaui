@@ -86,7 +86,8 @@ pub struct Start {
     pub session_id: Option<String>,
     pub source: Source,
     pub scan: Scan,
-    /// 窗格当前的轮次：补读到的轮次结束只在与它相同时才算。
+    /// 窗格当前的轮次标识（Kimi 为收到提问的时刻）：补读按它判断记录里的结束是不是这一轮的，认出的事件也带着它交给
+    /// 核心核对。
     pub turn: Option<String>,
     /// 窗格此刻在待审批。
     pub waiting: bool,
@@ -215,6 +216,7 @@ fn open(kq: RawFd, job: &Start) -> Option<(Entry, Option<Kind>)> {
     let mut state = WaitScan::default();
     state.session = job.session_id.clone();
     state.sub = job.sub;
+    state.turn = job.turn.clone();
     let (watch, first) = match job.scan {
         Scan::Lines(f) => {
             state.replay = true;
@@ -312,19 +314,24 @@ fn run(kq: RawFd, rx: Receiver<WaitJob>, core: Sender<Cmd>) {
         let gone = ev.fflags & (libc::NOTE_DELETE | libc::NOTE_RENAME) != 0;
         let Some(tid) = owner.get(&fd).cloned() else { continue };
         let Some(e) = entries.get_mut(&tid) else { continue };
-        let kind = match &mut e.watch {
+        let kinds: Vec<Kind> = match &mut e.watch {
             Watch::Lines { files, scan } => {
                 let main = files.first().map(|f| f.fd);
-                let kind = files.iter_mut().find(|f| f.fd == fd).and_then(|f| {
+                // 一次写入可能有几件事（Kimi：一轮开始与结束、上一轮结束与另开的一轮），读完再按顺序报告；只报第一件
+                // 的话，后面的要等下一次写入才读到，CLI 不再写就一直停在那里（2026-11-15）。
+                let mut kinds = Vec::new();
+                if let Some(f) = files.iter_mut().find(|f| f.fd == fd) {
                     e.state.sub = f.sub;
-                    read_new(f.fd, &mut f.offset, &mut f.partial, *scan, &mut e.state)
-                });
+                    while let Some(kind) = read_new(f.fd, &mut f.offset, &mut f.partial, *scan, &mut e.state) {
+                        kinds.push(kind);
+                    }
+                }
                 // 主记录没了才停；一起监听的其他记录没了不管。
-                if kind.is_none() && gone && main == Some(fd) {
+                if kinds.is_empty() && gone && main == Some(fd) {
                     remove(&mut entries, &mut owner, &tid);
                     continue;
                 }
-                kind
+                kinds
             }
             Watch::Whole { fd, scan } => {
                 // 原地改写时可能读到半截：解析不了就等下一次写入。进程退出时文件被删，停止监听。
@@ -333,14 +340,18 @@ fn run(kq: RawFd, rx: Receiver<WaitJob>, core: Sender<Cmd>) {
                     remove(&mut entries, &mut owner, &tid);
                     continue;
                 }
-                kind
+                kind.into_iter().collect()
             }
             Watch::Db { .. } => {
                 sync_db(kq, &tid, e, fd, gone, &mut owner);
-                judge_db(e)
+                judge_db(e).into_iter().collect()
             }
         };
-        if let Some(kind) = kind {
+        for kind in kinds {
+            // 报告了一轮结束而停止的监听，余下的不再报。
+            if !entries.contains_key(&tid) {
+                break;
+            }
             if !report(&core, &mut entries, &mut owner, &tid, kind) {
                 return;
             }
@@ -352,7 +363,7 @@ fn run(kq: RawFd, rx: Receiver<WaitJob>, core: Sender<Cmd>) {
 /// 当前这一轮，不在这里停，由核心线程叫停。核心线程已退出时返回 false。
 fn report(core: &Sender<Cmd>, entries: &mut HashMap<String, Entry>, owner: &mut HashMap<RawFd, String>, tid: &str, kind: Kind) -> bool {
     let Some(e) = entries.get_mut(tid) else { return true };
-    let (terminal_id, session_id, turn, agent) = (e.terminal_id.clone(), e.session_id.clone(), e.state.turn.take(), e.agent.clone());
+    let (terminal_id, session_id, turn, agent) = (e.terminal_id.clone(), e.session_id.clone(), e.state.turn.clone(), e.agent.clone());
     let stop = turn.is_none() && agent.is_none() && matches!(kind, Kind::TurnInterrupt | Kind::TurnEnd);
     if core.send(Cmd::SessionRecord { terminal_id, session_id, kind, turn, agent }).is_err() {
         return false;
@@ -687,19 +698,25 @@ mod tests {
     }
 
     const K_END: &str = r#"{"type":"turn.ended","agentId":"main","turnId":TURN,"reason":"completed","durationMs":5}"#;
+    const K_ASK: &str = r#"{"type":"turn.prompt","agentId":"main","origin":{"kind":"user"},"turnId":TURN,"trigger":"normal","time":AT}"#;
 
-    /// Kimi：索引与记录在开始监听之后才出现（新会话第一轮）也能接上；之后写入的轮次结束带着轮次号报告，不自行停止。
+    fn k_ask(turn: u32, at: u64) -> String {
+        K_ASK.replace("TURN", &turn.to_string()).replace("AT", &at.to_string())
+    }
+
+    /// Kimi：索引与记录在开始监听之后才出现（新会话第一轮）也能接上；认出的结束带着这次监听的轮次标识（收到提问的
+    /// 时刻）报告，不自行停止，由核心线程核对后叫停。
     #[test]
     fn kimi_record_appearing_later_is_picked_up() {
         let d = test_dir("waitwatch-kimi-late");
         let (tx, rx) = mpsc::channel();
         let w = WaitWatch::new(tx).unwrap();
-        w.start(kimi_job(&d, Some("0")));
+        w.start(kimi_job(&d, Some("1794668003000")));
         std::thread::sleep(Duration::from_millis(300));
         let session = d.join(".kimi-code/sessions/wd_w_abc/session_k1");
         std::fs::create_dir_all(session.join("agents/main")).unwrap();
         let wire = session.join("agents/main/wire.jsonl");
-        std::fs::write(&wire, "{\"type\":\"turn.prompt\",\"agentId\":\"main\",\"turnId\":0}\n").unwrap();
+        std::fs::write(&wire, format!("{}\n", k_ask(0, 1_794_668_003_010))).unwrap();
         std::fs::write(
             d.join(".kimi-code/session_index.jsonl"),
             format!("{}\n", serde_json::json!({"sessionId": "session_k1", "sessionDir": session})),
@@ -708,12 +725,18 @@ mod tests {
         assert_eq!(opened(&rx, Duration::from_secs(2)), Some(true));
         append(&wire, &format!("{}\n", K_END.replace("TURN", "0")));
         match rx.recv_timeout(Duration::from_secs(1)) {
-            Ok(Cmd::SessionRecord { kind: Kind::TurnEnd, turn, .. }) => assert_eq!(turn.as_deref(), Some("0")),
+            Ok(Cmd::SessionRecord { kind: Kind::TurnEnd, turn, .. }) => assert_eq!(turn.as_deref(), Some("1794668003000")),
             _ => panic!("应报告轮次结束"),
         }
-        append(&wire, &format!("{}\n", K_END.replace("TURN", "1")));
+        append(&wire, &format!("{}\n{}\n", k_ask(1, 1_794_668_009_000), K_END.replace("TURN", "1")));
         match rx.recv_timeout(Duration::from_secs(1)) {
-            Ok(Cmd::SessionRecord { kind: Kind::TurnEnd, turn, .. }) => assert_eq!(turn.as_deref(), Some("1"), "带轮次号的不自行停止"),
+            Ok(Cmd::SessionRecord { kind: Kind::PromptSubmit, .. }) => {}
+            _ => panic!("新开的一轮按提交报告"),
+        }
+        match rx.recv_timeout(Duration::from_secs(1)) {
+            Ok(Cmd::SessionRecord { kind: Kind::TurnEnd, turn, .. }) => {
+                assert_eq!(turn.as_deref(), Some("1794668003000"), "带轮次标识的不自行停止")
+            }
             _ => panic!("应继续监听"),
         }
         let _ = std::fs::remove_dir_all(&d);
@@ -804,14 +827,24 @@ mod tests {
         let _ = std::fs::remove_dir_all(&d);
     }
 
-    /// Kimi：开始监听之前已经写入的本轮结束靠补读认出；上一轮的不算。
+    /// Kimi：开始监听之前已经写入的本轮结束靠补读认出；上一轮的不算（这一轮的提问还没写进记录时，最后一轮是上一轮）。
     #[test]
     fn kimi_end_written_before_start_is_replayed() {
         let d = test_dir("waitwatch-kimi-replay");
         let session = d.join(".kimi-code/sessions/wd_w_abc/session_k1");
         std::fs::create_dir_all(session.join("agents/main")).unwrap();
         let wire = session.join("agents/main/wire.jsonl");
-        std::fs::write(&wire, format!("{}\n{}\n", K_END.replace("TURN", "1"), K_END.replace("TURN", "2"))).unwrap();
+        std::fs::write(
+            &wire,
+            format!(
+                "{}\n{}\n{}\n{}\n",
+                k_ask(1, 1_794_668_000_000),
+                K_END.replace("TURN", "1"),
+                k_ask(2, 1_794_668_003_016),
+                K_END.replace("TURN", "2")
+            ),
+        )
+        .unwrap();
         std::fs::write(
             d.join(".kimi-code/session_index.jsonl"),
             format!("{}\n", serde_json::json!({"sessionId": "session_k1", "sessionDir": session})),
@@ -819,13 +852,13 @@ mod tests {
         .unwrap();
         let (tx, rx) = mpsc::channel();
         let w = WaitWatch::new(tx).unwrap();
-        w.start(kimi_job(&d, Some("3")));
+        w.start(kimi_job(&d, Some("1794668010000")));
         assert_eq!(opened(&rx, Duration::from_secs(1)), Some(true));
         assert!(rx.recv_timeout(Duration::from_millis(300)).is_err(), "上一轮的结束不算");
-        w.start(kimi_job(&d, Some("2")));
+        w.start(kimi_job(&d, Some("1794668003000")));
         assert_eq!(opened(&rx, Duration::from_secs(1)), Some(true));
         match rx.recv_timeout(Duration::from_secs(1)) {
-            Ok(Cmd::SessionRecord { kind: Kind::TurnEnd, turn, .. }) => assert_eq!(turn.as_deref(), Some("2")),
+            Ok(Cmd::SessionRecord { kind: Kind::TurnEnd, turn, .. }) => assert_eq!(turn.as_deref(), Some("1794668003000")),
             _ => panic!("应补读出本轮的结束"),
         }
         let _ = std::fs::remove_dir_all(&d);

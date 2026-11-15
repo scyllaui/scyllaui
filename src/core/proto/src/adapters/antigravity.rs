@@ -24,7 +24,7 @@ pub static ADAPTER: Adapter = Adapter {
     scan_while_running: true,
     session_record: Some(|id| format!(".gemini/antigravity-cli/conversations/{id}.db")),
     record_lookup: None,
-    turn_end_by_record: false,
+    turns_by_record: false,
     pid_status: None,
     child_records: true,
     record_from_approval: false,
@@ -53,9 +53,7 @@ pub static ADAPTER: Adapter = Adapter {
         prompt: &["lastUserInput"],
         // 子代理与主对话在同一进程里各有会话 ID，子代理的事件 `lastUserInput` 为空字符串（2026-11-01 实测）。
         subagent_empty: Some("lastUserInput"),
-        subagent_when: None,
         injected_prompt: &[],
-        prompt_origin: None,
         approval_id: &[],
         approval_command: &[],
     },

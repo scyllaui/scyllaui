@@ -30,7 +30,8 @@ pub struct WaitScan {
     /// 正在补读开始监听之前已写入的行（docs/design.md 4.3 节「会话记录监听」）：判定函数只记状态、不报事件，
     /// 补读完由 [`WaitScan::replayed`] 给出结论。
     pub replay: bool,
-    /// 刚认出的事件所属的轮次（Kimi 的 `turnId`），由监听线程取走、随事件交给核心线程核对。
+    /// 这次监听所属的轮次标识（监听线程打开时按窗格当时的轮次填入；Kimi 为收到提问的时刻）：认出的事件都带着它交给
+    /// 核心线程，窗格已换到下一轮时核心不理会（上一轮的结束晚到）。
     pub turn: Option<String>,
     /// 监听的是哪个会话（监听线程填）：整份文件的判定据此排除别的会话。
     pub session: Option<String>,
@@ -51,18 +52,31 @@ pub struct WaitScan {
     copilot_aborted: bool,
     /// Kimi：补读到的最后一条主代理轮次结束（事件，轮次）。
     kimi_end: Option<(Kind, String)>,
+    /// Kimi：读到的主代理最近开的一轮（轮次，写入时刻毫秒）。
+    kimi_prompt: Option<(String, Option<i64>)>,
 }
 
+/// 比这个数大的轮次标识才是毫秒时刻（2001-09-09 之后）；更小的是旧版本留下的 Kimi 轮次号。
+const KIMI_MS_FLOOR: i64 = 1_000_000_000_000;
+
 impl WaitScan {
-    /// 补读完的结论。`turn` 为窗格当前的轮次，`waiting` 为窗格是否在待审批，`resync` 为换版本接管后的对账
+    /// 补读完的结论。`turn` 为窗格当前的轮次标识，`waiting` 为窗格是否在待审批，`resync` 为换版本接管后的对账
     /// （此前可能漏了事件；平时开始监听时刚收到提问，记录里最后一轮可能还是上一轮，不能按它判断中断）。
     pub fn replayed(&mut self, turn: Option<&str>, waiting: bool, resync: bool) -> Option<Kind> {
         self.replay = false;
         if let Some((kind, t)) = self.kimi_end.take() {
-            // 只认当前轮次的结束；不知道当前轮次时不认。
-            if turn == Some(t.as_str()) {
-                self.turn = Some(t);
-                return Some(kind);
+            // Kimi 的轮次标识是后台收到提问的时刻（毫秒）。记录里的提问比 Hook 晚 1—16 ms 写入（2026-11-15 本机 3 轮实测），
+            // 开始监听时这一轮的提问可能还没写，最后一轮还是上一轮：只认最后开的那一轮的结束，且那一轮写于这一刻
+            // 前 1 秒之后。标识不是时刻时（从 0.4.48 及更早接管，那时是 Kimi 的轮次号）只在对账时认。
+            let since = turn.and_then(|s| s.parse::<i64>().ok()).filter(|s| *s > KIMI_MS_FLOOR);
+            if let Some((p, at)) = &self.kimi_prompt {
+                let current = match (since, at) {
+                    (Some(s), Some(a)) => *a >= s - 1000,
+                    _ => resync,
+                };
+                if *p == t && current {
+                    return Some(kind);
+                }
             }
         }
         if resync && self.copilot_aborted {
@@ -221,30 +235,44 @@ pub fn codex(scan: &mut WaitScan, line: &Value) -> Option<Kind> {
     Some(if scan.sub { Kind::PermissionDone } else { Kind::TurnInterrupt })
 }
 
-/// Kimi Code `agents/main/wire.jsonl`（2026-11-14 核对 2.6.1 包内代码与本机 169 份记录）：每轮结束写
+/// Kimi Code `agents/main/wire.jsonl`（2026-11-14 核对 2.6.1 包内代码与本机 169 份记录）：每轮开始写
+/// `{"type":"turn.prompt","agentId":"main","origin":{"kind":"user"|…},"turnId":N,"time":<毫秒>}`，结束写
 /// `{"type":"turn.ended","agentId":"main","turnId":N,"reason":"completed|cancelled|failed"}`；子代理的写在它自己的
-/// 记录里。`completed` 按一轮结束，`cancelled` 按中断，`failed` 按出错；轮次号交给核心线程核对。
+/// 记录里。新开一轮按提交报（一轮刚结束时的插话、排队消息会另开一轮而不发提交 Hook，`trigger` 为 `notify`，
+/// 2026-11-15 本机 2.6.1 实测）；`completed` 按一轮结束，`cancelled` 按中断，`failed` 按出错，只认最近开的那一轮的
+/// 结束（插话不开新轮次时仍是同一轮）；记录里还没有读到开始时照认。
 pub fn kimi(scan: &mut WaitScan, line: &Value) -> Option<Kind> {
-    if line["type"] != "turn.ended" || line["agentId"] != "main" {
+    if line["agentId"] != "main" {
         return None;
     }
-    let kind = match line["reason"].as_str()? {
-        "completed" => Kind::TurnEnd,
-        "cancelled" => Kind::TurnInterrupt,
-        "failed" => Kind::TurnFail,
-        _ => return None,
-    };
     let turn = match &line["turnId"] {
         Value::Number(n) => n.to_string(),
         Value::String(s) => s.clone(),
         _ => return None,
     };
-    if scan.replay {
-        scan.kimi_end = Some((kind, turn));
-        return None;
+    match line["type"].as_str()? {
+        "turn.prompt" => {
+            scan.kimi_prompt = Some((turn, line["time"].as_i64()));
+            (!scan.replay).then_some(Kind::PromptSubmit)
+        }
+        "turn.ended" => {
+            let kind = match line["reason"].as_str()? {
+                "completed" => Kind::TurnEnd,
+                "cancelled" => Kind::TurnInterrupt,
+                "failed" => Kind::TurnFail,
+                _ => return None,
+            };
+            if scan.replay {
+                scan.kimi_end = Some((kind, turn));
+                return None;
+            }
+            if scan.kimi_prompt.as_ref().is_some_and(|(p, _)| *p != turn) {
+                return None;
+            }
+            Some(kind)
+        }
+        _ => None,
     }
-    scan.turn = Some(turn);
-    Some(kind)
 }
 
 /// GitHub Copilot CLI `~/.copilot/session-state/<会话>/events.jsonl`（2026-10-30 实测 1.0.105；2026-11-14 按本机
@@ -354,6 +382,7 @@ mod tests {
                 copilot_seen: self.copilot_seen,
                 copilot_aborted: self.copilot_aborted,
                 kimi_end: self.kimi_end.clone(),
+                kimi_prompt: self.kimi_prompt.clone(),
                 ..Default::default()
             };
             c.replayed(turn, waiting, resync)
@@ -499,25 +528,53 @@ mod tests {
         assert_eq!(grok(&mut s, &res("allow")), Some(Kind::PermissionDone));
     }
 
-    /// Kimi 2.6.1 的轮次结束记录（结构取自本机记录）：只认主代理的；补读到的只在轮次对得上时才算。
+    /// Kimi 2.6.1 的会话记录（结构取自本机记录）：新开一轮按提交报；只认主代理、最近开的那一轮的结束；补读按收到提问的
+    /// 时刻判断。
     #[test]
     fn kimi_turn_ended() {
         let end = |agent: &str, turn: u64, reason: &str| json!({"type": "turn.ended", "agentId": agent, "turnId": turn, "reason": reason, "durationMs": 1});
+        let prompt = |turn: u64, kind: &str, time: i64| json!({"type": "turn.prompt", "agentId": "main", "origin": {"kind": kind}, "turnId": turn, "trigger": "normal", "time": time});
         let mut s = WaitScan::default();
-        assert_eq!(kimi(&mut s, &end("main", 3, "completed")), Some(Kind::TurnEnd));
-        assert_eq!(s.turn.take().as_deref(), Some("3"));
+        assert_eq!(kimi(&mut s, &end("main", 3, "completed")), Some(Kind::TurnEnd), "还没读到开始时照认");
         assert_eq!(kimi(&mut s, &end("main", 4, "cancelled")), Some(Kind::TurnInterrupt));
         assert_eq!(kimi(&mut s, &end("main", 5, "failed")), Some(Kind::TurnFail));
         assert_eq!(kimi(&mut s, &end("agent-0", 0, "completed")), None, "子代理的不算");
         assert_eq!(kimi(&mut s, &end("main", 6, "blocked")), None);
         assert_eq!(kimi(&mut s, &json!({"type": "agent.turn.ended", "turnId": 6, "outcome": "done"})), None);
+        // 新开一轮按提交报，之后只认这一轮的结束。
+        assert_eq!(kimi(&mut s, &prompt(7, "user", 1_794_668_032_450)), Some(Kind::PromptSubmit));
+        assert_eq!(kimi(&mut s, &end("main", 6, "completed")), None, "上一轮的结束晚到");
+        assert_eq!(kimi(&mut s, &end("main", 7, "completed")), Some(Kind::TurnEnd));
+        // 一轮刚结束时的插话另开一轮（trigger 为 notify，不发提交 Hook，2026-11-15 实测）；系统发起的轮次同样算。
+        let mut notify = prompt(8, "user", 1_794_668_032_457);
+        notify["trigger"] = json!("notify");
+        assert_eq!(kimi(&mut s, &notify), Some(Kind::PromptSubmit));
+        assert_eq!(kimi(&mut s, &end("main", 8, "completed")), Some(Kind::TurnEnd));
+        assert_eq!(kimi(&mut s, &prompt(9, "system_trigger", 1_794_668_040_000)), Some(Kind::PromptSubmit));
+        assert_eq!(kimi(&mut s, &end("main", 9, "completed")), Some(Kind::TurnEnd));
+        // 补读时只记下，不报开始。
+        let mut r = WaitScan { replay: true, ..Default::default() };
+        assert_eq!(kimi(&mut r, &prompt(0, "user", 1)), None);
+
+        // 补读：收到提问在 1_794_668_032_434（Hook），记录里这一轮的提问晚 16 ms 写下（本机实测）。
+        let asked = "1794668032434";
         let mut s = WaitScan { replay: true, ..Default::default() };
-        assert_eq!(kimi(&mut s, &end("main", 1, "completed")), None);
-        assert_eq!(kimi(&mut s, &end("main", 2, "completed")), None);
-        assert_eq!(s.clone_replayed(Some("3"), false, false), None, "上一轮的结束不算");
+        kimi(&mut s, &prompt(0, "user", 1_794_668_000_000));
+        kimi(&mut s, &end("main", 0, "completed"));
+        assert_eq!(s.clone_replayed(Some(asked), false, false), None, "这一轮的提问还没写，最后一轮是上一轮");
+        assert_eq!(s.clone_replayed(Some("0"), false, true), Some(Kind::TurnEnd), "从旧版本接管（标识是轮次号）对账时认");
+        assert_eq!(s.clone_replayed(Some("0"), false, false), None);
+        kimi(&mut s, &prompt(1, "user", 1_794_668_032_450));
+        assert_eq!(s.clone_replayed(Some(asked), false, false), None, "这一轮还没结束");
+        kimi(&mut s, &end("main", 1, "completed"));
+        assert_eq!(s.clone_replayed(Some(asked), false, false), Some(Kind::TurnEnd), "监听打开前就结束了");
         assert_eq!(s.clone_replayed(None, false, false), None, "不知道当前轮次时不认");
-        assert_eq!(s.replayed(Some("2"), false, false), Some(Kind::TurnEnd));
-        assert_eq!(s.turn.as_deref(), Some("2"));
+        assert_eq!(s.replayed(Some("1794668040000"), false, false), None, "之后又问了一次，这一轮的结束不算");
+        // 插话不开新轮次：收到插话的时刻比这一轮的提问晚，补读不认，结束由实时读到的记录认出。
+        let mut s = WaitScan { replay: true, ..Default::default() };
+        kimi(&mut s, &prompt(2, "user", 1_794_668_100_000));
+        assert_eq!(s.replayed(Some("1794668105000"), false, false), None);
+        assert_eq!(kimi(&mut s, &end("main", 2, "completed")), Some(Kind::TurnEnd));
     }
 
     /// Antigravity 1.4.12 实测的对话库变化（2026-11-01）：审批出现 → 批准 → 正常结束；审批出现 → 拒绝；生成中 Esc。

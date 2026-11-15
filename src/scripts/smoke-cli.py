@@ -16,7 +16,8 @@
      `.agents/hooks.json`（agy 同样加载），不碰真实的全局 Hook 文件（2026-11-01）。
   2. 拉起隔离的 scyllauid（独立 --data-dir，--capture 落盘原始帧），Hook 环境指向它。
   3. 以无界面模式新建并提交「只回复 OK」，再按同一会话 ID 恢复并提交「再回复一次 OK」（每款 2 条最短提示词）。
-  4. 自动核对：必有事件、会话 ID 一致（恢复后不变）、环境报告里有 SCYLLAUI 的三个变量、不认识的事件名。
+  4. 自动核对：必有事件、会话 ID 一致（恢复后不变）、环境报告里有 SCYLLAUI 的三个变量、不认识的事件名；
+     装的 Hook 事件都在这个版本带的每一份事件清单里（cli-hook-schema-check.py，结果记为 hook_schema）。
   5. 脱敏后存为 tests/hook-samples/<工具>-<版本>-smoke.jsonl（proto/tests/replay_samples.rs 自动回放），
      判定结果存 tests/smoke-results/<工具>-<版本>.json。
   6. 删除临时 HOME（含复制进去的认证文件）；全程不打印凭据内容。
@@ -78,7 +79,8 @@ REQUIRED = {
     "codex": [["SessionStart"], ["UserPromptSubmit"], ["Stop"]],
     # Kimi 2.2.0 的 -p 无界面模式不发 SessionEnd（2026-10-15 实测）；交互界面的退出在实机清单里核对。
     # 2.6.1 起一轮正常结束不发 Stop（docs/design.md 3.1 节）：轮次结束改查会话记录的 turn.ended（kimi_turn_ended）。
-    "kimi": [["SessionStart"], ["UserPromptSubmit", "TurnStarted"]],
+    # 2026-11-15 起不装 TurnStarted（Kimi 改设置时的严格校验不认它，见 hookcfg.rs）。
+    "kimi": [["SessionStart"], ["UserPromptSubmit"]],
     "grok": [["SessionStart"], ["UserPromptSubmit"], ["Stop"], ["SessionEnd"]],
     # OpenCode 没有会话结束事件；恢复时不发 session.created。OpenCode 2（2026-10-31）的提示词与一轮结束换了名字。
     "opencode": [["session.created"], ["chat.message", "session.prompt"], ["session.idle", "session.execution.succeeded"]],
@@ -115,6 +117,9 @@ CHECKLIST = """实机清单（测试窗口，后台带 --capture；结果追加�
   5. 交互界面恢复命令：claude --resume、codex resume --no-daemon、kimi -r、grok --resume，会话 ID 不变。
   6. Codex 升级后是否要求重新信任 Hook（侧栏应为 ok；未信任时为「状态同步未生效」）。
   7. 侧栏：未验证版本提示出现；加入 verified-versions.json 并重建后消失。
+  8. 宿主操作回归（2026-11-15 起；Kimi 装上 Hook 后 /login 失败而运行时与 doctor 都正常）：装着本项目的条目，
+     按新用户顺序在隔离目录走一遍——修复 Hook → 首次登录 → 登出 → 改模型或设置 → CLI 自己的诊断
+     （kimi doctor、grok inspect、/hooks、/plugins），各步都不因本项目的条目报错（docs/design.md「外部文件清单」）。
 """
 
 
@@ -409,6 +414,10 @@ def main():
     failed = 0
     for t in tools:
         r = smoke(t)
+        # 装的事件在这个版本的每一份清单里（cli-hook-schema-check.py；2026-11-15 Kimi 改设置时的清单不认 TurnStarted）。
+        schema = subprocess.run([sys.executable, "-I", str(ROOT / "src/scripts/cli-hook-schema-check.py"), t])
+        r.setdefault("checks", {})["hook_schema"] = schema.returncode == 0
+        r["ok"] = bool(r.get("ok")) and schema.returncode == 0
         mark = "通过" if r.get("ok") else "未通过"
         print(f"== {t} {r.get('version')}：{mark}  {json.dumps(r.get('checks', {}), ensure_ascii=False)}")
         for run_ in r.get("runs", []):

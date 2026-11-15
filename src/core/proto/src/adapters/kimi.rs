@@ -20,7 +20,7 @@ pub static ADAPTER: Adapter = Adapter {
     scan_while_running: true,
     session_record: None,
     record_lookup: Some(super::RecordLookup::KimiIndex),
-    turn_end_by_record: true,
+    turns_by_record: true,
     pid_status: None,
     child_records: false,
     record_from_approval: false,
@@ -35,7 +35,9 @@ pub static ADAPTER: Adapter = Adapter {
     map_event,
     fields: Fields {
         session: &["session_id"],
-        turn: &["turn_id"],
+        // 提交事件不带轮次号（只有不装的 TurnStarted 带）：后台以收到提交的时刻作这一轮的标识，补读会话记录时按它
+        // 核对（`waiting::kimi`、docs/design.md 3.1 节）。
+        turn: &[],
         notification: &["notification_type"],
         title: &["session_title"],
         transcript: &["transcript_path"],
@@ -47,13 +49,11 @@ pub static ADAPTER: Adapter = Adapter {
         cwd: &["cwd"],
         end_keeps_error: false,
         title_placeholder: None,
+        // UserPromptSubmit 的 `prompt` 是内容块数组（`[{"type":"text","text":…}]`），取其中的文字。它只在用户提问时发
+        // （包内 `runPromptSubmitHook` 遇到非用户来源直接返回），子代理收到的任务不会当成提问。
         prompt: &["prompt"],
         subagent_empty: None,
-        subagent_when: Some(("origin_name", "subagent")),
         injected_prompt: &[],
-        // TurnStarted 带 `origin_kind`：用户提交为 `user`；子代理收到的任务为 `system_trigger`（`origin_name` 为 `subagent`，
-        // 正文以 `<git-context>` 开头，且不带 `agent_id`），2026-11-13 长跑核对 2.5.2 的会话记录 `agents/<代理>/wire.jsonl`。
-        prompt_origin: Some(("origin_kind", "user")),
         approval_id: &["id"],
         approval_command: &[],
     },
@@ -67,7 +67,9 @@ fn matches(p: &Process) -> bool {
 fn map_event(name: &str, notification_type: Option<&str>) -> Option<Kind> {
     Some(match name {
         "SessionStart" => Kind::SessionStart,
-        "UserPromptSubmit" | "TurnStarted" => Kind::PromptSubmit,
+        "UserPromptSubmit" => Kind::PromptSubmit,
+        // 不再装（见 hookcfg::events）；还没修复的旧配置仍会发，认得但不改状态。
+        "TurnStarted" => Kind::Other,
         "PreToolUse" | "PostToolUse" => Kind::ToolActivity,
         "PermissionRequest" => Kind::PermissionWait,
         "PermissionResult" => Kind::PermissionDone,

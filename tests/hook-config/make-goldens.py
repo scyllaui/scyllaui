@@ -9,6 +9,8 @@ s0-hooks.py 已于 2026-10-16 删除（由 `scyllaui hooks` 取代），这里�
   uninstall/    ← before 上执行 uninstall 的结果
   roundtrip/    ← install 结果上再执行 uninstall 的结果
 备份文件（*.scyllaui-bak-*）不收进期望结果。Rust 的 hookcfg 兼容测试（proto/tests/hookcfg_compat.rs）逐字节比对。
+有意的差异：2026-11-15 起 Kimi 不再装 TurnStarted（Kimi 改设置时的严格校验不认它），s0-hooks.py 仍会写；重新生成后
+要手工删掉 install/.kimi-code/config.toml 里的 TurnStarted 条目。
 用法：tests/hook-config/make-goldens.py
 """
 import shutil
