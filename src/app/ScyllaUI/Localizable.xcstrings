@@ -179,22 +179,22 @@
         }
       }
     },
+    "Hook 条目需要更新": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hook entries need updating"
+          }
+        }
+      }
+    },
     "Hook 被停用": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Hooks disabled"
-          }
-        }
-      }
-    },
-    "ScyllaUI 的标记块不完整（缺结束标记），未改动，请检查配置文件": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ScyllaUI's marker block is incomplete (missing its end marker). Nothing was changed; please check the config file."
           }
         }
       }
@@ -261,6 +261,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Total (session tokens)"
+          }
+        }
+      }
+    },
+    "条目需要更新": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entries need updating"
           }
         }
       }
@@ -3053,6 +3063,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hook data is missing the event name"
+          }
+        }
+      }
+    },
+    "hooks 写成了行内数组（hooks = […]），ScyllaUI 只支持 [[hooks]] 写法，未改动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The hooks are written as an inline array (hooks = […]). ScyllaUI only supports the [[hooks]] form, so nothing was changed."
           }
         }
       }

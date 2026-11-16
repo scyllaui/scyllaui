@@ -402,19 +402,24 @@ struct SBHookStatus: Equatable {
     /// 「状态同步未生效」：除了正常与没装，都要提示。
     var broken: Bool { state != "ok" && state != "absent" }
 
+    /// 条目都在、只是要更新（重复、旧写法、自建文件不是当前版本）：后台仍归在 `missing`，界面上单独说（2026-11-16）。
+    var outdatedOnly: Bool {
+        state == "missing" && !problems.contains { $0.hasPrefix("missing:") } && problems.contains { $0.hasPrefix("outdated:") }
+    }
+
     /// 悬停提示与确认框里的说明。不能修复的两种带上具体原因，用户才知道去看哪里（`problems` 的写法见 docs/protocol.md 第 5 节）。
     var reason: String {
         func after(_ prefix: String) -> String? {
             problems.first { $0.hasPrefix(prefix) }.map { String($0.dropFirst(prefix.count)) }
         }
         switch state {
-        case "missing": return String(localized: "Hook 条目缺失")
+        case "missing": return outdatedOnly ? String(localized: "Hook 条目需要更新") : String(localized: "Hook 条目缺失")
         case "disabled": return String(localized: "Hook 被停用")
         case "untrusted": return String(localized: "Hook 尚未在 Codex 里信任")
         case "policy":
             return after("policy:").map { String(localized: "被组织策略禁用（\($0)），无法修复") } ?? String(localized: "被组织策略禁用，无法修复")
         case "unreadable":
-            if problems.contains("block_incomplete") { return String(localized: "ScyllaUI 的标记块不完整（缺结束标记），未改动，请检查配置文件") }
+            if problems.contains("hooks_inline") { return String(localized: "hooks 写成了行内数组（hooks = […]），ScyllaUI 只支持 [[hooks]] 写法，未改动") }
             if let e = after("parse:") { return String(localized: "配置文件格式有误（\(e)），未改动") }
             if let e = after("read:") { return String(localized: "配置文件读不了（\(e)），未改动") }
             return String(localized: "配置文件读不了，未改动")

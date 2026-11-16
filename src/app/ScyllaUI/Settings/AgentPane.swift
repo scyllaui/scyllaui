@@ -142,7 +142,7 @@ final class AgentPane: NSViewController {
     static func stateText(_ s: SBHookStatus) -> String {
         switch s.state {
         case "ok": return String(localized: "正常")
-        case "missing": return String(localized: "缺少条目")
+        case "missing": return s.outdatedOnly ? String(localized: "条目需要更新") : String(localized: "缺少条目")
         case "disabled": return String(localized: "已停用")
         case "untrusted": return String(localized: "需在 Codex 中信任")
         case "policy": return String(localized: "被组织策略锁定")

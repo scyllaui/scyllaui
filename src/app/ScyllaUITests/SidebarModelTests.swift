@@ -498,13 +498,20 @@ final class SidebarModelTests: XCTestCase {
         XCTAssertTrue(m.banner().isEmpty)
         // 不能修复的两种带具体原因。
         let reasons = [
-            SBHookStatus(tool: "kimi", state: "unreadable", problems: ["block_incomplete"], fixable: false),
+            SBHookStatus(tool: "kimi", state: "unreadable", problems: ["hooks_inline"], fixable: false),
             SBHookStatus(tool: "claude", state: "unreadable", problems: ["parse:EOF at line 3"], fixable: false),
             SBHookStatus(tool: "grok", state: "policy", problems: ["policy:/h/.grok/requirements.toml"], fixable: false),
         ].map(\.reason)
-        XCTAssertEqual(reasons, ["ScyllaUI 的标记块不完整（缺结束标记），未改动，请检查配置文件",
+        XCTAssertEqual(reasons, ["hooks 写成了行内数组（hooks = […]），ScyllaUI 只支持 [[hooks]] 写法，未改动",
                                  "配置文件格式有误（EOF at line 3），未改动",
                                  "被组织策略禁用（/h/.grok/requirements.toml），无法修复"])
+        // 条目都在、只是要更新（重复、旧写法）：文字单独说；还缺条目时仍按缺失说。
+        let outdated = SBHookStatus(tool: "kimi", state: "missing", problems: ["outdated:block"], fixable: true)
+        XCTAssertEqual([outdated.reason, AgentPane.stateText(outdated)], ["Hook 条目需要更新", "条目需要更新"])
+        let mixed = SBHookStatus(tool: "claude", state: "missing", problems: ["missing:Stop", "outdated:SessionStart"], fixable: true)
+        XCTAssertEqual([mixed.reason, AgentPane.stateText(mixed)], ["Hook 条目缺失", "缺少条目"])
+        let gone = SBHookStatus(tool: "grok", state: "missing", problems: ["missing:hooks_file"], fixable: true)
+        XCTAssertEqual([gone.reason, AgentPane.stateText(gone)], ["Hook 条目缺失", "缺少条目"])
         // 旧推送（rev 不大于快照）不生效。
         m.apply(["type": "snapshot", "rev": 10, "recent_total": 0, "projects": [], "terminals": [], "conversations": [],
                  "hooks": [hook("grok", "disabled", fixable: true)]])

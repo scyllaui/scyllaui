@@ -17,7 +17,9 @@
   2. 拉起隔离的 scyllauid（独立 --data-dir，--capture 落盘原始帧），Hook 环境指向它。
   3. 以无界面模式新建并提交「只回复 OK」，再按同一会话 ID 恢复并提交「再回复一次 OK」（每款 2 条最短提示词）。
   4. 自动核对：必有事件、会话 ID 一致（恢复后不变）、环境报告里有 SCYLLAUI 的三个变量、不认识的事件名；
-     装的 Hook 事件都在这个版本带的每一份事件清单里（cli-hook-schema-check.py，结果记为 hook_schema）。
+     装的 Hook 事件都在这个版本带的每一份事件清单里（cli-hook-schema-check.py，结果记为 hook_schema）；
+     Kimi 另在临时 HOME 里登出一次，核对它整份重写配置后状态、修复、撤销仍正确（kimi-rewrite-check.py，
+     结果记为 config_rewrite）。
   5. 脱敏后存为 tests/hook-samples/<工具>-<版本>-smoke.jsonl（proto/tests/replay_samples.rs 自动回放），
      判定结果存 tests/smoke-results/<工具>-<版本>.json。
   6. 删除临时 HOME（含复制进去的认证文件）；全程不打印凭据内容。
@@ -418,6 +420,11 @@ def main():
         schema = subprocess.run([sys.executable, "-I", str(ROOT / "src/scripts/cli-hook-schema-check.py"), t])
         r.setdefault("checks", {})["hook_schema"] = schema.returncode == 0
         r["ok"] = bool(r.get("ok")) and schema.returncode == 0
+        if t == "kimi":
+            # Kimi 登出时整份重写配置（注释与标记全丢）后，本项目的条目仍认得出（kimi-rewrite-check.py；2026-11-16）。
+            rewrite = subprocess.run([sys.executable, "-I", str(ROOT / "src/scripts/kimi-rewrite-check.py")])
+            r["checks"]["config_rewrite"] = rewrite.returncode == 0
+            r["ok"] = r["ok"] and rewrite.returncode == 0
         mark = "通过" if r.get("ok") else "未通过"
         print(f"== {t} {r.get('version')}：{mark}  {json.dumps(r.get('checks', {}), ensure_ascii=False)}")
         for run_ in r.get("runs", []):

@@ -426,25 +426,33 @@ fn inspect_codex(home: &str, found: &HashMap<String, Ours>, config: &str, f: &mu
     }
 }
 
+/// 按命令特征认本项目的条目，不靠标记：Kimi 登录、登出时整份重写 `config.toml`，注释（含标记）全丢、
+/// 字符串改用双引号；它自己改 hooks 段时还可能只留下一行标记（2026-11-16 实测 2.6.1，docs/design.md 3.1.5 节）。
+/// 每个事件恰好一条当前写法就算正常，有没有标记都一样。
 fn inspect_kimi(text: &str, f: &mut Findings) {
-    match kimi_block(text) {
-        Err(e) => f.unreadable.push(e),
-        Ok(None) => f.missing.extend(events(Tool::Kimi).iter().map(|e| e.to_string())),
-        Ok(Some((start, end))) => {
-            if text[start..end] != *kimi_block_text().trim_end_matches('\n') {
-                let block = &text[start..end];
-                let mut any_missing = false;
-                for ev in events(Tool::Kimi) {
-                    if !block.contains(&format!("event = \"{ev}\"")) {
-                        f.missing.push(ev.to_string());
-                        any_missing = true;
-                    }
-                }
-                if !any_missing {
-                    f.outdated.push("block".into());
-                }
+    if kimi_inline_hooks(text) {
+        return f.unreadable.push("hooks_inline".into());
+    }
+    let mut stale = false;
+    let mut seen: HashMap<&str, usize> = HashMap::new();
+    let ours = kimi_ours(text);
+    for e in &ours {
+        match e.event().filter(|ev| events(Tool::Kimi).contains(ev)) {
+            Some(ev) => {
+                *seen.entry(ev).or_default() += 1;
+                stale |= !e.current(ev);
             }
+            None => stale = true,
         }
+    }
+    stale |= seen.values().any(|n| *n > 1);
+    for ev in events(Tool::Kimi) {
+        if !seen.contains_key(ev) {
+            f.missing.push(ev.to_string());
+        }
+    }
+    if f.missing.is_empty() && stale {
+        f.outdated.push("block".into());
     }
 }
 
@@ -595,6 +603,10 @@ struct TomlLine {
     table: Option<String>,
     key: Option<String>,
     value: Option<String>,
+    /// 这一行是表头（`[x]` 或 `[[x]]`）。
+    header: bool,
+    /// 这一行在多行字符串里（属于上一个键的值）。
+    cont: bool,
 }
 
 fn toml_lines(text: &str) -> Vec<TomlLine> {
@@ -607,14 +619,14 @@ fn toml_lines(text: &str) -> Vec<TomlLine> {
             if line.matches(delim).count() % 2 == 1 {
                 multi = None;
             }
-            out.push(TomlLine { table: table.clone(), key: None, value: None });
+            out.push(TomlLine { table: table.clone(), key: None, value: None, header: false, cont: true });
             continue;
         }
         if line.starts_with('[') {
             let inner = line.trim_start_matches('[');
             let end = inner.find(']').unwrap_or(inner.len());
             table = Some(inner[..end].trim().to_owned());
-            out.push(TomlLine { table: table.clone(), key: None, value: None });
+            out.push(TomlLine { table: table.clone(), key: None, value: None, header: true, cont: false });
             continue;
         }
         let (mut key, mut value) = (None, None);
@@ -630,7 +642,7 @@ fn toml_lines(text: &str) -> Vec<TomlLine> {
                 value = Some(strip_comment(v).to_owned());
             }
         }
-        out.push(TomlLine { table: table.clone(), key, value });
+        out.push(TomlLine { table: table.clone(), key, value, header: false, cont: false });
     }
     out
 }
@@ -687,24 +699,201 @@ fn kimi_block_text() -> String {
     lines.join("\n") + "\n"
 }
 
-/// 标记块的字节范围（从开始标记到结束标记末尾）；没有为 None；只有开始标记没有结束标记时报错。
-fn kimi_block(text: &str) -> Result<Option<(usize, usize)>, String> {
-    let Some(start) = text.find(KIMI_BEGIN) else { return Ok(None) };
-    let rest = &text[start + KIMI_BEGIN.len()..];
-    let end = rest.find(KIMI_END).ok_or("block_incomplete")?;
-    Ok(Some((start, start + KIMI_BEGIN.len() + end + KIMI_END.len())))
+/// 顶层把 hooks 写成行内数组（`hooks = [ {…} ]`）：后面再追加 `[[hooks]]` 是非法 TOML，整份配置 Kimi 都读不了
+/// （2026-11-16 实测 `kimi doctor` 报 Invalid TOML），所以这种写法不碰。
+fn kimi_inline_hooks(text: &str) -> bool {
+    toml_lines(text).iter().any(|l| l.table.is_none() && l.key.as_deref() == Some("hooks"))
 }
 
-/// 与 s0-hooks.py 的 `toml_strip` 相同。
-fn kimi_strip(text: &str) -> Result<String, String> {
-    match kimi_block(text)? {
-        None => Ok(text.to_owned()),
-        Some((start, end)) => Ok(format!(
-            "{}\n{}",
-            text[..start].trim_end_matches('\n'),
-            text[end..].trim_start_matches('\n')
-        )),
+/// Kimi 配置里命令是本项目的一个 `[[hooks]]` 元素：从表头到最后一行内容的行号（含两端）与各键解码后的值。
+struct KimiEntry {
+    start: usize,
+    end: usize,
+    keys: Vec<(String, Option<String>)>,
+}
+
+impl KimiEntry {
+    fn get(&self, key: &str) -> Option<&str> {
+        self.keys.iter().find(|(k, _)| k == key).and_then(|(_, v)| v.as_deref())
     }
+
+    fn event(&self) -> Option<&str> {
+        self.get("event")
+    }
+
+    /// 与本项目写入的完全相同：只有这三个键，值也相同（不论 Kimi 改成哪种引号）。
+    fn current(&self, ev: &str) -> bool {
+        self.keys.len() == 3
+            && self.get("event") == Some(ev)
+            && self.get("command") == Some(command(Tool::Kimi).as_str())
+            && self.get("timeout") == Some(TIMEOUT.to_string().as_str())
+    }
+}
+
+/// 配置里命令是本项目的 `[[hooks]]` 元素，标记块内外都算。`[hooks.x]` 子表算上一个元素的一部分。
+fn kimi_ours(text: &str) -> Vec<KimiEntry> {
+    let raw: Vec<&str> = text.split('\n').collect();
+    let mut out = vec![];
+    let mut cur: Option<KimiEntry> = None;
+    let finish = |e: Option<KimiEntry>, out: &mut Vec<KimiEntry>| {
+        if let Some(e) = e {
+            let ours = e.keys.iter().any(|(k, v)| k == "command" && v.as_deref().is_some_and(is_ours_text));
+            if ours {
+                out.push(e);
+            }
+        }
+    };
+    for (n, l) in toml_lines(text).iter().enumerate() {
+        if l.header {
+            let table = l.table.as_deref().unwrap_or("");
+            if table.starts_with("hooks.") && cur.is_some() {
+                cur.as_mut().unwrap().end = n;
+                continue;
+            }
+            finish(cur.take(), &mut out);
+            if table == "hooks" && raw[n].trim_start().starts_with("[[") {
+                cur = Some(KimiEntry { start: n, end: n, keys: vec![] });
+            }
+            continue;
+        }
+        let Some(e) = cur.as_mut() else { continue };
+        if let Some(k) = &l.key {
+            let v = l.value.as_deref().unwrap_or("");
+            // 多行字符串不解码，原文参与识别（不会是当前写法）。
+            e.keys.push((k.clone(), Some(toml_scalar(v).unwrap_or_else(|| v.to_owned()))));
+            e.end = n;
+        } else if l.cont {
+            e.end = n;
+        }
+    }
+    finish(cur.take(), &mut out);
+    out
+}
+
+/// 单行 TOML 值解码：基本字符串（含转义）、字面字符串，其余原样（数字等）；多行字符串或写法不认识为 None。
+fn toml_scalar(v: &str) -> Option<String> {
+    let v = v.trim();
+    if v.starts_with("\"\"\"") || v.starts_with("'''") {
+        return None;
+    }
+    let tail_ok = |rest: &str| rest.trim().is_empty() || rest.trim_start().starts_with('#');
+    if let Some(body) = v.strip_prefix('\'') {
+        let end = body.find('\'')?;
+        return tail_ok(&body[end + 1..]).then(|| body[..end].to_owned());
+    }
+    let Some(body) = v.strip_prefix('"') else { return Some(strip_comment(v).to_owned()) };
+    let mut out = String::new();
+    let mut chars = body.char_indices();
+    while let Some((i, c)) = chars.next() {
+        match c {
+            '"' => return tail_ok(&body[i + 1..]).then_some(out),
+            '\\' => {
+                let (_, e) = chars.next()?;
+                match e {
+                    'b' => out.push('\u{8}'),
+                    't' => out.push('\t'),
+                    'n' => out.push('\n'),
+                    'f' => out.push('\u{c}'),
+                    'r' => out.push('\r'),
+                    '"' => out.push('"'),
+                    '\\' => out.push('\\'),
+                    'u' | 'U' => {
+                        let len = if e == 'u' { 4 } else { 8 };
+                        let hex: String = (0..len).filter_map(|_| chars.next().map(|(_, h)| h)).collect();
+                        out.push(char::from_u32(u32::from_str_radix(&hex, 16).ok()?)?);
+                    }
+                    _ => return None,
+                }
+            }
+            _ => out.push(c),
+        }
+    }
+    None
+}
+
+/// Kimi 配置里属于本项目的行。
+struct KimiOwn {
+    /// 每行是否属于本项目：条目（表头到最后一行内容）、单独成行的标记、夹在这些行之间的空行。
+    mask: Vec<bool>,
+    /// 不在成对标记之间的条目数（Kimi 重写配置后留下的）。只用于向用户说明删的是哪些。
+    loose: usize,
+    /// 有标记行（成对或落单）。
+    markers: bool,
+}
+
+/// 标记只是给人看的装饰：成对、落单、没有，都不影响认条目；删除时标记行一并删，标记之间别人的内容不动。
+fn kimi_own(text: &str) -> KimiOwn {
+    let lines: Vec<&str> = text.split('\n').collect();
+    let scanned = toml_lines(text);
+    let mut mask = vec![false; lines.len()];
+    let mut inside = vec![false; lines.len()];
+    let mut open = None;
+    let mut markers = false;
+    for (n, l) in lines.iter().enumerate() {
+        let t = l.trim();
+        if scanned[n].cont || (t != KIMI_BEGIN && t != KIMI_END) {
+            continue;
+        }
+        mask[n] = true;
+        markers = true;
+        if t == KIMI_BEGIN {
+            open = Some(n);
+        } else if let Some(s) = open.take() {
+            inside[s..=n].fill(true);
+        }
+    }
+    let ours = kimi_ours(text);
+    for e in &ours {
+        mask[e.start..=e.end].fill(true);
+    }
+    // 夹在本项目两行之间的空行（块内条目之间的分隔）。
+    let mut n = 0;
+    while n < lines.len() {
+        if mask[n] || !lines[n].trim().is_empty() {
+            n += 1;
+            continue;
+        }
+        let end = (n..lines.len()).find(|i| !lines[*i].trim().is_empty() || mask[*i]).unwrap_or(lines.len());
+        if n > 0 && mask[n - 1] && end < lines.len() && mask[end] {
+            mask[n..end].fill(true);
+        }
+        n = end;
+    }
+    KimiOwn { mask, loose: ours.iter().filter(|e| !inside[e.start]).count(), markers }
+}
+
+/// 删去本项目的全部行。每段删除之后的空行一并删；这一段含标记或删到了文件末尾时，前面的空行也删（与
+/// s0-hooks.py 的 `toml_strip` 逐字节相同）；只是块外散落的条目时前面的空行留着，前后两段之间仍隔一个空行。
+fn kimi_strip(text: &str, own: &KimiOwn) -> String {
+    let lines: Vec<&str> = text.split('\n').collect();
+    let blank = |n: usize| lines[n].trim().is_empty();
+    let marker = |n: usize| own.mask[n] && matches!(lines[n].trim(), KIMI_BEGIN | KIMI_END);
+    let mut drop = own.mask.clone();
+    let mut n = 0;
+    while n < lines.len() {
+        if !drop[n] {
+            n += 1;
+            continue;
+        }
+        let start = n;
+        while n < lines.len() && (drop[n] || blank(n)) {
+            drop[n] = true;
+            n += 1;
+        }
+        if n == lines.len() || (start..n).any(marker) {
+            let mut b = start;
+            while b > 0 && blank(b - 1) {
+                b -= 1;
+                drop[b] = true;
+            }
+        }
+    }
+    let kept: Vec<&str> = lines.iter().zip(&drop).filter(|(_, d)| !**d).map(|(l, _)| *l).collect();
+    let mut rest = kept.join("\n");
+    if text.ends_with('\n') && !rest.ends_with('\n') {
+        rest.push('\n');
+    }
+    rest
 }
 
 // ---- 生成改动 ----
@@ -781,9 +970,11 @@ pub fn plan(s: &Snapshot, action: Action) -> Result<Option<Plan>, String> {
     match (s.tool, action) {
         (Tool::Kimi, _) => {
             let old = main.clone().unwrap_or_default();
-            let base = kimi_strip(&old)?;
+            let own = kimi_own(&old);
+            let base = kimi_strip(&old, &own);
             let new = match action {
-                // 与 s0-hooks.py 相同：去掉旧块后在末尾追加。配置已正常时不动（避免仅为挪动位置而改写）。
+                // 去掉本项目的全部条目与标记后在末尾追加一个新块，不会重复。配置已正常时不动（避免仅为挪动位置
+                // 或补回标记而改写；没有标记时撤销按命令特征照样删得掉）。
                 Action::Repair if status.state == State::Ok => old.clone(),
                 Action::Repair => {
                     let b = if base.ends_with('\n') || base.is_empty() { base } else { base + "\n" };
@@ -792,11 +983,17 @@ pub fn plan(s: &Snapshot, action: Action) -> Result<Option<Plan>, String> {
                 Action::Uninstall => base,
             };
             if new != old {
+                if own.loose > 0 {
+                    act(&mut p, format!("删除本项目在标记块外的 {} 条（Kimi 登录、登出时重写配置会去掉标记）", own.loose),
+                        json!({"kind": "uninstall", "count": own.loose}));
+                }
                 let n = events(Tool::Kimi).len();
                 match action {
                     Action::Repair => act(&mut p, format!("在文件末尾写入本项目的标记块（{n} 条 [[hooks]]）"),
                                           json!({"kind": "kimi_block_write", "count": n})),
-                    Action::Uninstall => act(&mut p, "删除本项目的标记块".into(), json!({"kind": "kimi_block_remove"})),
+                    Action::Uninstall if own.markers =>
+                        act(&mut p, "删除本项目的标记块".into(), json!({"kind": "kimi_block_remove"})),
+                    Action::Uninstall => {}
                 }
                 push_change(&mut p, &lay.main, main, Some(new), true, false);
             }
@@ -1135,14 +1332,17 @@ fn file_diff(tool: Tool, c: &FileChange) -> String {
     let old = c.old.as_deref().unwrap_or("");
     let new = c.new.as_deref().unwrap_or("");
     match (tool, c.path.extension().and_then(|e| e.to_str())) {
-        // Kimi 的 config.toml 可能含凭据：只显示本项目标记块的行，不显示原有内容（同 s0-hooks.py）。
+        // Kimi 的 config.toml 可能含凭据：只显示本项目的行（条目与标记，块内块外都算），不显示别人的内容。
         (Tool::Kimi, _) => {
-            let block = |t: &str| kimi_block(t).ok().flatten().map(|(a, b)| t[a..b].to_owned()).unwrap_or_default();
+            let own = |t: &str| -> Vec<String> {
+                let mask = kimi_own(t).mask;
+                t.split('\n').zip(mask).filter(|(_, m)| *m).map(|(l, _)| l.to_owned()).collect()
+            };
             let mut out = format!("--- {name}（原）\n+++ {name}（新）\n");
-            for l in block(old).lines() {
+            for l in own(old) {
                 out += &format!("-{l}\n");
             }
-            for l in block(new).lines() {
+            for l in own(new) {
                 out += &format!("+{l}\n");
             }
             out
@@ -1689,11 +1889,6 @@ mod tests {
         assert_ne!(edited, text);
         let st = analyze(&snap(Tool::Kimi, Some(&edited), None));
         assert_eq!((st.state, st.problems), (State::Missing, vec!["outdated:block".to_owned()]));
-        // 只有开始标记：不碰。
-        let broken = format!("{user}{KIMI_BEGIN}\n[[hooks]]\n");
-        let s = snap(Tool::Kimi, Some(&broken), None);
-        assert_eq!(analyze(&s).state, State::Unreadable);
-        assert!(plan(&s, Action::Repair).is_err());
         // 撤销后与原文一致。
         let s = snap(Tool::Kimi, Some(&text), None);
         assert_eq!(after(&s, &plan(&s, Action::Uninstall).unwrap().unwrap()).main.unwrap().unwrap().trim_end(), user.trim_end());
@@ -1731,6 +1926,193 @@ mod tests {
         let fixed = after(&s, &plan(&s, Action::Repair).unwrap().unwrap());
         assert_eq!(analyze(&fixed).state, State::Ok);
         assert!(!fixed.main.unwrap().unwrap().contains("TurnStarted"));
+    }
+
+    /// Kimi 2.6.1 `/logout` 前后的真实文件（2026-11-16 临时 HOME 实测）：整份重写，注释与标记全丢，命令改为双引号。
+    /// 两条用户自己的 Hook 在本项目条目前后各一条。
+    const KIMI_BEFORE_LOGOUT: &str = include_str!("../../../../tests/hook-config/kimi-rewrite/before-logout.toml");
+    const KIMI_AFTER_LOGOUT: &str = include_str!("../../../../tests/hook-config/kimi-rewrite/after-logout.toml");
+
+    fn kimi_user_hooks(text: &str) -> Vec<String> {
+        text.split("[[hooks]]").filter(|x| x.contains("my-hook.sh"))
+            .map(|x| x.trim().split("\n\n").next().unwrap().to_owned()).collect()
+    }
+
+    #[test]
+    fn kimi_fixture_is_a_real_rewrite() {
+        assert!(KIMI_BEFORE_LOGOUT.contains(KIMI_BEGIN) && !KIMI_AFTER_LOGOUT.contains('#'));
+        assert_eq!(analyze(&snap(Tool::Kimi, Some(KIMI_BEFORE_LOGOUT), None)).state, State::Ok);
+    }
+
+    #[test]
+    fn kimi_without_markers_is_recognised_by_command() {
+        let s = snap(Tool::Kimi, Some(KIMI_AFTER_LOGOUT), None);
+        // 状态：条目都在、写法等价，算正常；修复不动文件（不会再追加一组）。
+        assert_eq!(analyze(&s).state, State::Ok);
+        assert_eq!(plan(&s, Action::Repair).unwrap(), None);
+        // 撤销：删干净本项目的 10 条，用户自己的两条原样保留。
+        let p = plan(&s, Action::Uninstall).unwrap().unwrap();
+        assert_eq!(p.steps, vec![json!({"kind": "uninstall", "count": events(Tool::Kimi).len()})]);
+        let left = after(&s, &p).main.unwrap().unwrap();
+        assert!(!left.contains("SCYLLAUI"), "{left}");
+        assert_eq!(kimi_user_hooks(&left), kimi_user_hooks(KIMI_AFTER_LOGOUT));
+        assert_eq!(kimi_user_hooks(&left).len(), 2);
+        assert!(left.starts_with("default_model = \"\"\n") && left.trim_end().ends_with("command = \"~/bin/my-hook.sh stop\""), "{left}");
+        // Kimi 写的文件以两个换行结尾，删后保持原样。
+        assert_eq!(left.ends_with("\n\n"), KIMI_AFTER_LOGOUT.ends_with("\n\n"));
+        assert!(!left.contains("\n\n\n"), "删除处不留多余空行：{left}");
+        assert_eq!(analyze(&snap(Tool::Kimi, Some(&left), None)).problems.len(), events(Tool::Kimi).len());
+    }
+
+    #[test]
+    fn kimi_duplicates_from_old_repair_are_collapsed() {
+        // 0.4.49 及更早：标记丢失后修复会在末尾再追加一个标记块，每个事件两条。
+        let dup = format!("{KIMI_AFTER_LOGOUT}\n{}", kimi_block_text());
+        let s = snap(Tool::Kimi, Some(&dup), None);
+        let st = analyze(&s);
+        assert_eq!((st.state, st.problems, st.fixable), (State::Missing, vec!["outdated:block".to_owned()], true));
+        let p = plan(&s, Action::Repair).unwrap().unwrap();
+        assert_eq!(p.steps[0], json!({"kind": "uninstall", "count": events(Tool::Kimi).len()}));
+        let fixed = after(&s, &p);
+        let text = fixed.main.clone().unwrap().unwrap();
+        assert_eq!(analyze(&fixed).state, State::Ok);
+        assert_eq!(text.matches("hook --config kimi").count(), events(Tool::Kimi).len());
+        assert_eq!(text.matches(KIMI_BEGIN).count(), 1);
+        assert_eq!(kimi_user_hooks(&text), kimi_user_hooks(KIMI_AFTER_LOGOUT));
+        // 再修复不变；撤销删掉块，用户的条目还在。
+        assert_eq!(plan(&fixed, Action::Repair).unwrap(), None);
+        let p = plan(&fixed, Action::Uninstall).unwrap().unwrap();
+        assert_eq!(p.steps, vec![json!({"kind": "kimi_block_remove"})]);
+        let left = after(&fixed, &p).main.unwrap().unwrap();
+        assert!(!left.contains("SCYLLAUI") && kimi_user_hooks(&left).len() == 2);
+    }
+
+    #[test]
+    fn kimi_partial_or_changed_loose_entries() {
+        // 块外只剩一部分：缺的算缺失；修复删掉块外的，写一个完整的块。
+        let only_stop = format!("x = 1\n\n[[hooks]]\nevent = \"Stop\"\ncommand = \"{}\"\ntimeout = 2\n",
+                                command(Tool::Kimi).replace('"', "\\\""));
+        let s = snap(Tool::Kimi, Some(&only_stop), None);
+        assert_eq!(analyze(&s).problems.len(), events(Tool::Kimi).len() - 1);
+        let fixed = after(&s, &plan(&s, Action::Repair).unwrap().unwrap());
+        let text = fixed.main.clone().unwrap().unwrap();
+        assert_eq!(analyze(&fixed).state, State::Ok);
+        assert_eq!(text.matches("event = \"Stop\"").count(), 1);
+        assert!(text.starts_with("x = 1\n\n# >>> scyllaui hooks >>>\n"), "{text}");
+        // 块外的条目改了超时、多了键：算需要更新。
+        for bad in [KIMI_AFTER_LOGOUT.replacen("timeout = 2", "timeout = 9", 1),
+                    KIMI_AFTER_LOGOUT.replacen("timeout = 2", "timeout = 2\nmatcher = \"x\"", 1)] {
+            let st = analyze(&snap(Tool::Kimi, Some(&bad), None));
+            assert_eq!((st.state, st.problems), (State::Missing, vec!["outdated:block".to_owned()]));
+        }
+        // 别人的条目命令不含本项目特征：一律不认、不动。
+        let foreign = "[[hooks]]\nevent = \"Stop\"\ncommand = \"echo SCYLLAUI\"\ntimeout = 2\n";
+        let s = snap(Tool::Kimi, Some(foreign), None);
+        assert_eq!(plan(&s, Action::Uninstall).unwrap(), None);
+        let fixed = after(&s, &plan(&s, Action::Repair).unwrap().unwrap()).main.unwrap().unwrap();
+        assert!(fixed.starts_with(foreign));
+    }
+
+    /// 预览里的减号行（不算空行，排序后比较：与别人条目相同的行如 `[[hooks]]` 只看条数）。
+    fn minus_lines(p: &Plan) -> Vec<String> {
+        let mut v: Vec<String> = p.diff().lines().filter(|l| l.starts_with('-') && !l.starts_with("---"))
+            .map(|l| l[1..].to_owned()).filter(|l| !l.trim().is_empty()).collect();
+        v.sort();
+        v
+    }
+
+    /// 实际删掉的行（不算空行，排序）：原文比新文多出来的。
+    fn removed_lines(s: &Snapshot, p: &Plan) -> Vec<String> {
+        let old = s.main.clone().unwrap().unwrap();
+        let new = after(s, p).main.unwrap().unwrap();
+        let mut left: Vec<&str> = new.lines().collect();
+        let mut v: Vec<String> = old.lines().filter(|l| !l.trim().is_empty()).filter(|l| match left.iter().position(|x| x == l) {
+            Some(i) => {
+                left.remove(i);
+                false
+            }
+            None => true,
+        }).map(str::to_owned).collect();
+        v.sort();
+        v
+    }
+
+    #[test]
+    fn kimi_preview_shows_every_removed_line() {
+        // 标记丢失后撤销：预览要列出将删的 10 条，不带别人的内容。
+        let s = snap(Tool::Kimi, Some(KIMI_AFTER_LOGOUT), None);
+        let p = plan(&s, Action::Uninstall).unwrap().unwrap();
+        assert_eq!(minus_lines(&p).len(), events(Tool::Kimi).len() * 4);
+        assert_eq!(minus_lines(&p), removed_lines(&s, &p));
+        assert!(!p.diff().contains("my-hook"), "{}", p.diff());
+        // 有标记、旧版修复留下重复：两组都列出。
+        for text in [KIMI_BEFORE_LOGOUT.to_owned(), format!("{KIMI_AFTER_LOGOUT}\n{}", kimi_block_text())] {
+            let s = snap(Tool::Kimi, Some(&text), None);
+            let p = plan(&s, Action::Uninstall).unwrap().unwrap();
+            assert_eq!(minus_lines(&p), removed_lines(&s, &p));
+            assert!(!p.diff().contains("my-hook") && !p.diff().contains("api_key"));
+        }
+    }
+
+    #[test]
+    fn kimi_markers_are_only_decoration() {
+        let n = events(Tool::Kimi).len();
+        // 只剩一行标记（Kimi 自己改 hooks 段时，段内的标记丢、段外的留）：照常判断、照常撤销，标记行一并删。
+        for lone in [KIMI_BEGIN, KIMI_END] {
+            let gone = if lone == KIMI_BEGIN { KIMI_END } else { KIMI_BEGIN };
+            let text = KIMI_BEFORE_LOGOUT.replace(&format!("{gone}\n"), "");
+            assert!(text.contains(lone) && !text.contains(gone));
+            let s = snap(Tool::Kimi, Some(&text), None);
+            assert_eq!(analyze(&s).state, State::Ok, "{lone}");
+            assert_eq!(plan(&s, Action::Repair).unwrap(), None);
+            let p = plan(&s, Action::Uninstall).unwrap().unwrap();
+            assert_eq!(p.steps, vec![json!({"kind": "uninstall", "count": n}), json!({"kind": "kimi_block_remove"})]);
+            let left = after(&s, &p).main.unwrap().unwrap();
+            assert!(!left.to_lowercase().contains("scyllaui"), "{left}");
+            assert_eq!(kimi_user_hooks(&left), kimi_user_hooks(KIMI_BEFORE_LOGOUT));
+            assert!(left.contains("# my settings") && left.contains("[providers.\"managed:kimi-code\"]"));
+            assert_eq!(minus_lines(&p), removed_lines(&s, &p));
+        }
+        // 成对标记之间有别人的条目（Kimi 往 hooks 段加了一条）：撤销不删它。
+        let mine = "[[hooks]]\nevent = \"PreToolUse\"\ncommand = \"~/bin/my-hook.sh pre\"\n\n";
+        let text = kimi_block_text().replacen("[[hooks]]\nevent = \"Stop\"", &format!("{mine}[[hooks]]\nevent = \"Stop\""), 1);
+        let s = snap(Tool::Kimi, Some(&text), None);
+        assert_eq!(analyze(&s).state, State::Ok);
+        let p = plan(&s, Action::Uninstall).unwrap().unwrap();
+        assert_eq!(after(&s, &p).main.unwrap().unwrap(), mine.trim_end().to_owned() + "\n");
+        // 标记字样在多行字符串里：不是标记。
+        let quoted = format!("note = \"\"\"\n{KIMI_BEGIN}\n\"\"\"\n");
+        assert_eq!(plan(&snap(Tool::Kimi, Some(&quoted), None), Action::Uninstall).unwrap(), None);
+    }
+
+    #[test]
+    fn kimi_inline_hooks_array_is_left_alone() {
+        // 追加 [[hooks]] 会让整份配置成为非法 TOML（kimi doctor: Invalid TOML）：只说明，不碰。
+        for text in ["hooks = [ { event = \"Stop\", command = \"~/bin/my-hook.sh stop\" } ]\n",
+                     "default_model = \"k\"\nhooks = [\n  { event = \"Stop\", command = \"x\" },\n]\n\n[models.k]\nmodel = \"k\"\n"] {
+            let s = snap(Tool::Kimi, Some(text), None);
+            let st = analyze(&s);
+            assert_eq!((st.state, st.fixable), (State::Unreadable, false));
+            assert_eq!(st.problems, vec!["hooks_inline".to_owned()]);
+            assert!(plan(&s, Action::Repair).is_err() && plan(&s, Action::Uninstall).is_err());
+        }
+        // 别的表里叫 hooks 的键不算。
+        let other = "[features]\nhooks = true\n";
+        assert_eq!(analyze(&snap(Tool::Kimi, Some(other), None)).state, State::Missing);
+    }
+
+    #[test]
+    fn toml_scalar_decodes_kimi_rewrites() {
+        assert_eq!(toml_scalar("'a \"b\"'").as_deref(), Some("a \"b\""));
+        assert_eq!(toml_scalar("\"a \\\"b\\\" \\\\ \\u00e9\" # c").as_deref(), Some("a \"b\" \\ é"));
+        assert_eq!(toml_scalar("2 # 秒").as_deref(), Some("2"));
+        assert_eq!(toml_scalar("\"a\" b"), None);
+        assert_eq!(toml_scalar("\"\"\"x"), None);
+        let lines: Vec<String> = KIMI_AFTER_LOGOUT.lines().filter(|l| l.contains("SCYLLAUI")).map(str::to_owned).collect();
+        assert_eq!(lines.len(), events(Tool::Kimi).len());
+        for l in lines {
+            assert_eq!(toml_scalar(l.split_once('=').unwrap().1).as_deref(), Some(command(Tool::Kimi).as_str()));
+        }
     }
 
     #[test]

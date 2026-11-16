@@ -146,7 +146,7 @@ OpenCode 2（2026-10-31 起支持，实测 2.2.4）：默认所有终端共用�
 
 - Claude Code、Codex、Kimi Code、Grok Build 都有官方的 Hook 机制：在会话开始、提交提示词、需要审批、调用工具、一轮结束、会话结束这些时刻，执行配置文件里登记的命令。ScyllaUI 在四款 CLI 的配置文件里各登记几条命令，CLI 运行时由它们把事件告诉 ScyllaUI，侧栏据此更新。ScyllaUI 不读屏幕上的文字判断状态，CLI 改界面不影响它。OpenCode 没有这种命令式 Hook，只有插件：ScyllaUI 在 `~/.config/opencode/plugins/` 放一个自己生成的插件文件 `scyllaui.js`，OpenCode 启动时自动加载，由它把事件转给 ScyllaUI；它只在 ScyllaUI 的终端里起作用，在别处运行 OpenCode 时什么也不做。没装 OpenCode（没有 `~/.config/opencode`）时 ScyllaUI 不建这个目录。GitHub Copilot CLI 的 Hook 是 ScyllaUI 自建的 `~/.copilot/hooks/scyllaui.json`；没装 Copilot（没有 `~/.copilot`）时同样不建。Copilot 同意审批、拒绝审批和按 Esc 中断时不发 Hook，ScyllaUI 从它的会话记录 `~/.copilot/session-state/<会话 ID>/events.jsonl` 里认出这三件事，侧栏随之更新。Antigravity CLI（命令 `agy`）的 Hook 在 `~/.gemini/config/hooks.json`，这份文件 Antigravity 的桌面 App、IDE 与 CLI 共用：ScyllaUI 只增删其中名为「scyllaui」的一项，您自己的 Hook 原样保留；这几条在 App、IDE 和 ScyllaUI 之外的终端里什么也不做。没装 Antigravity CLI（没有 `~/.gemini/antigravity-cli`）时不建。Antigravity 等待审批、拒绝审批和按 Esc 中断时都不发 Hook，ScyllaUI 从它的对话库 `~/.gemini/antigravity-cli/conversations/<对话 ID>.db` 里只读认出，侧栏随之显示「需确认」、回到运行中或 Ready。
 - 这些命令只在 ScyllaUI 的终端里起作用：在其他终端（系统「终端」、iTerm 等）里运行的 CLI 执行到它们时什么也不做。
-- 写入的位置固定为家目录下各 CLI 的默认配置：`~/.claude/settings.json`、`~/.codex/hooks.json`、`~/.kimi-code/config.toml`（ScyllaUI 的条目在 `# >>> scyllaui hooks >>>` 标记块内）、`~/.grok/hooks/scyllaui.json`、`~/.config/opencode/plugins/scyllaui.js`（整个文件由 ScyllaUI 生成，修复时整份重写，撤销时删除）、`~/.copilot/hooks/scyllaui.json`（同样整份生成）、`~/.gemini/config/hooks.json` 里的「scyllaui」一项（改写前备份；撤销后文件里什么也不剩时删除）。用 `CLAUDE_CONFIG_DIR`、`CODEX_HOME` 等环境变量把配置放到别处的，ScyllaUI 目前看不到也改不到。
+- 写入的位置固定为家目录下各 CLI 的默认配置：`~/.claude/settings.json`、`~/.codex/hooks.json`、`~/.kimi-code/config.toml`（ScyllaUI 的条目写在 `# >>> scyllaui hooks >>>` 标记块内；Kimi 登录、登出时会去掉文件里的注释，标记也随之消失，ScyllaUI 仍能认出并撤销自己的条目；如果您把 Kimi 的 hooks 手写成了行内数组 `hooks = [ … ]`，暂不支持，ScyllaUI 会提示并且不改这个文件，改成 `[[hooks]]` 写法后即可修复）、`~/.grok/hooks/scyllaui.json`、`~/.config/opencode/plugins/scyllaui.js`（整个文件由 ScyllaUI 生成，修复时整份重写，撤销时删除）、`~/.copilot/hooks/scyllaui.json`（同样整份生成）、`~/.gemini/config/hooks.json` 里的「scyllaui」一项（改写前备份；撤销后文件里什么也不剩时删除）。用 `CLAUDE_CONFIG_DIR`、`CODEX_HOME` 等环境变量把配置放到别处的，ScyllaUI 目前看不到也改不到。
 
 ### 哪些功能依赖它
 
@@ -166,6 +166,7 @@ OpenCode 2（2026-10-31 起支持，实测 2.2.4）：默认所有终端共用�
   |---|---|---|
   | 正常 | ScyllaUI 的条目都在、写法是最新的、没被停用 | 撤销… |
   | 缺少条目 | 部分或全部条目不在了：CLI 升级或重装覆盖了配置、手动编辑时删掉等 | 修复… |
+  | 条目需要更新 | 条目都在，但不是当前的写法，或同一条出现了两次（比如旧版本 ScyllaUI 写入的） | 修复… |
   | 已停用 | 条目还在，但被关掉了：Claude 与 Copilot 的 `disableAllHooks`、Codex 的 `hooks = false`、Antigravity「scyllaui」一项的 `"enabled": false`，或在 Codex、Grok 的 `/hooks` 里逐条停用 | 修复… |
   | 需在 Codex 中信任 | 只有 Codex：条目已写好，Codex 要求您亲自确认一次才执行 | 去信任…（M4b 块 5 起，原为「说明…」）、撤销… |
   | 被组织策略锁定 | 组织策略只允许管理员下发的 Hook，ScyllaUI 不能修复 | 说明… |
@@ -178,7 +179,7 @@ OpenCode 2（2026-10-31 起支持，实测 2.2.4）：默认所有终端共用�
 ### 怎么用
 
 - 四款都是「正常」：不用操作。
-- 「缺少条目」或「已停用」：点「修复…」，看过改动后确认。已经在运行的 CLI 会话不一定马上读到新配置，修复后新开一个会话最稳妥。
+- 「缺少条目」「条目需要更新」或「已停用」：点「修复…」，看过改动后确认。已经在运行的 CLI 会话不一定马上读到新配置，修复后新开一个会话最稳妥。
 - Codex「需在 Codex 中信任」：这一步只能在 Codex 里由您确认，ScyllaUI 不替您写信任记录。M4b 块 5 起有三种更省事的入口，做的是同一件事：「设置 › Agent」那一行的「去信任…」、侧栏 Codex 那一行的「未同步」、修复确认框里的「在 Codex 里打开 /hooks」（修复写入后也会接着提示这一步）。它们会切到正在运行 Codex 的终端（优先您点的那一行、其次当前终端），确认后像粘贴一样在 Codex 输入行填入 `/hooks`、不回车；您按回车打开 Codex 的 Hook 列表（顶部写着「7 hooks need review before they can run」），按 `t` 信任全部待审核的条目（按回车可逐条审核），之后变为「正常」。列表里没有 ScyllaUI 的条目时，退出 Codex 再打开，它启动时会询问是否信任（Hooks need review），三个选项依次是 Review hooks、Trust all and continue、Continue without trusting (hooks won't run)，选「Trust all and continue」；选了最后一项则这次不执行 Hook，侧栏那一行显示「未同步」，之后照上面点它即可。没有正在运行的 Codex 时只说明怎么做，不替您启动 Codex。
 - 不想让 ScyllaUI 管某款 CLI，或准备卸载 ScyllaUI：点「撤销…」。
 

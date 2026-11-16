@@ -7,7 +7,7 @@ api_key = "fixture-not-a-secret"
 # >>> scyllaui hooks >>>
 [[hooks]]
 event = "SessionStart"
-command = 'old'
+command = '"$SCYLLAUI_BIN" hook --config kimi'
 timeout = 2
 # <<< scyllaui hooks <<<
 
