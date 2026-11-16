@@ -590,15 +590,15 @@ struct TaskRow: Equatable {
     /// 第 1 行显示的任务标题（2026-11-01 用户要求，参照 GUI 版 Agent 工具）：CLI 生成的标题，没有时为第一条提示词；
     /// 没有对话（Shell、新会话还没提问）为 nil，显示工具名。用户命名优先于它。
     var heading: String? = nil
-    /// 这一行的对话（终端行为最近绑定的那段，没有为 nil）：提示词足迹按它读（docs/design.md 10.5 节决策 10）。
+    /// 这一行的对话（终端行为最近绑定的那段，没有为 nil）：历史提示词按它读（docs/design.md 10.5 节决策 10）。
     var conversationID: Int64? = nil
-    /// 这段对话的任务标题（标题，没有时为最新提示词，压成一行）：删除确认框与提示词足迹的栏头用。没有对话为 nil。
+    /// 这段对话的任务标题（标题，没有时为最新提示词，压成一行）：删除确认框与历史提示词的栏头用。没有对话为 nil。
     var taskTitle: String? = nil
     /// 副标题是目录（相对项目根的写法）：单行、过长时截掉开头，保留最有用的末段。
     var subtitleIsPath = false
     /// 终端行：前台识别出的 AI（工具键）。
     var fgTool: String? = nil
-    /// 终端行：前台是不认识的命令时它的程序名（如 `agy`）；提示词足迹据此说明（2026-10-30）。
+    /// 终端行：前台是不认识的命令时它的程序名（如 `agy`）；历史提示词据此说明（2026-10-30）。
     var fgCommand: String? = nil
     /// 终端行：前台这款 AI 的状态同步未生效、用户也没在设置里撤销过，第 1 行显示可点的「未同步」（M4b 块 5 P2）。
     var unsynced = false
@@ -629,7 +629,7 @@ struct SidebarTree: Equatable {
     var children: [String: [String]] = ["": []]
     /// 建树时记下的父节点表（buildTree 填写；手工构造的树为空，差分时现算）。
     var parent: [String: String] = [:]
-    /// 全部存活终端的行（终端 ID → 行），不受搜索与「只看待处理」影响：标题栏、窗口标题、足迹按右侧显示的终端取，
+    /// 全部存活终端的行（终端 ID → 行），不受搜索与「只看待处理」影响：标题栏、窗口标题、历史提示词按右侧显示的终端取，
     /// 不能因为它此刻不在列表里就当成 Shell（2026-11-13 长跑发现）。不参与差分与 `==`。
     var terminalRows: [String: TaskRow] = [:]
 
@@ -1118,7 +1118,7 @@ final class SidebarModel {
         row.cwdDenied = t.notice == "cwd_denied"
         row.cwdMissing = t.notice == "cwd_missing"
         // 悬停只给副标题被截断时的全文（2026-10-30 用户要求）。目录、前台进程、会话 ID、CLI 版本不再放：
-        // 冲突写在「冲突」徽标上，状态同步问题在「未同步」与提示栏的「详情…」里，会话 ID 在提示词足迹的栏头。
+        // 冲突写在「冲突」徽标上，状态同步问题在「未同步」与提示栏的「详情…」里，会话 ID 在历史提示词的栏头。
         if !t.conflictWith.isEmpty { row.conflictTerminals = t.conflictWith.count + 1 }
         if t.fgKind == "command" { row.fgCommand = t.fgPath.map { ($0 as NSString).lastPathComponent } }
         // 状态同步（M1 第 7 块）：只说前台这款 CLI。

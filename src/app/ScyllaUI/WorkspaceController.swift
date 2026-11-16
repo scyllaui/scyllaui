@@ -38,7 +38,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
     /// 终端区（右侧窄标题栏之下）：只放当前终端或空态。
     private let container = NSView()
     private let emptyState = NSStackView()
-    /// 提示词足迹（M4a 追加块 9）：终端区右侧固定宽度的一栏，菜单「终端 › 提示词足迹」开关。
+    /// 历史提示词（M4a 追加块 9）：终端区右侧固定宽度的一栏，菜单「终端 › 历史提示词」开关。
     private let promptPanel = PromptHistoryPanel()
     private var promptPanelShown = false
     /// 后台崩溃后已在原终端接回的对话与时间（防止恢复即崩溃时反复重来）。
@@ -50,15 +50,15 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
     private var lostAgentReport: DispatchWorkItem?
     private var containerToEdge: NSLayoutConstraint?
     private var containerToPanel: NSLayoutConstraint?
-    /// 足迹栏宽度（可拖动，docs/design.md 10.5 节决策 20）。
+    /// 历史提示词栏宽度（可拖动，docs/design.md 10.5 节决策 20）。
     private lazy var promptWidth = promptPanel.widthAnchor.constraint(equalToConstant: Self.savedPromptWidth)
-    /// 足迹读的对话：侧栏选中的对话优先，否则当前终端绑定的；`promptKey` 变了才重读（副标题即最新提示词）。
+    /// 历史提示词读的对话：侧栏选中的对话优先，否则当前终端绑定的；`promptKey` 变了才重读（副标题即最新提示词）。
     private var selectedConversation: Int64?
     private var currentRowConversation: Int64?
-    /// 当前终端这一行没有对话时，足迹栏按它说明场景（`PromptHistoryPanel.noConversationMessage`）。
+    /// 当前终端这一行没有对话时，历史提示词栏按它说明场景（`PromptHistoryPanel.noConversationMessage`）。
     private var currentRowForeground: (tool: String?, unsynced: Bool, command: String?) = (nil, false, nil)
     private var promptKey: String?
-    /// 当前终端这一行上次是否在运行中、属于哪段对话：一轮结束时足迹补读一次（`reloadPromptsAtTurnEnd`）。
+    /// 当前终端这一行上次是否在运行中、属于哪段对话：一轮结束时历史提示词补读一次（`reloadPromptsAtTurnEnd`）。
     private var promptRowRunning: (conversation: Int64?, running: Bool) = (nil, false)
     private let split = SidebarSplitView()
     private let sideView = SidebarBackgroundView()
@@ -298,7 +298,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         let right = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
         right.addSubview(container)
-        // 提示词足迹在终端区右侧，默认隐藏（M4a 追加块 9）。
+        // 历史提示词在终端区右侧，默认隐藏（M4a 追加块 9）。
         promptPanel.translatesAutoresizingMaskIntoConstraints = false
         promptPanel.isHidden = true
         right.addSubview(promptPanel)
@@ -641,7 +641,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         return CGSize(width: (cell.width * 40).rounded(.up) + 8, height: (cell.height * 10).rounded(.up) + 8)
     }
 
-    /// 提示词足迹占用的宽度；关着时为 0。
+    /// 历史提示词占用的宽度；关着时为 0。
     private var promptPanelExtent: CGFloat { promptPanelShown ? promptWidth.constant : 0 }
 
     private static var savedPromptWidth: CGFloat {
@@ -649,7 +649,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         return w == 0 ? PromptHistoryPanel.defaultWidth : min(max(w, PromptHistoryPanel.minWidth), PromptHistoryPanel.maxWidth)
     }
 
-    /// 拖动足迹栏左边缘（同侧栏策略）：限在 280—520，且终端区不小于最小尺寸（拖动时不加宽窗口）；松手时记住。
+    /// 拖动历史提示词栏左边缘（同侧栏策略）：限在 280—520，且终端区不小于最小尺寸（拖动时不加宽窗口）；松手时记住。
     private func resizePromptPanel(_ width: CGFloat, done: Bool) {
         let room = (promptPanel.superview?.bounds.width ?? 0) - terminalMinSize.width
         let w = min(max(width, PromptHistoryPanel.minWidth), max(PromptHistoryPanel.minWidth, min(PromptHistoryPanel.maxWidth, room)))
@@ -671,7 +671,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
     // MARK: 铺满屏幕时的三栏比例（2026-11-06 用户要求）
 
     /// 照 Claude 桌面版铺满时的三栏（2026-11-06 用户在 1512 pt 与 1280 pt 两种屏幕上对照截图）：左栏基本固定在 300 左右，
-    /// 右栏占「窗口宽度减去左栏」的约 34.2%（1512 宽时约 414，1280 宽时约 335）。侧栏取 300，足迹栏按这个比例，
+    /// 右栏占「窗口宽度减去左栏」的约 34.2%（1512 宽时约 414，1280 宽时约 335）。侧栏取 300，历史提示词栏按这个比例，
     /// 仍限在各自的最小、最大宽度之间。
     static let filledSidebarWidth: CGFloat = 300
     static let filledPromptShare: CGFloat = 0.342
@@ -690,7 +690,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         noteWindowFrame()
     }
 
-    /// 窗口变成铺满屏幕（双击标题栏、绿色按钮或「窗口」菜单的缩放、填充与全屏）时，按比例重设侧栏与足迹栏的宽度并记住。
+    /// 窗口变成铺满屏幕（双击标题栏、绿色按钮或「窗口」菜单的缩放、填充与全屏）时，按比例重设侧栏与历史提示词栏的宽度并记住。
     func windowDidResize(_ notification: Notification) {
         guard !window.inLiveResize else { return }
         noteWindowFrame()
@@ -1435,9 +1435,9 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         }
     }
 
-    // MARK: 提示词足迹（M4a 追加块 9，docs/design.md 10.5 节决策 10）
+    // MARK: 历史提示词（M4a 追加块 9，docs/design.md 10.5 节决策 10）
 
-    /// 开关提示词足迹。打开时窗口不够宽先加宽，终端区保持至少 40 列。
+    /// 开关历史提示词。打开时窗口不够宽先加宽，终端区保持至少 40 列。
     @objc func togglePromptHistory(_ sender: Any?) {
         promptPanelShown.toggle()
         promptPanel.isHidden = !promptPanelShown
@@ -1455,7 +1455,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         refreshPromptHistory(key: nil)
     }
 
-    /// 重读足迹：`key` 为当前终端这一行的（对话、最新提示词），没变就不读；nil 表示目标可能变了，总是读。
+    /// 重读历史提示词：`key` 为当前终端这一行的（对话、最新提示词），没变就不读；nil 表示目标可能变了，总是读。
     private func refreshPromptHistory(key: String?) {
         guard promptPanelShown else { return }
         let target = selectedConversation ?? currentRowConversation

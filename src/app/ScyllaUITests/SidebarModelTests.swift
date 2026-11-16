@@ -428,7 +428,7 @@ final class SidebarModelTests: XCTestCase {
         let filtered = build(m)
         XCTAssertEqual(filtered.kids("pc:1"), ["t:b"], "处理完即移出")
         XCTAssertEqual(m.pendingTotal, 0)
-        // 移出列表的终端仍有行：右侧正在显示它时，标题栏、窗口标题与足迹照常按它显示（2026-11-13 长跑发现）。
+        // 移出列表的终端仍有行：右侧正在显示它时，标题栏、窗口标题与历史提示词照常按它显示（2026-11-13 长跑发现）。
         XCTAssertEqual(filtered.terminalRows["a"]?.toolKey, "claude")
         XCTAssertEqual(filtered.terminalRows["a"]?.conversationID, 7)
         let filteredInfo = m.statusInfos(filtered)["a"]
@@ -623,7 +623,7 @@ final class SidebarModelTests: XCTestCase {
         XCTAssertEqual(r.lamp, .running)
         XCTAssertEqual(r.name, "我的名字", "用户命名代替工具名显示在第 1 行（2026-10-25）")
         XCTAssertEqual(r.subtitle, "第二问", "命名不再占用副标题")
-        XCTAssertEqual(r.taskTitle, "原生标题", "任务标题供删除确认框与足迹栏头用")
+        XCTAssertEqual(r.taskTitle, "原生标题", "任务标题供删除确认框与历史提示词栏头用")
         XCTAssertEqual(w.heading, "修一下测试", "第 1 行显示任务标题（2026-11-01），工具靠图标区分")
         XCTAssertEqual(r.heading, "原生标题", "有用户命名时第 1 行仍显示命名（TaskCell 取 name 优先）")
         var cleared = terminal("r", project: 1, state: "running", tool: "claude", conversation: 4)

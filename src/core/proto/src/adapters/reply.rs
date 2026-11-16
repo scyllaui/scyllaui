@@ -19,15 +19,15 @@ pub enum ReplySource {
     KimiWire,
     /// Grok `updates.jsonl`（ACP）：最后一个 `user_message_chunk` 之后的 `agent_message_chunk` 依次拼接。
     GrokUpdates,
-    /// Copilot `~/.copilot/session-state/<ID>/events.jsonl`（适配器的 `session_record`）：提示词足迹为 `type=user.message`
+    /// Copilot `~/.copilot/session-state/<ID>/events.jsonl`（适配器的 `session_record`）：历史提示词为 `type=user.message`
     /// 的 `data.content`（2026-10-30 本机 1.0.105 只读核对）；回复为 `type=assistant.message` 的 `data.content`（2026-10-31 起读）。
     CopilotEvents,
     /// OpenCode 的 SQLite 库 `~/.local/share/opencode/opencode.db`（不是 JSON Lines，由 scyllauid 只读查询，表结构不是官方承诺）：
-    /// 提示词足迹为 `message` 中 `role=user` 的消息与其 `part`（2026-10-30 本机 1.19.5 只读核对）；回复为最近一条有文字的
+    /// 历史提示词为 `message` 中 `role=user` 的消息与其 `part`（2026-10-30 本机 1.19.5 只读核对）；回复为最近一条有文字的
     /// `role=assistant` 消息的 `text` 段（2026-10-31 起读，`opencode_reply`）。
     OpenCodeDb,
     /// Antigravity `~/.gemini/antigravity-cli/brain/<ID>/.system_generated/logs/transcript_full.jsonl`（Hook 的
-    /// `transcriptPath`，2026-11-01 本机 1.4.12 只读核对）：提示词足迹为 `type=USER_INPUT`、`source=USER_EXPLICIT` 的
+    /// `transcriptPath`，2026-11-01 本机 1.4.12 只读核对）：历史提示词为 `type=USER_INPUT`、`source=USER_EXPLICIT` 的
     /// `content` 中 `<USER_REQUEST>` 里的部分；回复为 `type=PLANNER_RESPONSE` 的 `content`。
     AntigravityTranscript,
 }
@@ -38,7 +38,7 @@ impl ReplySource {
         self != ReplySource::None
     }
 
-    /// 能读出用户提示词（提示词足迹）。
+    /// 能读出用户提示词（历史提示词）。
     pub fn has_prompts(self) -> bool {
         self != ReplySource::None
     }

@@ -99,7 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         term.items.last?.allowsKeyEquivalentWhenHidden = true
         add(String(localized: "打开文件夹…"), #selector(WorkspaceController.openFolder(_:)), "o")
         term.addItem(.separator())
-        add(String(localized: "改名…"), #selector(WorkspaceController.renameCurrent(_:)), "")
+        add(String(localized: "重命名…"), #selector(WorkspaceController.renameCurrent(_:)), "")
         add(String(localized: "关闭终端"), #selector(WorkspaceController.closeCurrent(_:)), "w")
         term.addItem(.separator())
         // Cmd+\ 没有被 libghostty 默认绑定（固定 commit 的 Config.zig 中没有反斜杠键），直接走菜单。
@@ -110,7 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         term.items.last?.isHidden = true
         term.items.last?.allowsKeyEquivalentWhenHidden = true
         // Cmd+Y：固定 commit 的 libghostty 没有默认绑定，直接走菜单（M4a 追加块 9）。
-        add(String(localized: "提示词足迹"), #selector(WorkspaceController.togglePromptHistory(_:)), "y")
+        add(String(localized: "历史提示词"), #selector(WorkspaceController.togglePromptHistory(_:)), "y")
         // Cmd+Shift+,：与 Ghostty 的默认绑定相同（M2 第 5 块）；只留快捷键，不在菜单里显示（docs/design.md 10.5 节决策 25）。
         add(String(localized: "重新载入配置"), #selector(WorkspaceController.reloadConfiguration(_:)), ",")
         term.items.last?.keyEquivalentModifierMask = [.command, .shift]

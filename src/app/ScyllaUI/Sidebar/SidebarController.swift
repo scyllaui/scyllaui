@@ -196,7 +196,7 @@ final class SidebarFeed {
         searchStart = nil
         searchReply = nil
         searchApplied = nil
-        // 被筛掉的终端行不在差分里，它变了也要出批：右侧正在显示它时，窗口标题与足迹要跟随（SidebarTree.terminalRows）。
+        // 被筛掉的终端行不在差分里，它变了也要出批：右侧正在显示它时，窗口标题与历史提示词要跟随（SidebarTree.terminalRows）。
         guard !changes.isEmpty || !batch.traces.isEmpty || banner != shownBanner || status != shownStatus
             || batch.pending != shownPending || tree.terminalRows != shown.terminalRows else { return }
         // 只在真正出批时记时间：没有变化、不出批的那次不该让下一批多等一个间隔。
@@ -267,7 +267,7 @@ final class SidebarController: NSObject, NSOutlineViewDataSource, NSOutlineViewD
     var onRename: ((_ id: String, _ name: String) -> Void)?
     /// 双击「最近任务」中的一条：一键恢复该对话（参数为对话 ID，M1 第 6 块；单击只选中，docs/design.md 10.5 节决策 15）。
     var onResumeConversation: ((Int64) -> Void)?
-    /// 用户单击选中了某条对话（最近任务、搜索结果）或选中回到终端（nil）：提示词足迹跟随（M4a 追加块 9）。
+    /// 用户单击选中了某条对话（最近任务、搜索结果）或选中回到终端（nil）：历史提示词跟随（M4a 追加块 9）。
     var onSelectConversation: ((Int64?) -> Void)?
     /// 「最近任务」与搜索结果里对话行的悬停删除按钮（docs/design.md 10.5 节决策 4）：对话 ID 与确认框里显示的标题。
     var onDeleteConversation: ((_ id: Int64, _ title: String) -> Void)?
@@ -688,7 +688,7 @@ final class SidebarController: NSObject, NSOutlineViewDataSource, NSOutlineViewD
         beginRename(id)
     }
 
-    /// 某段对话所在的行：最近任务（对话行）优先，其次是绑定它的终端行；都没有为 nil。提示词足迹的栏头用。
+    /// 某段对话所在的行：最近任务（对话行）优先，其次是绑定它的终端行；都没有为 nil。历史提示词的栏头用。
     func row(forConversation id: Int64) -> TaskRow? {
         if case .conversation(let r)? = tree.rows[SidebarKey.conversation(id)] { return r }
         // 终端行含被筛掉的（SidebarTree.terminalRows）。

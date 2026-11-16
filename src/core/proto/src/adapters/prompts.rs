@@ -1,4 +1,4 @@
-//! 提示词足迹（docs/design.md 10.5 节决策 10）：从各款 CLI 自己的会话记录读出用户提示词，按时间先后列出。只含纯逻辑；
+//! 历史提示词（docs/design.md 10.5 节决策 10）：从各款 CLI 自己的会话记录读出用户提示词，按时间先后列出。只含纯逻辑；
 //! 读文件在 scyllauid 的 `prompts.rs`。文件与格式与「最后一条回复」相同（`ReplySource`），2026-10-25 本机只读核对：
 //! Claude 2.1.309、Codex 0.163.0、Kimi 2.3.1、Grok（updates.jsonl）；Copilot 1.0.105（events.jsonl，2026-10-30）。
 //! 格式都不是官方承诺，认不出的行跳过。

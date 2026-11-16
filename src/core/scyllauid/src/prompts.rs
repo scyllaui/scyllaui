@@ -1,4 +1,4 @@
-//! 提示词足迹的读取线程（docs/design.md 10.5 节决策 10，docs/protocol.md 第 4 节 `prompts.list`）：按需读 CLI 自己的
+//! 历史提示词的读取线程（docs/design.md 10.5 节决策 10，docs/protocol.md 第 4 节 `prompts.list`）：按需读 CLI 自己的
 //! 会话记录，读完把整条应答交回核心线程发给请求方。不落库、不缓存；显示前脱敏。读文件不占核心线程：大的 Claude 会话记录
 //! 有几十 MB。
 
@@ -47,7 +47,7 @@ impl PromptWorker {
         let (tx, rx) = mpsc::channel::<PromptJob>();
         std::thread::spawn(move || {
             for job in rx {
-                let reply = crate::guarded("读提示词足迹", || read(&job)).unwrap_or_else(|| {
+                let reply = crate::guarded("读历史提示词", || read(&job)).unwrap_or_else(|| {
                     json!({"type": "reply", "id": job.req_id, "ok": false,
                            "error": {"code": "internal", "message": "读会话记录出错"}})
                 });
@@ -73,14 +73,14 @@ pub fn read(job: &PromptJob) -> Value {
     for s in &job.segments {
         let a = adapter(s.tool);
         let source = a.reply_source;
-        // `supported` 为 false：这款工具不支持足迹（不读它的记录），界面写明「暂不支持」，不说成记录已不在。
+        // `supported` 为 false：这款工具不支持历史提示词（不读它的记录），界面写明「暂不支持」，不说成记录已不在。
         let supported = source.has_prompts();
         if source == ReplySource::OpenCodeDb {
             // 查询出错（库被占用太久、表结构变了）标 `error`，界面说读取失败，不说成记录已不在。
             let (list, error) = match opencode_prompts(&job.home, &s.native_id) {
                 Ok(list) => (list, false),
                 Err(e) => {
-                    log!("读提示词足迹：OpenCode 库查询失败（{}）：{e}", s.native_id);
+                    log!("读历史提示词：OpenCode 库查询失败（{}）：{e}", s.native_id);
                     (None, true)
                 }
             };
@@ -91,7 +91,7 @@ pub fn read(job: &PromptJob) -> Value {
             }
             continue;
         }
-        // 记录位置：Copilot 按会话 ID 推出（适配器的 `session_record`；Antigravity 的那个是对话库，足迹读 Hook 给出的会话记录），
+        // 记录位置：Copilot 按会话 ID 推出（适配器的 `session_record`；Antigravity 的那个是对话库，历史提示词读 Hook 给出的会话记录），
         // Kimi 查会话索引，其余用 Hook 给出的路径。
         let path = match (a.session_record, source) {
             _ if !supported => None,
@@ -119,7 +119,7 @@ pub fn read(job: &PromptJob) -> Value {
 /// OpenCode 库的位置（官方默认的数据目录，相对 CLI 家目录）。
 const OPENCODE_DB: &str = ".local/share/opencode/opencode.db";
 
-/// 只读打开 OpenCode 库（OpenCode 正在写时最多等 500 ms）；库不在为 Ok(None)。足迹与读回复、用量（`title.rs`）共用。
+/// 只读打开 OpenCode 库（OpenCode 正在写时最多等 500 ms）；库不在为 Ok(None)。历史提示词与读回复、用量（`title.rs`）共用。
 pub(crate) fn open_opencode(home: &Path) -> rusqlite::Result<Option<rusqlite::Connection>> {
     let db = home.join(OPENCODE_DB);
     if !db.exists() {
@@ -301,7 +301,7 @@ mod tests {
         let _ = fs::remove_dir_all(&d);
     }
 
-    /// OpenCode 2：足迹读 `session_message`，用户消息与输入行的 `!命令`（存为 `type=shell`）。
+    /// OpenCode 2：历史提示词读 `session_message`，用户消息与输入行的 `!命令`（存为 `type=shell`）。
     #[test]
     fn opencode_2_prompts() {
         let d = test_dir("prompts-opencode2");

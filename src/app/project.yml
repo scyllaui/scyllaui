@@ -57,7 +57,7 @@ targets:
         # 版权声明（2026-10-30 用户定稿，写全）：「关于」面板与开屏页脚共用这一句。
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 Siyuan Zhang. All rights reserved."
         # 版本号规则见 docs/design.md 10.1 节「版本号」；构建号由 build-app.sh 按 git 提交数覆盖，这里的 1 只在直接用 Xcode 构建时生效。
-        MARKETING_VERSION: "0.4.51"
+        MARKETING_VERSION: "0.4.52"
         CURRENT_PROJECT_VERSION: "1"
         # 签名（M4b 块 1，docs/design.md 10.6 节「块 1 实现」）：正式版与测试版都用 Developer ID 并开硬化运行时；
         # 测试版也签，系统按签名认出同一个 App，换构建不再重问「文稿」等授权。Rust 程序在「Copy ScyllaUI core」里用同一身份签。

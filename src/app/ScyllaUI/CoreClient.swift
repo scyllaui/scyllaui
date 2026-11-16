@@ -170,7 +170,7 @@ final class CoreClient {
         }
     }
 
-    /// 提示词足迹（`prompts.list`，M4a 追加块 9）：后台读完才应答，在读线程回调；未连接时立即以 nil 回调。
+    /// 历史提示词（`prompts.list`，M4a 追加块 9）：后台读完才应答，在读线程回调；未连接时立即以 nil 回调。
     func prompts(conversationID: Int64, completion: @escaping ([String: Any]?) -> Void) {
         queue.async {
             guard self.fd >= 0 else { return completion(nil) }

@@ -1,4 +1,4 @@
-// 提示词足迹面板的单测（M4a 追加块 9，docs/design.md 10.5 节决策 10）：分段、「更早的未显示」与空状态。
+// 历史提示词面板的单测（M4a 追加块 9，docs/design.md 10.5 节决策 10）：分段、「更早的未显示」与空状态。
 
 import AppKit
 import XCTest
@@ -41,11 +41,11 @@ final class PromptHistoryPanelTests: XCTestCase {
         XCTAssertEqual(PromptHistoryPanel.noConversationMessage(tool: "claude", unsynced: true, command: nil),
                        "Claude Code 的状态同步未生效，对不上它的会话；点侧栏这一行的「未同步」修复。", "发提示词也对不上时不说「发出一条」")
         XCTAssertEqual(PromptHistoryPanel.noConversationMessage(tool: nil, unsynced: false, command: "agy"),
-                       "前台运行的 agy 不是 ScyllaUI 已接入的 Agent，没有提示词足迹。", "不认识的命令不说成 Shell")
-        // 不支持足迹的工具：写明不支持，不借用「记录已不在」（docs/ui-methodology.md 1.7 节）。
+                       "前台运行的 agy 不是 ScyllaUI 已接入的 Agent，没有历史提示词。", "不认识的命令不说成 Shell")
+        // 不支持历史提示词的工具：写明不支持，不借用「记录已不在」（docs/ui-methodology.md 1.7 节）。
         p.show(reply: ["ok": true, "truncated": false, "items": [],
                        "segments": [["conversation_id": 3, "tool": "opencode", "available": false, "supported": false]]])
-        XCTAssertTrue(shows("OpenCode 暂不支持提示词足迹"))
+        XCTAssertTrue(shows("OpenCode 暂不支持历史提示词"))
         XCTAssertFalse(shows("会话记录已不在，读不到提示词"))
         p.show(reply: ["ok": true, "truncated": false, "items": [],
                        "segments": [["conversation_id": 4, "tool": "opencode", "available": false, "supported": true, "error": true]]])

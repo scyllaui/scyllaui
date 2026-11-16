@@ -393,7 +393,7 @@ impl Reader {
         last_reply(job.reply, &tail(&path, REPLY_TAIL)?)
     }
 
-    /// Copilot 的会话记录：适配器按会话 ID 推出的 `events.jsonl`（同提示词足迹）。
+    /// Copilot 的会话记录：适配器按会话 ID 推出的 `events.jsonl`（同历史提示词）。
     fn copilot_record(&self, job: &TitleJob) -> Option<PathBuf> {
         let rel = adapter(job.tool).session_record?;
         valid_session_id(&job.native_id).then(|| self.home.join(rel(&job.native_id)))

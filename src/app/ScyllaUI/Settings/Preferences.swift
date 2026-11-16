@@ -67,7 +67,7 @@ enum Prefs {
         set { d.set(newValue, forKey: Key.lastTerminal) }
     }
 
-    /// 提示词足迹栏的宽度，0 为默认（docs/design.md 10.5 节决策 20）。
+    /// 历史提示词栏的宽度，0 为默认（docs/design.md 10.5 节决策 20）。
     static var promptPanelWidth: Double {
         get { d.double(forKey: Key.promptPanelWidth) }
         set { d.set(newValue, forKey: Key.promptPanelWidth) }

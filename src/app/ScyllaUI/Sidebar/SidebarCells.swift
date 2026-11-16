@@ -601,7 +601,7 @@ final class TaskCell: HoverCellView, SidebarCell, NSTextFieldDelegate {
         if denied.text != dirNotice {
             denied.set(dirNotice, fg: ScyllaUIStyle.waiting, bg: ScyllaUIStyle.waitingBg)
             denied.toolTip = r.cwdMissing
-                ? String(localized: "这个终端的启动目录已不存在（可能已被删除、改名或移走），Shell 已在主目录打开，没有代输启动命令。目录还在别处时，可在那里新开终端。")
+                ? String(localized: "这个终端的启动目录已不存在（可能已被删除、重命名或移走），Shell 已在主目录打开，没有代输启动命令。目录还在别处时，可在那里新开终端。")
                 : String(localized: "后台进不了这个终端的启动目录，Shell 已在其他目录启动，没有代输启动命令。可在「系统设置 › 隐私与安全性 › 文件与文件夹」中允许 ScyllaUI 访问，再新开终端。")
         }
         unsynced.isHidden = !r.unsynced

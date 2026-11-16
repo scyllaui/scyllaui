@@ -1,6 +1,6 @@
 // 分隔线的悬停标识（2026-11-06 用户要求，参照 Claude 桌面版的视觉与动效）：鼠标停在分隔线的拖动热区上 0.15 s 后，
 // 一条 2 pt 的蓝线用 0.15 s 淡入；移开后淡出；拖动中一直显示。线本身不接收鼠标事件，拖动与双击仍由各自的分隔线处理。
-// 侧栏分隔线（SidebarSplitView）与足迹栏左边缘（PromptHistoryPanel 的 EdgeHandle）共用。
+// 侧栏分隔线（SidebarSplitView）与历史提示词栏左边缘（PromptHistoryPanel 的 EdgeHandle）共用。
 
 import AppKit
 

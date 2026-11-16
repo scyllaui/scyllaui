@@ -1,4 +1,4 @@
-// 提示词足迹（M4a 追加块 9，docs/design.md 10.5 节决策 10、19、20）：主窗口右侧一栏，列出当前终端（或侧栏选中的已结束对话）
+// 历史提示词（M4a 追加块 9，docs/design.md 10.5 节决策 10、19、20）：主窗口右侧一栏，列出当前终端（或侧栏选中的已结束对话）
 // 里用户发过的提示词。内容由后台按需从 CLI 自己的会话记录读出（`prompts.list`），不落库，显示前已脱敏。
 // 2026-10-25 按用户意见改版：栏头为绿色「历史」符号与标题，第 2 行为工具全名 · 当前会话或已结束 · 完整会话 ID；
 // 最新在上，编号 1、2、3…（最早为 1），左侧细连线同侧栏；每条默认收起（最多 2 行），点箭头展开全文；右侧拷贝常显与缩略时间，
@@ -42,7 +42,7 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
     }
 
     private let icon = NSImageView()
-    private let title = NSTextField(labelWithString: String(localized: "提示词足迹"))
+    private let title = NSTextField(labelWithString: String(localized: "历史提示词"))
     private let count = NSTextField(labelWithString: "")
     private let subjectLabel = NSTextField(labelWithString: "")
     private let sessionLabel = NSTextField(labelWithString: "")
@@ -66,7 +66,7 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
         // 只画自己的范围：macOS 14 起视图默认不裁剪绘制，`draw` 收到的脏区可以超出边界，原来 `dirtyRect.fill()` 把底色涂满了
         // 整个终端区，栏一打开终端整块看不见（2026-10-25 实测，图层树里这一栏的内容层宽 1103 而栏宽 320）。
         clipsToBounds = true
-        icon.image = NSImage(systemSymbolName: "clock.arrow.circlepath", accessibilityDescription: String(localized: "提示词足迹"))
+        icon.image = NSImage(systemSymbolName: "clock.arrow.circlepath", accessibilityDescription: String(localized: "历史提示词"))
         icon.symbolConfiguration = .init(pointSize: 13, weight: .semibold)
         icon.contentTintColor = ScyllaUIStyle.ready
         title.font = ScyllaUIStyle.sectionFont
@@ -80,12 +80,12 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
         sessionLabel.textColor = .tertiaryLabelColor
         sessionLabel.lineBreakMode = .byTruncatingMiddle
         sessionLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        close.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: String(localized: "关闭提示词足迹"))
+        close.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: String(localized: "关闭历史提示词"))
         close.symbolConfiguration = .init(pointSize: 11, weight: .semibold)
         close.bezelStyle = .accessoryBarAction
         close.isBordered = false
         close.contentTintColor = .secondaryLabelColor
-        close.toolTip = String(localized: "关闭提示词足迹")
+        close.toolTip = String(localized: "关闭历史提示词")
         close.target = self
         close.action = #selector(closeClicked(_:))
         filter.placeholderString = String(localized: "筛选")
@@ -219,7 +219,7 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
             return (c, n)
         }, uniquingKeysWith: { a, _ in a })
         let missing = segInfo.allSatisfy { ($0["available"] as? Bool) == false }
-        // 这款工具不支持足迹（后台标 `supported: false`）：写明不支持，不说成记录已不在（docs/ui-methodology.md 1.7 节）。
+        // 这款工具不支持历史提示词（后台标 `supported: false`）：写明不支持，不说成记录已不在（docs/ui-methodology.md 1.7 节）。
         let unsupported = segInfo.last.flatMap { s in (s["supported"] as? Bool) == false ? s["tool"] as? String : nil }
         // 读取出错（`error`，如工具升级后记录格式变了）：说读取失败，同样不说成记录已不在。
         let failed = segInfo.last.flatMap { s in (s["error"] as? Bool) == true ? s["tool"] as? String : nil }
@@ -228,7 +228,7 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
         if segs != segments { expanded = [] }
         (items, segments, truncated, sessionIDs) = (list, segs, cut, ids)
         updateSubject()
-        let empty = unsupported.map { String(localized: "\(Self.toolName($0)) 暂不支持提示词足迹") }
+        let empty = unsupported.map { String(localized: "\(Self.toolName($0)) 暂不支持历史提示词") }
             ?? failed.map { String(localized: "读取 \(Self.toolName($0)) 的会话记录失败，可能是它升级后格式变了；详情见日志文件夹里的 scyllauid.log") }
             ?? (missing ? String(localized: "会话记录已不在，读不到提示词") : String(localized: "这段对话还没有提示词"))
         rebuild(message: list.isEmpty ? empty : nil)
@@ -239,7 +239,7 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
     static func noConversationMessage(tool: String?, unsynced: Bool, command: String?) -> String {
         if let tool, unsynced { return String(localized: "\(toolName(tool)) 的状态同步未生效，对不上它的会话；点侧栏这一行的「未同步」修复。") }
         if let tool { return String(localized: "还没对上 \(toolName(tool)) 的这次会话，发出一条提示词后显示。") }
-        if let command { return String(localized: "前台运行的 \(command) 不是 ScyllaUI 已接入的 Agent，没有提示词足迹。") }
+        if let command { return String(localized: "前台运行的 \(command) 不是 ScyllaUI 已接入的 Agent，没有历史提示词。") }
         return String(localized: "当前是 Shell，在这个终端启动 Agent 后，这里显示它的历史提示词。")
     }
 
@@ -358,7 +358,7 @@ enum PromptTime {
     }
 }
 
-/// 足迹的一行：左侧细连线（竖线贯穿，最后一行只画到短横线处），与侧栏连线同色同粗。
+/// 历史提示词的一行：左侧细连线（竖线贯穿，最后一行只画到短横线处），与侧栏连线同色同粗。
 private class PromptRowCell: HoverCellView {
     static let lineX: CGFloat = 14
     var isLast = false {
@@ -535,7 +535,7 @@ private final class PlainRowView: NSTableRowView {
     override func drawSelection(in dirtyRect: NSRect) {}
 }
 
-/// 足迹栏的左边缘：左右调整光标，拖动改宽度，双击回到默认宽度（同侧栏分隔线）；悬停与拖动报给蓝线（2026-11-06）。
+/// 历史提示词栏的左边缘：左右调整光标，拖动改宽度，双击回到默认宽度（同侧栏分隔线）；悬停与拖动报给蓝线（2026-11-06）。
 private final class EdgeHandle: NSView {
     var onDrag: ((CGFloat, Bool) -> Void)?
     var onDoubleClick: (() -> Void)?

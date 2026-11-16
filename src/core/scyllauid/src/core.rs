@@ -358,7 +358,7 @@ pub struct Core {
     /// 已监听的 git 目录：描述符 → 目录。
     git_fds: HashMap<RawFd, PathBuf>,
     titles: TitleWorker,
-    /// 提示词足迹的读取线程（M4a 追加块 9）；测试里多数不设。
+    /// 历史提示词的读取线程（M4a 追加块 9）；测试里多数不设。
     prompts: Option<PromptWorker>,
     /// 存活终端此刻所在的目录（workspace.json，M4a 追加块 10）：重启后恢复终端时开回原目录。
     workspace: WorkspaceDirs,
@@ -3104,7 +3104,7 @@ impl Core {
         }
     }
 
-    /// 提示词足迹（docs/design.md 10.5 节决策 10，docs/protocol.md 第 4 节）：沿 `resumed_from` 找出恢复链，由旧到新交给
+    /// 历史提示词（docs/design.md 10.5 节决策 10，docs/protocol.md 第 4 节）：沿 `resumed_from` 找出恢复链，由旧到新交给
     /// 读取线程，读完由它把应答交回（`Cmd::PromptsListed`）。对话不存在或读取线程未启用时立即回错误。
     fn prompts_list(&mut self, id: u64, req_id: Value, msg: &Value) {
         let mut chain = Vec::new();
@@ -3123,7 +3123,7 @@ impl Core {
         let fail = |code: &str, message: &str| json!({"type": "reply", "id": req_id, "ok": false, "error": {"code": code, "message": message}});
         match &self.prompts {
             _ if chain.is_empty() => self.send_to(id, &fail("not_found", "对话不存在")),
-            None => self.send_to(id, &fail("unavailable", "提示词足迹未启用")),
+            None => self.send_to(id, &fail("unavailable", "历史提示词未启用")),
             Some(worker) => worker.request(PromptJob { conn: id, req_id, home: PathBuf::from(&self.cli_home), segments: chain }),
         }
     }
@@ -4932,7 +4932,7 @@ mod tests {
         opened(&mut b, false);
         kimi(&mut b, "Interrupt", json!({"turn_id": 7, "reason": "cancelled"}));
         assert_eq!(state(&b), AgentState::Ready);
-        // 提示词取自内容块（侧栏副标题、提示词足迹用）。
+        // 提示词取自内容块（侧栏副标题、历史提示词用）。
         assert_eq!(b.count("SELECT count(*) FROM conversation WHERE native_id = 'session_k1' AND last_prompt = '五'"), 1);
         // 一轮刚结束时的插话另开一轮、不发提交 Hook（2026-11-15 实测）：记录里新开的一轮让 Ready 回到运行中，
         // 以此刻作新的轮次标识，监听按它重开；这一轮的结束照常从记录认出。
@@ -5187,7 +5187,7 @@ mod tests {
         assert_eq!((tool("t1"), tool("t2")), (Some(json!("codex")), Some(Value::Null)));
     }
 
-    /// 提示词足迹（M4a 追加块 9）：`prompts.list` 交给读取线程，读完才回；恢复链由旧到新；对话不存在立即回错误。
+    /// 历史提示词（M4a 追加块 9）：`prompts.list` 交给读取线程，读完才回；恢复链由旧到新；对话不存在立即回错误。
     #[test]
     fn prompts_list_reads_on_worker_and_replies() {
         let mut b = bench("prompts");
