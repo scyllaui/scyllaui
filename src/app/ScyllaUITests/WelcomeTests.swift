@@ -78,6 +78,16 @@ final class WelcomePolicyTests: XCTestCase {
                               feedback: .some(nil)), .init(splash: true, guide: false, feedback: true))
     }
 
+    /// 「看过」只在用户点了那一页的按钮时记：须知点「继续」、引导在最后一页点了按钮、「遇到问题」点「完成」。
+    /// 引导前两页不单独记，没走到最后一页就关掉的，下次整组再出现。关窗不走这里，所以不会记。
+    func testReadMarksComeOnlyFromActingOnAPage() {
+        XCTAssertEqual(WelcomePolicy.mark(leaving: .notice), .notice)
+        XCTAssertNil(WelcomePolicy.mark(leaving: .files))
+        XCTAssertNil(WelcomePolicy.mark(leaving: .why))
+        XCTAssertEqual(WelcomePolicy.mark(leaving: .hooks), .guide)
+        XCTAssertEqual(WelcomePolicy.mark(leaving: .feedback), .feedback)
+    }
+
     func testMajorMinor() {
         XCTAssertEqual(WelcomePolicy.majorMinor("0.4.0"), "0.4")
         XCTAssertEqual(WelcomePolicy.majorMinor("1.0"), "1.0")

@@ -93,6 +93,11 @@ NAME="ScyllaUI"
 [ "$CONFIG" = "Debug" ] && NAME="ScyllaUIBeta"
 APP="$DERIVED/Build/Products/$CONFIG/$NAME.app"
 [ -x "$APP/Contents/MacOS/$NAME" ] || fail "构建失败，未生成 $APP"
+# Xcode 复用同一个包目录，包目录自己的修改时间停在第一次建它的那天（0.4.48—0.4.50 三个发布包都是 2026-11-14 03:16:01，
+# 比 11-14 换图标还早）。macOS 的图标缓存按路径与包目录的修改时间判断是否过期：时间不变，换过图标的新版装到同一路径后，
+# 程序坞仍显示旧图标（2026-11-17 用户全新安装 0.4.50 遇到；只删程序坞图标缓存无效，更新包目录时间后恢复）。
+# 所以每次构建都把它更新为构建时间。修改时间不在签名范围内，发布包（ditto、zip、DMG）会带着这个时间。
+touch "$APP"
 [ "$(file -b "$APP/Contents/MacOS/$NAME" | head -c 6)" = "Mach-O" ] && ! cmp -s "$APP/Contents/MacOS/$NAME" "$PROJECT_DIR/src/core/target/release/scyllaui" || fail "$APP 主程序异常"
 [ -f "$APP/Contents/Resources/terminfo/78/xterm-ghostty" ] || fail "$APP 缺少 terminfo"
 for bin in $HELPERS; do

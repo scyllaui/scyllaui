@@ -13,8 +13,14 @@ DERIVED="$PROJECT_DIR/output/build-tests"
 
 [ -x "$XCODEGEN" ] || { echo "错误：未找到 $XCODEGEN" >&2; exit 1; }
 "$XCODEGEN" generate --spec "$APP_DIR/project.yml" --project "$APP_DIR" --quiet
+# 编译失败时上一次的测试包还在，接着运行会把旧结果当成这一次的（2026-11-16 发现：测试引用了测试目标里没有的类型，
+# 脚本照样报「80 个通过」）。所以必须看这一次构建是否成功，失败就停，不运行旧包。
+XCODE_LOG="$DERIVED/xcodebuild-tests.log"
+mkdir -p "$DERIVED"
 xcodebuild -project "$APP_DIR/ScyllaUI.xcodeproj" -scheme ScyllaUITests -derivedDataPath "$DERIVED" \
-  build-for-testing | grep -E "^/.*(error|warning): |TEST BUILD (SUCCEEDED|FAILED)" || true
+  build-for-testing > "$XCODE_LOG" 2>&1 || true
+grep -E "^/.*(error|warning): |TEST BUILD (SUCCEEDED|FAILED)" "$XCODE_LOG" || true
+grep -q "TEST BUILD SUCCEEDED" "$XCODE_LOG" || { echo "错误：测试目标编译失败，没有运行测试；完整日志：$XCODE_LOG" >&2; exit 1; }
 BUNDLE="$DERIVED/Build/Products/Debug/ScyllaUITests.xctest"
 [ -d "$BUNDLE" ] || { echo "错误：构建失败，未生成 $BUNDLE" >&2; exit 1; }
 xcrun xctest "$BUNDLE"

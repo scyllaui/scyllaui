@@ -101,18 +101,27 @@ extension Prefs {
     static var feedbackShownAt: Date? { UserDefaults.standard.object(forKey: WelcomeKey.feedbackAt) as? Date }
     static var noticeSeen: String? { UserDefaults.standard.string(forKey: WelcomeKey.noticeSeen) }
 
-    /// 显示使用须知时记下它的版本与时间。
+    // 下面三项「看过」的记录只在用户点了那一页的按钮时写（WelcomePolicy.mark），关窗不写。
+
+    /// 用户在使用须知页点了「继续」：记下须知的版本与时间。
     static func recordNotice(version: String, at date: Date) {
         UserDefaults.standard.set(version, forKey: WelcomeKey.noticeSeen)
         UserDefaults.standard.set(date, forKey: WelcomeKey.noticeSeenAt)
     }
 
-    /// 关闭欢迎窗口（任何方式）即记为看过：开屏记时间与版本号，带引导时另记「主.次」，安排了「遇到问题」一页时另记时间。
-    static func recordWelcome(at date: Date, version: String, guide: Bool, feedback: Bool) {
-        let d = UserDefaults.standard
-        d.set(date, forKey: WelcomeKey.shownAt)
-        d.set(version, forKey: WelcomeKey.version)
-        if guide { d.set(WelcomePolicy.majorMinor(version), forKey: WelcomeKey.guideSeen) }
-        if feedback { d.set(date, forKey: WelcomeKey.feedbackAt) }
+    /// 用户在引导最后一页点了按钮：记下看过引导的「主.次」。
+    static func recordGuide(version: String) {
+        UserDefaults.standard.set(WelcomePolicy.majorMinor(version), forKey: WelcomeKey.guideSeen)
+    }
+
+    /// 用户在「遇到问题」页点了「完成」：记下时间。
+    static func recordFeedback(at date: Date) {
+        UserDefaults.standard.set(date, forKey: WelcomeKey.feedbackAt)
+    }
+
+    /// 欢迎窗口关闭时记开屏的时间与版本号（只是记录，不影响哪些页出现）。
+    static func recordSplash(at date: Date, version: String) {
+        UserDefaults.standard.set(date, forKey: WelcomeKey.shownAt)
+        UserDefaults.standard.set(version, forKey: WelcomeKey.version)
     }
 }

@@ -505,13 +505,18 @@ final class SidebarModelTests: XCTestCase {
         XCTAssertEqual(reasons, ["hooks 写成了行内数组（hooks = […]），ScyllaUI 只支持 [[hooks]] 写法，未改动",
                                  "配置文件格式有误（EOF at line 3），未改动",
                                  "被组织策略禁用（/h/.grok/requirements.toml），无法修复"])
-        // 条目都在、只是要更新（重复、旧写法）：文字单独说；还缺条目时仍按缺失说。
+        // 条目都在、只是要更新（重复、旧写法）：文字单独说；还缺条目时仍按缺失说。「设置 › Agent」的状态文字用同一个
+        // 判断（`outdatedOnly`），AgentPane 不在测试目标里，那一句在真实窗口里核对。
         let outdated = SBHookStatus(tool: "kimi", state: "missing", problems: ["outdated:block"], fixable: true)
-        XCTAssertEqual([outdated.reason, AgentPane.stateText(outdated)], ["Hook 条目需要更新", "条目需要更新"])
+        XCTAssertTrue(outdated.outdatedOnly)
+        XCTAssertEqual(outdated.reason, "Hook 条目需要更新")
         let mixed = SBHookStatus(tool: "claude", state: "missing", problems: ["missing:Stop", "outdated:SessionStart"], fixable: true)
-        XCTAssertEqual([mixed.reason, AgentPane.stateText(mixed)], ["Hook 条目缺失", "缺少条目"])
+        XCTAssertFalse(mixed.outdatedOnly)
+        XCTAssertEqual(mixed.reason, "Hook 条目缺失")
         let gone = SBHookStatus(tool: "grok", state: "missing", problems: ["missing:hooks_file"], fixable: true)
-        XCTAssertEqual([gone.reason, AgentPane.stateText(gone)], ["Hook 条目缺失", "缺少条目"])
+        XCTAssertFalse(gone.outdatedOnly)
+        XCTAssertEqual(gone.reason, "Hook 条目缺失")
+        XCTAssertFalse(SBHookStatus(tool: "kimi", state: "ok", problems: [], fixable: false).outdatedOnly)
         // 旧推送（rev 不大于快照）不生效。
         m.apply(["type": "snapshot", "rev": 10, "recent_total": 0, "projects": [], "terminals": [], "conversations": [],
                  "hooks": [hook("grok", "disabled", fixable: true)]])

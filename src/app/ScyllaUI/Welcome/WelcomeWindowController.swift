@@ -1,7 +1,8 @@
 // 欢迎窗口（M4a 块 4，docs/design.md 10.4 节决策 9）：与主窗口同大、盖在主窗口上（子窗口），透明标题栏、不可调整大小；
 // 主窗口照常接回终端。五页：① 开屏；② 「文稿」等文件夹的访问授权说明；③ 为什么要同步状态（Hook）；④ 安装状态同步
 // （0.4.1 起③④由原来的一页拆成两页）；⑤ 遇到问题怎么反馈（2026-11-02）。②—④ 只在首次启动与主或次版本号变化时出现，
-// ⑤ 1.0.0 之前每次启动、之后每天第一次打开时出现（WelcomePolicy）。关闭（任何方式）即记为看过。
+// ⑤ 每天第一次打开时出现（WelcomePolicy）。用户在那一页点了往下走的按钮才记为看过；停在某一页不操作、窗口被关掉
+// （关闭按钮、退出 App、改语言后重启）都不算，下次还会出现（2026-11-16 用户决定）。
 // 没看过当前版本的《使用须知》时，开屏后先是须知页，只有「继续」，关窗不退出（2026-11-07 开源后取代原先的许可协议同意页）。
 // ②—④ 的内容列宽随窗口（不少于窗口宽的 60%），③④ 可「← 上一步」回看（2026-10-28 用户要求，docs/design.md 10.4 节决策 9）。
 
@@ -108,12 +109,26 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
 
     private var page = 0
 
-    private enum Page { case notice, files, why, hooks, feedback }
+    private typealias Page = WelcomePolicy.Page
 
     /// 开屏之后的页序：使用须知、引导页 ②—④ 与「遇到问题」⑤ 各按自己的规则出现。
     private lazy var pages: [Page] = (notice ? [.notice] : []) + (guide ? [.files, .why, .hooks] : []) + (feedback ? [.feedback] : [])
 
+    /// 用户在当前页点了往下走的按钮（「继续」「完成」「以后再说」）：这是写「看过」记录的唯一入口（WelcomePolicy.mark）。
+    private func acted() {
+        guard page >= 1, page <= pages.count, let mark = WelcomePolicy.mark(leaving: pages[page - 1]) else { return }
+        if record {
+            switch mark {
+            case .notice: Prefs.recordNotice(version: WelcomePolicy.noticeVersion, at: Date())
+            case .guide: Prefs.recordGuide(version: version)
+            case .feedback: Prefs.recordFeedback(at: Date())
+            }
+        }
+        scyllauiLog.notice("welcome read mark=\(String(describing: mark), privacy: .public) page=\(self.page) recorded=\(self.record)")
+    }
+
     private func next() {
+        acted()
         page += 1
         showPage()
     }
@@ -130,8 +145,9 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-        if record { Prefs.recordWelcome(at: Date(), version: version, guide: guide, feedback: feedback) }
-        scyllauiLog.notice("welcome closed page=\(self.page) recorded=\(self.record)")
+        // 关窗只记开屏的时间与版本；各页是否看过由 acted() 在用户点按钮时记，停在某一页被关掉的不算。
+        if record { Prefs.recordSplash(at: Date(), version: version) }
+        scyllauiLog.notice("welcome closed page=\(self.page) of=\(self.pages.count) recorded=\(self.record)")
         window.parent?.removeChildWindow(window)
         onClose()
     }
@@ -221,10 +237,10 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
     }
 
     /// 使用须知（2026-11-07，开源后取代许可协议同意页）：全文可滚动，按界面语言显示中文或英文；只有「继续」，
-    /// 显示时就记下版本（GPL 不要求接收者同意任何条款才能运行，所以不设「同意」，也不因关窗退出）。
+    /// 点了「继续」才记下版本（2026-11-16 起，此前显示时就记）。GPL 不要求接收者同意任何条款才能运行，所以不设「同意」，
+    /// 也不因关窗退出；没点「继续」就关掉的，下次打开还会出现。
     private func noticePage() -> NSView {
-        if record { Prefs.recordNotice(version: WelcomePolicy.noticeVersion, at: Date()) }
-        scyllauiLog.notice("notice shown version=\(WelcomePolicy.noticeVersion, privacy: .public) recorded=\(self.record)")
+        scyllauiLog.notice("notice shown version=\(WelcomePolicy.noticeVersion, privacy: .public)")
         // 全文长，这一页内容列放宽到窗口宽的约八成（2026-11-02 用户看过协议页后要求横向拉宽）。
         let width = columnWidth(fraction: 0.8)
         // 全文按固定宽度排好放进滚动框，文档视图不用 Auto Layout：NSTextView 放在整页缩放（ScaledPage）里会随缩放反复
@@ -508,7 +524,10 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         showPage()
     }
 
-    @objc private func finish() { window.close() }
+    @objc private func finish() {
+        acted()
+        window.close()
+    }
 
     @objc private func install() { HookRepairFlow.run(.repair, core: core) }
 
