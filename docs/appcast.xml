@@ -6,6 +6,14 @@
 <description>ScyllaUI release feed</description>
 <language>en</language>
 <item>
+    <title>ScyllaUI 0.4.52</title>
+    <pubDate>Mon, 16 Nov 2026 18:30:55 +0000</pubDate>
+    <sparkle:version>733</sparkle:version>
+    <sparkle:shortVersionString>0.4.52</sparkle:shortVersionString>
+    <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+    <enclosure url="https://github.com/scyllaui/scyllaui/releases/download/v0.4.52/ScyllaUI-0.4.52.dmg" sparkle:edSignature="NYh8bwgTWaZvWjI79LTBk21GwpoHgvLMadmpNpxeoMbtOUykmxKYeUPCICb66psDJF9RCG8MxHVQjcoClS/ADA==" length="12591768" type="application/octet-stream"/>
+</item>
+<item>
     <title>ScyllaUI 0.4.51</title>
     <pubDate>Mon, 16 Nov 2026 16:29:58 +0000</pubDate>
     <sparkle:version>726</sparkle:version>
