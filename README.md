@@ -8,6 +8,8 @@
 
 ScyllaUI puts your AI coding agents — Claude Code, Codex, Kimi Code, Grok Build, OpenCode, GitHub Copilot CLI and Antigravity CLI — and plain shells from all your projects into one native macOS window. The sidebar groups every terminal by project and shows, in real time, whether each agent is running, waiting for your approval, done, or failed. The right side is a full native terminal.
 
+**Download:** [scyllaui.github.io/scyllaui](https://scyllaui.github.io/scyllaui/) (always links to the latest version)
+
 ![ScyllaUI main window: terminals grouped by project with live agent status, the status bar on top, and a terminal on the right](docs/images/overview-en.png)
 
 ### Features
@@ -129,6 +131,8 @@ Copyright © 2026 Siyuan Zhang. All rights reserved.
 ## 中文
 
 ScyllaUI 把多个项目里的 AI 编程助手（Claude Code、Codex、Kimi Code、Grok Build、OpenCode、GitHub Copilot CLI、Antigravity CLI）和普通 Shell 放进同一个原生 macOS 窗口：左侧侧栏按项目管理所有终端，实时显示每个 Agent 正在运行、等您确认、已经做完还是出错；右侧是完整的原生终端。
+
+**下载：** [scyllaui.github.io/scyllaui](https://scyllaui.github.io/scyllaui/) （始终指向最新版本）
 
 ![ScyllaUI 主窗口：按项目分组的终端与实时状态，顶部是状态栏，右侧是终端](docs/images/overview-zh.png)
 
