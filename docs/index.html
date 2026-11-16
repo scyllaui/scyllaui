@@ -31,6 +31,7 @@
   h1 { font-size: 40px; line-height: 1.2; margin: 0 0 4px; }
   .tagline { margin: 0; color: var(--muted); }
   img.icon { width: 112px; height: 112px; margin: 0; border: 0; border-radius: 0; flex: none; }
+  .lead { font-size: 20px; font-weight: 600; margin: 0 0 12px; }
   .download { margin: 28px 0 8px; }
   .btn {
     display: inline-block; padding: 12px 22px; border-radius: 10px;
@@ -63,7 +64,10 @@
   </header>
 
   <div data-lang="zh">
-    <p>把多个项目里的 AI 编程助手（Claude Code、Codex、Kimi Code、Grok Build、OpenCode、GitHub Copilot CLI、Antigravity CLI）和普通 Shell 放进同一个原生 macOS 窗口：侧栏按项目管理所有终端，实时显示每个 Agent 正在运行、等您确认、已经做完还是出错。</p>
+    <p class="lead">为并行运行多个 AI 编程助手打造的原生 macOS 终端。</p>
+    <p>在几个项目里同时开着多个不同品牌的 AI Agent，最费神的不是写提示词，而是记住哪个在等你。ScyllaUI 把它们和普通 Shell 收进同一个窗口，按 Git 仓库自动归组，实时显示每个 Agent 正在运行、等你批准、已经做完还是出错。不用自己写 Hook，也不靠猜：没有可靠信号时，它会直接标为「未知」。</p>
+    <p>终端由后台进程常驻托管：退出、更新 App，甚至重启电脑，正在进行的对话都会接回原处。</p>
+    <p>目前支持 Claude Code、Codex、Kimi Code、Grok Build、OpenCode、GitHub Copilot CLI 和 Antigravity CLI，后续会陆续接入更多 AI Agent。</p>
     <div class="download">
       <a class="btn js-dl" href="https://github.com/scyllaui/scyllaui/releases/latest">下载 ScyllaUI</a>
       <p class="meta"><span class="js-ver">最新版本</span> · 需要 Apple 芯片的 Mac、macOS 14 及以上，不支持 Intel 芯片</p>
@@ -84,7 +88,10 @@
   </div>
 
   <div data-lang="en">
-    <p>ScyllaUI puts your AI coding agents — Claude Code, Codex, Kimi Code, Grok Build, OpenCode, GitHub Copilot CLI and Antigravity CLI — and plain shells from all your projects into one native macOS window. The sidebar groups every terminal by project and shows, in real time, whether each agent is running, waiting for your approval, done, or failed.</p>
+    <p class="lead">A native macOS terminal built for running many AI coding agents in parallel.</p>
+    <p>With different AI agents running across your projects, the hard part isn't writing prompts; it's remembering which one is waiting on you. ScyllaUI brings them and your plain shells into one window, grouped by Git repository, and shows live whether each agent is running, waiting for approval, done or failed. There are no hooks to write by hand and no guessing: without a reliable signal, it says "Unknown".</p>
+    <p>A background process keeps every terminal alive: quit or update the app, even restart your Mac, and your conversations resume where they left off.</p>
+    <p>Currently supported: Claude Code, Codex, Kimi Code, Grok Build, OpenCode, GitHub Copilot CLI and Antigravity CLI, with more agents on the way.</p>
     <div class="download">
       <a class="btn js-dl" href="https://github.com/scyllaui/scyllaui/releases/latest">Download ScyllaUI</a>
       <p class="meta"><span class="js-ver">Latest version</span> · Requires a Mac with Apple silicon and macOS 14 or later; Intel Macs are not supported</p>

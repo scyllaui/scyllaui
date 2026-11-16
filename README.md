@@ -6,7 +6,13 @@
 
 ## English
 
-ScyllaUI puts your AI coding agents — Claude Code, Codex, Kimi Code, Grok Build, OpenCode, GitHub Copilot CLI and Antigravity CLI — and plain shells from all your projects into one native macOS window. The sidebar groups every terminal by project and shows, in real time, whether each agent is running, waiting for your approval, done, or failed. The right side is a full native terminal.
+**A native macOS terminal built for running many AI coding agents in parallel.**
+
+With different AI agents running across your projects, the hard part isn't writing prompts; it's remembering which one is waiting on you. ScyllaUI brings them and your plain shells into one window, grouped by Git repository, and shows live whether each agent is running, waiting for approval, done or failed. There are no hooks to write by hand and no guessing: without a reliable signal, it says "Unknown".
+
+A background process keeps every terminal alive: quit or update the app, even restart your Mac, and your conversations resume where they left off.
+
+Currently supported: Claude Code, Codex, Kimi Code, Grok Build, OpenCode, GitHub Copilot CLI and Antigravity CLI, with more agents on the way.
 
 **Download:** [scyllaui.github.io/scyllaui](https://scyllaui.github.io/scyllaui/) (always links to the latest version)
 
@@ -130,7 +136,13 @@ Copyright © 2026 Siyuan Zhang. All rights reserved.
 
 ## 中文
 
-ScyllaUI 把多个项目里的 AI 编程助手（Claude Code、Codex、Kimi Code、Grok Build、OpenCode、GitHub Copilot CLI、Antigravity CLI）和普通 Shell 放进同一个原生 macOS 窗口：左侧侧栏按项目管理所有终端，实时显示每个 Agent 正在运行、等您确认、已经做完还是出错；右侧是完整的原生终端。
+**为并行运行多个 AI 编程助手打造的原生 macOS 终端。**
+
+在几个项目里同时开着多个不同品牌的 AI Agent，最费神的不是写提示词，而是记住哪个在等你。ScyllaUI 把它们和普通 Shell 收进同一个窗口，按 Git 仓库自动归组，实时显示每个 Agent 正在运行、等你批准、已经做完还是出错。不用自己写 Hook，也不靠猜：没有可靠信号时，它会直接标为「未知」。
+
+终端由后台进程常驻托管：退出、更新 App，甚至重启电脑，正在进行的对话都会接回原处。
+
+目前支持 Claude Code、Codex、Kimi Code、Grok Build、OpenCode、GitHub Copilot CLI 和 Antigravity CLI，后续会陆续接入更多 AI Agent。
 
 **下载：** [scyllaui.github.io/scyllaui](https://scyllaui.github.io/scyllaui/) （始终指向最新版本）
 
