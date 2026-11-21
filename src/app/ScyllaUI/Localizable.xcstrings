@@ -411,7 +411,7 @@
         }
       }
     },
-    "修复后需要在 Codex 里输入 /hooks，按提示信任 ScyllaUI 的 %lld 条 Hook": {
+    "修复后需要在 Codex 里信任 ScyllaUI 的 %lld 条 Hook，写入后会说明怎么做": {
       "localizations": {
         "en": {
           "variations": {
@@ -419,13 +419,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "After repairing, type /hooks in Codex and trust ScyllaUI's %lld hook when prompted"
+                  "value": "After repairing, ScyllaUI's %lld hook must be trusted in Codex; ScyllaUI shows how once it is written"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "After repairing, type /hooks in Codex and trust ScyllaUI's %lld hooks when prompted"
+                  "value": "After repairing, ScyllaUI's %lld hooks must be trusted in Codex; ScyllaUI shows how once they are written"
                 }
               }
             }
@@ -2581,7 +2581,7 @@
         }
       }
     },
-    "需要在 Codex 里输入 /hooks，按提示信任 ScyllaUI 的 %lld 条 Hook": {
+    "需要在 Codex 里信任 ScyllaUI 的 %lld 条 Hook": {
       "localizations": {
         "en": {
           "variations": {
@@ -2589,13 +2589,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Type /hooks in Codex and trust ScyllaUI's %lld hook when prompted"
+                  "value": "ScyllaUI's %lld hook must be trusted in Codex"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Type /hooks in Codex and trust ScyllaUI's %lld hooks when prompted"
+                  "value": "ScyllaUI's %lld hooks must be trusted in Codex"
                 }
               }
             }
@@ -2833,12 +2833,12 @@
         }
       }
     },
-    "装好后还要在 Codex 里输入 /hooks，把 ScyllaUI 的 Hook 设为信任，Codex 的状态同步才会生效。": {
+    "装好后打开 Codex，它会询问是否信任新的 Hook：按下方向键选中第 2 项「Trust all and continue」再按回车，Codex 的状态同步才会生效。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "After installing, type /hooks in Codex and trust ScyllaUI's hooks. Codex's status won't sync until you do."
+            "value": "After installing, open Codex. It asks whether to trust the new hooks: press the Down Arrow to select option 2, “Trust all and continue”, then press Return. Codex's status won't sync until you do."
           }
         }
       }
@@ -2957,22 +2957,12 @@
         }
       }
     },
-    "在 Codex 里打开 /hooks": {
+    "在 ScyllaUI 的终端里打开 Codex：它启动时会询问是否信任新的 Hook（Hooks need review），按下方向键选中第 2 项「Trust all and continue」，再按回车。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open /hooks in Codex"
-          }
-        }
-      }
-    },
-    "在 ScyllaUI 的终端里打开 Codex：它启动时若询问是否信任新的 Hook（Hooks need review），选「Trust all and continue」；没有询问时，侧栏那一行会出现「未同步」，点它即可。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Codex in a ScyllaUI terminal. If it asks whether to trust new hooks (Hooks need review), choose “Trust all and continue”. If it doesn't ask, its sidebar row shows “Not synced” — click that."
+            "value": "Open Codex in a ScyllaUI terminal. When it starts, it asks whether to trust the new hooks (Hooks need review). Press the Down Arrow to select option 2, “Trust all and continue”, then press Return."
           }
         }
       }
@@ -2987,12 +2977,32 @@
         }
       }
     },
-    "将在这个终端的 Codex 输入行填入 /hooks，不回车。按回车打开 Codex 的 Hook 列表，再按 t 信任全部待审核的条目（按回车可逐条审核）；列表里没有时，退出 Codex 再打开，它会询问是否信任。这一步只能由您在 Codex 里确认，ScyllaUI 不代写信任记录。": {
+    "将在这个终端的 Codex 输入行填入 /hooks：\n\n1. 您按回车，打开 Codex 的 Hook 列表。\n2. 列表底部显示「t trust all」，这时按一下键盘上的字母键 T（不用回车），全部信任。\n\n列表里没有待信任的条目时：输入 /quit 再按回车退出 Codex，然后重新打开；它启动时会询问是否信任，按下方向键选中第 2 项「Trust all and continue」，再按回车。\n\n这一步只能由您在 Codex 里确认，ScyllaUI 不代写信任记录。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "ScyllaUI will type /hooks into Codex's input line in this terminal without pressing Return. Press Return to open Codex's hook list, then press t to trust all hooks awaiting review (or Return to review them one by one). If they aren't listed, quit Codex and open it again; it will ask whether to trust them. Only you can confirm this in Codex — ScyllaUI never writes trust records for you."
+            "value": "ScyllaUI will type /hooks into Codex's input line in this terminal:\n\n1. Press Return to open Codex's hook list.\n2. When the bottom of the list shows “t trust all”, press the T key once (no Return needed) to trust them all.\n\nIf no hooks are awaiting review in the list: type /quit and press Return to quit Codex, then open it again. When it starts, it asks whether to trust the hooks; press the Down Arrow to select option 2, “Trust all and continue”, then press Return.\n\nOnly you can confirm this in Codex — ScyllaUI never writes trust records for you."
+          }
+        }
+      }
+    },
+    "这个 Codex 的启动时间（%@）早于写入 Hook 的时间（%@），因此读不到新写入的 Hook，在当前线程中无法信任。\n\n1. 在 Codex 里输入 /quit 再按回车，退出 Codex。\n2. 重新打开：输入 codex 再按回车；要接着刚才的对话，输入 codex resume --last 再按回车。\n3. Codex 启动时会询问是否信任新的 Hook（Hooks need review）：按下方向键选中第 2 项「Trust all and continue」，再按回车。\n\n这一步只能由您在 Codex 里确认，ScyllaUI 不代写信任记录。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Codex started at %1$@, before the hooks were written at %2$@, so it can't see the new hooks and they can't be trusted in the current thread.\n\n1. In Codex, type /quit and press Return to quit.\n2. Open it again: type codex and press Return. To continue the same conversation, type codex resume --last and press Return.\n3. When Codex starts, it asks whether to trust the new hooks (Hooks need review). Press the Down Arrow to select option 2, “Trust all and continue”, then press Return.\n\nOnly you can confirm this in Codex — ScyllaUI never writes trust records for you."
+          }
+        }
+      }
+    },
+    "这个 Codex 需要重开一次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Codex needs to be restarted"
           }
         }
       }
@@ -3033,16 +3043,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "One more step: trust ScyllaUI's hooks in Codex"
-          }
-        }
-      }
-    },
-    "这款 Agent 的状态同步未生效，侧栏看不到它在做什么。点按查看并修复。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Status sync isn't working for this agent, so the sidebar can't see what it's doing. Click to review and fix."
           }
         }
       }
@@ -3363,16 +3363,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "This agent sent hook data that doesn't match what ScyllaUI expects, so the sidebar status may be inaccurate. Click “Details…” for versions and reasons."
-          }
-        }
-      }
-    },
-    "%@ 的状态同步未生效，对不上它的会话；点侧栏这一行的「未同步」修复。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Status sync isn't working for %@, so ScyllaUI can't match its session. Click “Not synced” on its sidebar row to fix it."
           }
         }
       }
@@ -4187,6 +4177,196 @@
           "stringUnit": {
             "state": "translated",
             "value": "Installing the update needs an administrator's approval: ScyllaUI is in the Applications folder, and this account can't replace it. The prompt that just appeared (ScyllaUI wants permission to update) is that step.\n\nTo update, choose ScyllaUI › Check for Updates… again and have an administrator enter their name and password, or ask an administrator to update while logged in."
+          }
+        }
+      }
+    },
+    "%@ 的状态没在同步，对不上它的会话；点侧栏这一行的「未同步」处理。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@'s status isn't syncing, so ScyllaUI can't match its session. Click “Not synced” on its sidebar row to see what to do."
+          }
+        }
+      }
+    },
+    "1. 在 %@ 里输入 %@ 再按回车，退出 %@。\n2. 重新打开：输入 %@ 再按回车；要接着刚才的对话，输入 %@ 再按回车。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1. In %1$@, type %2$@ and press Return to quit %3$@.\n2. Open it again: type %4$@ and press Return. To continue the same conversation, type %5$@ and press Return."
+          }
+        }
+      }
+    },
+    "• %@：输入 %@ 开新会话；或输入 %@ 退出后，用 %@ 接着刚才的对话。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• %1$@: type %2$@ to start a new session; or type %3$@ to quit, then %4$@ to continue the same conversation."
+          }
+        }
+      }
+    },
+    "• %@：输入 %@ 退出，再输入 %@ 重新打开；要接着刚才的对话用 %@。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• %1$@: type %2$@ to quit, then %3$@ to open it again; to continue the same conversation, use %4$@."
+          }
+        }
+      }
+    },
+    "• %@：退出后重新打开。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• %@: quit and open it again."
+          }
+        }
+      }
+    },
+    "下次失效": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stops next run"
+          }
+        }
+      }
+    },
+    "任选一种做法：\n\n1. 开新会话：在 %@ 里输入 %@ 再按回车。当前对话不会带到新会话里。\n2. 接着当前对话：输入 %@ 再按回车退出，然后输入 %@ 再按回车。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do either of these:\n\n1. Start a new session: in %1$@, type %2$@ and press Return. The current conversation isn't carried over.\n2. Continue the current conversation: type %3$@ and press Return to quit, then type %4$@ and press Return."
+          }
+        }
+      }
+    },
+    "修复完成，正在运行的会话要重开后才同步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repaired — running sessions need to be reopened to sync"
+          }
+        }
+      }
+    },
+    "已在运行的 %@ 会话通常还会继续同步；哪个会话不再同步了，它那一行会显示「未同步」。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sessions that are already running usually keep syncing. If one stops, its sidebar row shows “Not synced”."
+          }
+        }
+      }
+    },
+    "这个 %@ 在写入 Hook 之前就已启动，因此读不到新写入的 Hook，当前线程的状态无法同步。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This %@ started before the hooks were written, so it can't see the new hooks and the current thread's status can't sync."
+          }
+        }
+      }
+    },
+    "这个 %@ 的启动时间（%@）早于写入 Hook 的时间（%@），因此读不到新写入的 Hook，当前线程的状态无法同步。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This %1$@ started at %2$@, before the hooks were written at %3$@, so it can't see the new hooks and the current thread's status can't sync."
+          }
+        }
+      }
+    },
+    "这个 %@ 要重开后才同步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This %@ needs to be reopened to sync"
+          }
+        }
+      }
+    },
+    "这个 Agent 的状态没在同步，侧栏看不到它在做什么。点按查看怎么处理。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This agent's status isn't syncing, so the sidebar can't see what it's doing. Click to see what to do."
+          }
+        }
+      }
+    },
+    "这个 Codex 在写入 Hook 之前就已启动，因此读不到新写入的 Hook，在当前线程中无法信任。\n\n1. 在 Codex 里输入 /quit 再按回车，退出 Codex。\n2. 重新打开：输入 codex 再按回车；要接着刚才的对话，输入 codex resume --last 再按回车。\n3. Codex 启动时会询问是否信任新的 Hook（Hooks need review）：按下方向键选中第 2 项「Trust all and continue」，再按回车。\n\n这一步只能由您在 Codex 里确认，ScyllaUI 不代写信任记录。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Codex started before the hooks were written, so it can't see the new hooks and they can't be trusted in the current thread.\n\n1. In Codex, type /quit and press Return to quit.\n2. Open it again: type codex and press Return. To continue the same conversation, type codex resume --last and press Return.\n3. When Codex starts, it asks whether to trust the new hooks (Hooks need review). Press the Down Arrow to select option 2, “Trust all and continue”, then press Return.\n\nOnly you can confirm this in Codex — ScyllaUI never writes trust records for you."
+          }
+        }
+      }
+    },
+    "这个会话还在同步，退出后不再同步。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This session is still syncing; it stops syncing once it exits."
+          }
+        }
+      }
+    },
+    "这些会话在写入 Hook 之前就已启动，读不到新写入的 Hook：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These sessions started before the hooks were written, so they can't see the new hooks:"
+          }
+        }
+      }
+    },
+    "这些终端的行上显示「未同步」，点它可以再看到做法。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Their sidebar rows show “Not synced”; click it to see these steps again."
+          }
+        }
+      }
+    },
+    "这款 Agent 的状态同步配置已失效。这个会话还在同步，退出后就不再同步。点按查看并修复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This agent's status sync configuration no longer works. This session is still syncing, but it stops once it exits. Click to review and fix."
+          }
+        }
+      }
+    },
+    "退出 %@ 后重新打开，就能同步。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit %@ and open it again to sync."
           }
         }
       }

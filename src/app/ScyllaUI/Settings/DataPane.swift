@@ -152,6 +152,7 @@ final class DataPane: NSViewController {
                     alert.beginSheetModal(for: window)
                     return
                 }
+                alert.useWideLayout()
                 alert.alertStyle = .warning
                 alert.messageText = String(localized: "清除全部 \(n) 条已结束的对话记录？")
                 alert.informativeText = String(localized: "将从 ScyllaUI 的库里立即删除这些任务的标题、提示词、回复摘要与事件记录，删除后无法在 ScyllaUI 中恢复。正在运行的任务与 Agent 自己的会话记录不受影响。")

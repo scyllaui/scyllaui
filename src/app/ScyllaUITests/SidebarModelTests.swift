@@ -466,14 +466,15 @@ final class SidebarModelTests: XCTestCase {
         var claude = terminal("c", project: 1, state: "ready", tool: "claude", fg: "agent", fgTool: "claude")
         claude["foreground"] = ["kind": "agent", "tool": "claude", "version": "2.1.300", "version_verified": false]
         var codex = terminal("x", project: 1, fg: "agent", fgTool: "codex")
-        codex["foreground"] = ["kind": "agent", "tool": "codex", "version": "0.162.1", "version_verified": true]
+        // 2026-11-20 起「未同步」按后台给的这个进程的同步情况（`foreground.sync`）显示，不只看配置状态。
+        codex["foreground"] = ["kind": "agent", "tool": "codex", "version": "0.162.1", "version_verified": true, "sync": "off"]
         m.apply(["type": "snapshot", "rev": 1, "recent_total": 0, "projects": [project(1, "p", order: 0)],
                  "terminals": [claude, codex], "conversations": [],
                  "hooks": [hook("claude", "ok"), hook("codex", "missing", fixable: true), hook("kimi", "absent"),
                            hook("grok", "ok")]])
         XCTAssertTrue(m.banner().isEmpty, "状态同步未生效不进提示栏")
         let t = build(m)
-        XCTAssertEqual(task(t, "t:x")?.unsynced, true, "状态同步未生效：终端行显示「未同步」")
+        XCTAssertEqual(task(t, "t:x")?.unsynced, true, "这个进程没在同步：终端行显示「未同步」")
         XCTAssertEqual(task(t, "t:c")?.unsynced, false)
         XCTAssertNil(task(t, "t:c")?.note, "版本不进悬停提示（2026-10-30）")
         // Hook 数据有异常：提示栏第二行列出工具（M4b 块 6）。
@@ -490,7 +491,9 @@ final class SidebarModelTests: XCTestCase {
         // 修好后「未同步」随之消失。
         m.apply(["type": "hooks.upsert", "rev": 3,
                  "hooks": [hook("claude", "policy"), hook("codex", "ok"), hook("kimi", "absent"), hook("grok", "ok")]])
-        XCTAssertEqual(task(build(m), "t:x")?.unsynced, false, "状态变化后终端行重算")
+        codex["foreground"] = ["kind": "agent", "tool": "codex", "version": "0.162.1", "version_verified": true]
+        m.apply(["type": "terminal.upsert", "rev": 3, "terminal": codex])
+        XCTAssertEqual(task(build(m), "t:x")?.unsynced, false, "后台推来新的同步情况后终端行重算")
         // 有异常的进程退出后，提示随之消失；全部正常时提示栏不出现。
         m.apply(["type": "terminal.upsert", "rev": 4, "terminal": terminal("c", project: 1)])
         m.apply(["type": "hooks.upsert", "rev": 5,
@@ -524,30 +527,64 @@ final class SidebarModelTests: XCTestCase {
         XCTAssertEqual(m.hooks.map(\.state), ["disabled"])
     }
 
-    /// 「未同步」（M4b 块 5 P2）：前台这款 AI 的状态同步未生效、用户没撤销过时，终端行可点；修好或撤销后消失。
+    /// 「未同步」与「下次失效」（M4b 块 5 P2；2026-11-20 改为按后台给的这个进程真实的同步情况 `foreground.sync` 显示，
+    /// docs/design.md 4.7 节「会话是否真的在同步」）：
+    /// - `off`、`new_session`、`restart`：这个会话此刻没在同步，显示「未同步」，用户撤销过这款也显示；
+    /// - `old`：配置已失效但这个会话还在同步，不显示「未同步」，没撤销过时显示「下次失效」；
+    /// - 没有 `sync`：在同步，什么都不标，哪怕配置状态此刻不正常（以后台的判断为准）。
     func testUnsyncedBadge() {
         let m = model()
         func hook(_ tool: String, _ state: String) -> [String: Any] {
             ["tool": tool, "state": state, "path": "/h/\(tool)", "problems": [], "fixable": state == "missing"]
         }
+        func agent(_ id: String, _ tool: String, sync: String? = nil, entriesAtStart: Bool? = nil) -> [String: Any] {
+            var t = terminal(id, project: 1, fg: "agent", fgTool: tool)
+            var f = t["foreground"] as? [String: Any] ?? [:]
+            f["sync"] = sync
+            f["entries_at_start"] = entriesAtStart
+            t["foreground"] = f
+            return t
+        }
         m.apply(["type": "snapshot", "rev": 1, "recent_total": 0, "projects": [project(1, "p", order: 0)],
-                 "terminals": [terminal("x", project: 1, fg: "agent", fgTool: "codex"), terminal("k", project: 1, fg: "agent", fgTool: "kimi"),
-                               terminal("s", project: 1, fg: "shell")],
-                 "conversations": [], "hooks": [hook("codex", "untrusted"), hook("kimi", "ok")]])
+                 "terminals": [agent("x", "codex", sync: "off", entriesAtStart: false), agent("k", "kimi"), terminal("s", project: 1, fg: "shell"),
+                               agent("o", "grok", sync: "old"), agent("n", "copilot", sync: "new_session"), agent("r", "kimi", sync: "restart"),
+                               agent("q", "claude")],
+                 "conversations": [],
+                 "hooks": [hook("codex", "untrusted"), hook("kimi", "ok"), hook("grok", "missing"), hook("copilot", "ok"), hook("claude", "missing")]])
         var t = build(m)
-        XCTAssertEqual(task(t, "t:x")?.unsynced, true)
+        XCTAssertEqual(task(t, "t:x").map { [$0.unsynced, $0.syncNext] }, [true, false])
         XCTAssertEqual(task(t, "t:x")?.fgTool, "codex")
-        XCTAssertEqual(task(t, "t:k")?.unsynced, false, "状态同步正常的不标")
-        XCTAssertEqual(task(t, "t:s")?.unsynced, false, "Shell 不标")
+        XCTAssertEqual(task(t, "t:k").map { [$0.unsynced, $0.syncNext] }, [false, false], "在同步的不标")
+        XCTAssertEqual(task(t, "t:s").map { [$0.unsynced, $0.syncNext] }, [false, false], "Shell 不标")
         XCTAssertNil(task(t, "t:s")?.fgTool)
-        XCTAssertEqual(m.statusInfos(t)["x"]?.fgAgent, "codex", "状态行信息带前台 AI，供找正在运行的 Codex")
-        m.setHooksRemoved(["codex"])
-        XCTAssertEqual(task(build(m), "t:x")?.unsynced, false, "撤销过的不标")
+        XCTAssertEqual(task(t, "t:o").map { [$0.unsynced, $0.syncNext] }, [false, true], "还在同步、下次失效")
+        XCTAssertEqual(task(t, "t:n").map { [$0.unsynced, $0.syncNext] }, [true, false], "配置正常但这个进程读不到：未同步")
+        XCTAssertEqual(task(t, "t:r").map { [$0.unsynced, $0.syncNext] }, [true, false])
+        XCTAssertEqual(task(t, "t:q").map { [$0.unsynced, $0.syncNext] }, [false, false], "后台没说它没在同步就不标")
+        let infos = m.statusInfos(t)
+        XCTAssertEqual(infos["x"]?.fgAgent, "codex", "状态行信息带前台 AI，供找正在运行的 Codex")
+        XCTAssertEqual([infos["x"]?.fgSync, infos["n"]?.fgSync, infos["k"]?.fgSync], ["off", "new_session", nil])
+        XCTAssertEqual([infos["x"]?.fgEntriesAtStart, infos["k"]?.fgEntriesAtStart], [false, nil], "启动时条目在不在，供 Codex 信任引导分路")
+        // 用户撤销过：真的没在同步的照样显示「未同步」；还在同步的不再提示「下次失效」。
+        m.setHooksRemoved(["codex", "grok", "copilot"])
+        t = build(m)
+        XCTAssertEqual(task(t, "t:x")?.unsynced, true, "撤销过的也显示")
+        XCTAssertEqual(task(t, "t:n")?.unsynced, true)
+        XCTAssertEqual(task(t, "t:o").map { [$0.unsynced, $0.syncNext] }, [false, false], "自己撤的、还在同步：不提示")
         m.setHooksRemoved([])
-        XCTAssertEqual(task(build(m), "t:x")?.unsynced, true)
-        m.apply(["type": "hooks.upsert", "rev": 2, "hooks": [hook("codex", "ok"), hook("kimi", "ok")]])
+        XCTAssertEqual(task(build(m), "t:o")?.syncNext, true)
+        // 后台推来「在同步」：徽标消失。
+        m.apply(["type": "terminal.upsert", "rev": 2, "terminal": agent("x", "codex")])
+        m.apply(["type": "terminal.upsert", "rev": 3, "terminal": agent("o", "grok")])
         t = build(m)
         XCTAssertEqual(task(t, "t:x")?.unsynced, false, "修好即消失")
+        XCTAssertEqual(task(t, "t:o")?.syncNext, false)
+        // Hook 状态里带何时读取与引导命令。
+        let codex = SBHookStatus(json: ["tool": "codex", "state": "ok", "load": "session", "command": "codex", "new_session": "/new",
+                                        "quit": "/quit", "resume_last": "codex resume --last"])
+        XCTAssertEqual(codex?.load, "session")
+        XCTAssertEqual(codex?.commands, SyncGuide.Commands(command: "codex", newSession: "/new", quit: "/quit", resumeLast: "codex resume --last"))
+        XCTAssertEqual(SBHookStatus(json: ["tool": "claude", "state": "ok", "load": "live"])?.commands, SyncGuide.Commands())
     }
 
     /// 重建时没能接回的 AI（M4b 块 5 P2）：状态同步未生效的要说明并修复，正常的只说还没开始对话；撤销过的、状态未知的不说。

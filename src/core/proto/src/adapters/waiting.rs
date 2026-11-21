@@ -18,6 +18,9 @@ pub enum Scan {
     /// Antigravity 的对话库 `~/.gemini/antigravity-cli/conversations/<ID>.db`：每次有写入查询一次（`AgyRead`），
     /// 交给 `antigravity` 判定。
     AntigravityDb,
+    /// JSON Lines，只找开始监听之后写入的、用户提交的提示词（`prompts::Prompt::submitted`），每条报给核心线程核对
+    /// 这个会话是否真的在同步（docs/design.md 4.7 节「用会话记录对账」）。不由适配器的 `waiting_scan` 声明。
+    Submits(super::reply::ReplySource),
 }
 
 /// 逐行判定：认出了就返回对应的统一事件（`TurnInterrupt` 回到 Ready，`PermissionDone` 回到运行中）。

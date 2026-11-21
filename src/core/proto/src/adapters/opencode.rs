@@ -31,6 +31,10 @@ pub static ADAPTER: Adapter = Adapter {
     // `permission.replied`（拒绝也是它，`reply: reject`）、`form.replied` / `form.cancelled`；2.3.0 子代理默认在后台跑，
     // 主会话一轮结束后子会话还可能要审批（2026-11-13 长跑）。
     subagent_approvals: super::SubagentApprovals { resolved_event: true, outlive_turn: true },
+    // 2.3.0（`--standalone`）：运行中加载、卸载插件。（2026-11-18 实测，docs/s0-hook-compat.md）
+    hook_load: super::HookLoad::Live,
+    submit_record: false,
+    guide: super::Guide::NONE,
     matches,
     version,
     // `--help`：`-s, --session  session id to continue`。

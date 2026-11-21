@@ -191,16 +191,23 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
             self.notifier.applyBadge()
         }
         hookBar.onDetails = { [weak self] items in self?.showInaccurateDetails(items) }
-        // 「未同步」（M4b 块 5）：Codex 待信任时去 Codex 里打开 /hooks（填进这一行的终端），其余走这款工具的修复确认框。
+        // 「未同步」（M4b 块 5）：Codex 待信任时引导用户去这一行的 Codex 里信任（重开或 /hooks，见 openCodexHooks），其余走这款工具的修复确认框。
+        // 2026-11-20 起徽标按这个进程真实的同步情况显示（docs/design.md 4.7 节「会话是否真的在同步」）：配置正常、只是这个进程
+        // 读不到的，说明怎么开新会话或重开；配置已失效但它还在同步的（「下次失效」），修复确认框里多说一句。
         sidebar.onUnsynced = { [weak self] id, tool in
             guard let self else { return }
-            if tool == "codex", self.hookStatuses.first(where: { $0.tool == tool })?.state == "untrusted" {
+            let sync = self.statusInfos[id]?.fgSync
+            if let sync, SyncGuide.needsReopen(sync) {
+                self.guideReopen(terminal: id, tool: tool, sync: sync)
+            } else if tool == "codex", self.hookStatuses.first(where: { $0.tool == tool })?.state == "untrusted" {
                 self.openCodexHooks(preferred: id, afterRepair: false)
             } else {
-                HookRepairFlow.run(.repair, tools: [tool], core: self.core)
+                HookRepairFlow.run(.repair, tools: [tool], core: self.core, stillSynced: sync == "old")
             }
         }
         HookRepairFlow.openCodexHooks = { [weak self] id, after in self?.openCodexHooks(preferred: id, afterRepair: after) }
+        HookRepairFlow.afterRepair = { [weak self] tools in self?.reportReopenNeeded(tools) }
+        HookRepairFlow.runningAgents = { [weak self] in Set(self?.statusInfos.values.compactMap(\.fgAgent) ?? []) }
         // 窗口标题跟随当前终端这一行：有用户命名时为名称，否则即任务标题，与侧栏副标题一致（docs/design.md 第 5 节）。
         sidebar.onCurrentRow = { [weak self] row in
             self?.window.title = row?.name ?? row?.subtitle ?? "ScyllaUI"
@@ -514,6 +521,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         let line = title.split(whereSeparator: \.isNewline).joined(separator: " ")
         let shown = line.count > 40 ? String(line.prefix(40)) + "…" : line
         let alert = NSAlert()
+        alert.useWideLayout()
         alert.alertStyle = .warning
         alert.messageText = String(localized: "删除「\(shown)」的记录？")
         alert.informativeText = String(localized: "将从 ScyllaUI 中立即删除这条任务的标题、提示词、回复摘要与事件记录，删除后无法在 ScyllaUI 中恢复。Agent 自己的会话记录不受影响，知道会话 ID 仍可在 Agent 里恢复。")
@@ -1042,6 +1050,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         lines.append("")
         lines.append(String(localized: "反馈问题时点「报告问题…」，诊断包会带上日志和各 Agent 的版本。"))
         let alert = NSAlert()
+        alert.useWideLayout()
         alert.messageText = String(localized: "状态可能不准：\(names)")
         alert.informativeText = lines.joined(separator: "\n")
         alert.addButton(withTitle: String(localized: "好"))
@@ -1342,6 +1351,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         }
         lines += lost.idle.map { String(localized: "\(SidebarModel.toolName($0.tool))：还没开始对话，\($0.count) 个终端已恢复为 Shell") }
         let alert = NSAlert()
+        alert.useWideLayout()
         alert.messageText = String(localized: "有终端没能接回 Agent")
         alert.informativeText = lines.joined(separator: "\n")
         alert.addButton(withTitle: String(localized: "修复…"))
@@ -1368,6 +1378,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         guard welcome == nil, let notice = exitNotice else { return }
         exitNotice = nil
         let alert = NSAlert()
+        alert.useWideLayout()
         alert.messageText = notice.title()
         alert.informativeText = notice.message
         alert.addButton(withTitle: String(localized: "好"))
@@ -1377,26 +1388,58 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         }
     }
 
-    /// 「在 Codex 里打开 /hooks」（M4b 块 5 P1 方案 B，docs/design.md 10.6 节）：ScyllaUI 不代写信任记录，只把 `/hooks` 像粘贴一样
-    /// 填进正在运行的 Codex 的输入行（不回车），由用户在 Codex 自己的界面里确认。终端依次取 `preferred`（侧栏「未同步」那一行）、
-    /// 当前显示的、侧栏里第一个前台为 Codex 的；都没有时说明怎么做，不自动启动 Codex。`afterRepair`：修复刚写入、接着提示这一步。
+    /// 引导用户去 Codex 里信任 ScyllaUI 的 Hook（M4b 块 5 P1 方案 B；2026-11-17 重做，docs/design.md 4.7 节「引导用户信任」）：
+    /// ScyllaUI 不代写信任记录，由用户在 Codex 自己的界面里确认。先判断 Codex 的启动时间是否早于写入 Hook 的时间：早于，
+    /// 这个 Codex 读不到新写入的条目，提示重开；否则把 `/hooks` 像粘贴一样填进它的输入行（不回车）。终端依次取 `preferred`
+    /// （侧栏「未同步」那一行）、当前显示的、侧栏里第一个前台为 Codex 的；都没有时说明怎么做，不自动启动 Codex。
+    /// `afterRepair`：修复刚写入、接着提示这一步。写入时间向后台现取，不用推送来的：紧接修复之后，推送可能还没到。
     private func openCodexHooks(preferred: String?, afterRepair: Bool) {
         window.makeKeyAndOrderFront(nil)
+        guard window.attachedSheet == nil else { return NSSound.beep() }
+        core.request(["type": "hooks.status"]) { [weak self] reply in
+            let codex = ((reply["hooks"] as? [[String: Any]]) ?? []).first { $0["tool"] as? String == "codex" }
+            let changed = (codex?["changed_at"] as? NSNumber)?.int64Value
+            let stateChanged = (codex?["state_changed_at"] as? NSNumber)?.int64Value
+            DispatchQueue.main.async {
+                self?.guideCodexTrust(preferred: preferred, afterRepair: afterRepair, hookChangedAt: changed, stateChangedAt: stateChanged)
+            }
+        }
+    }
+
+    /// `hookChangedAt` 是 `hooks.json` 的修改时间，`stateChangedAt` 是后台记下的配置状态最近一次变化的时间（待信任时即条目写入的
+    /// 时间）。后台查得到「这个 Codex 启动时条目在不在」就以它分路、写后一个时间；查不到再比较启动时间与文件修改时间。
+    private func guideCodexTrust(preferred: String?, afterRepair: Bool, hookChangedAt: Int64?, stateChangedAt: Int64?) {
         guard window.attachedSheet == nil else { return NSSound.beep() }
         let running = Set(statusInfos.filter { $0.value.fgAgent == "codex" }.map(\.key))
         let id = [preferred, currentID].compactMap { $0 }.first(where: running.contains)
             ?? sidebar.terminalOrder.first(where: running.contains) ?? running.first
         let alert = NSAlert()
+        alert.useWideLayout()
         alert.messageText = afterRepair ? String(localized: "还差一步：在 Codex 里信任 ScyllaUI 的 Hook") : String(localized: "在 Codex 里信任 ScyllaUI 的 Hook")
         guard let id, sessions[id] != nil else {
             if !afterRepair { alert.messageText = String(localized: "没有正在运行的 Codex") }
-            alert.informativeText = String(localized: "在 ScyllaUI 的终端里打开 Codex：它启动时若询问是否信任新的 Hook（Hooks need review），选「Trust all and continue」；没有询问时，侧栏那一行会出现「未同步」，点它即可。")
-            scyllauiLog.notice("codex_hooks_fill skipped=no_codex after_repair=\(afterRepair)")
+            alert.informativeText = CodexTrustGuide.notRunningText
+            scyllauiLog.notice("codex_trust_guide route=no_codex after_repair=\(afterRepair)")
             alert.beginSheetModal(for: window)
             return
         }
         show(id)
-        alert.informativeText = HookRepairFlow.keepHooksCommand(String(localized: "将在这个终端的 Codex 输入行填入 /hooks，不回车。按回车打开 Codex 的 Hook 列表，再按 t 信任全部待审核的条目（按回车可逐条审核）；列表里没有时，退出 Codex 再打开，它会询问是否信任。这一步只能由您在 Codex 里确认，ScyllaUI 不代写信任记录。"))
+        let startedAt = statusInfos[id]?.fgStartedAt
+        let entriesAtStart = statusInfos[id]?.fgEntriesAtStart
+        let route = CodexTrustGuide.route(startedAt: startedAt, hookChangedAt: hookChangedAt, entriesAtStart: entriesAtStart)
+        let writtenAt = entriesAtStart == false ? (stateChangedAt ?? hookChangedAt) : hookChangedAt
+        scyllauiLog.notice("codex_trust_guide route=\(route == .restart ? "restart" : "hooks_list", privacy: .public) terminal=\(id.prefix(8), privacy: .public) after_repair=\(afterRepair) started_at=\(startedAt ?? 0) changed_at=\(writtenAt ?? 0) entries_at_start=\(entriesAtStart.map { $0 ? "yes" : "no" } ?? "unknown", privacy: .public)")
+        if route == .restart {
+            if !afterRepair { alert.messageText = String(localized: "这个 Codex 需要重开一次") }
+            alert.informativeText = CodexTrustGuide.restartText(startedAt: startedAt, hookChangedAt: writtenAt)
+            alert.addButton(withTitle: String(localized: "好"))
+            alert.beginSheetModal(for: window) { [weak self] _ in
+                guard let self, let s = self.sessions[id], s.hasView else { return }
+                self.window.makeFirstResponder(s.view)
+            }
+            return
+        }
+        alert.informativeText = CodexTrustGuide.hooksListText
         alert.addButton(withTitle: String(localized: "填入 /hooks"))
         alert.addButton(withTitle: String(localized: "取消"))
         alert.beginSheetModal(for: window) { [weak self] response in
@@ -1404,6 +1447,55 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
             s.view.sendText("/hooks")
             self.window.makeFirstResponder(s.view)
             scyllauiLog.notice("codex_hooks_fill terminal=\(id.prefix(8), privacy: .public) after_repair=\(afterRepair)")
+        }
+    }
+
+    /// 配置正常、但这个 Agent 进程启动时条目还没写入（`foreground.sync` 为 `new_session` 或 `restart`，docs/design.md 4.7 节
+    /// 「会话是否真的在同步」）：只说明怎么开新会话或重开，不往终端里填内容。
+    private func guideReopen(terminal id: String, tool: String, sync: String) {
+        window.makeKeyAndOrderFront(nil)
+        guard window.attachedSheet == nil else { return NSSound.beep() }
+        let name = SidebarModel.toolName(tool)
+        let commands = hookStatuses.first { $0.tool == tool }?.commands ?? SyncGuide.Commands()
+        let startedAt = statusInfos[id]?.fgStartedAt
+        let changedAt = (hookJSON.first { $0["tool"] as? String == tool }?["state_changed_at"] as? NSNumber)?.int64Value
+        if sessions[id] != nil { show(id) }
+        scyllauiLog.notice("sync_guide kind=\(sync, privacy: .public) tool=\(tool, privacy: .public) terminal=\(id.prefix(8), privacy: .public) started_at=\(startedAt ?? 0) changed_at=\(changedAt ?? 0)")
+        let alert = NSAlert()
+        alert.useWideLayout()
+        alert.messageText = String(localized: "这个 \(name) 要重开后才同步")
+        alert.informativeText = SyncGuide.text(tool: name, sync: sync, commands: commands, startedAt: startedAt, changedAt: changedAt)
+        alert.addButton(withTitle: String(localized: "好"))
+        alert.beginSheetModal(for: window) { [weak self] _ in
+            guard let self, let s = self.sessions[id], s.hasView else { return }
+            self.window.makeFirstResponder(s.view)
+        }
+    }
+
+    /// 修复写入成功后：有正在运行的会话要重开才同步时，接着说明一次，每款一行（同上一节）。终端的新情况随推送到，
+    /// 所以稍等一下再看；Codex 还要信任时不走这里，以信任引导为准。
+    private func reportReopenNeeded(_ tools: [String]) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            guard let self, self.window.attachedSheet == nil else { return }
+            var kinds: [String: String] = [:]
+            for info in self.statusInfos.values {
+                if let tool = info.fgAgent, tools.contains(tool), let sync = info.fgSync, SyncGuide.needsReopen(sync) { kinds[tool] = sync }
+            }
+            let lines = tools.compactMap { tool -> String? in
+                guard let sync = kinds[tool] else { return nil }
+                let commands = self.hookStatuses.first { $0.tool == tool }?.commands ?? SyncGuide.Commands()
+                return SyncGuide.line(tool: SidebarModel.toolName(tool), sync: sync, commands: commands)
+            }
+            scyllauiLog.notice("sync_after_repair tools=\(tools.joined(separator: ","), privacy: .public) reopen=\(kinds.keys.sorted().joined(separator: ","), privacy: .public)")
+            guard !lines.isEmpty else { return }
+            self.window.makeKeyAndOrderFront(nil)
+            let alert = NSAlert()
+            alert.useWideLayout()
+            alert.messageText = String(localized: "修复完成，正在运行的会话要重开后才同步")
+            alert.informativeText = String(localized: "这些会话在写入 Hook 之前就已启动，读不到新写入的 Hook：") + "\n\n" + lines.joined(separator: "\n")
+                + "\n\n" + String(localized: "这些终端的行上显示「未同步」，点它可以再看到做法。")
+            alert.addButton(withTitle: String(localized: "好"))
+            alert.beginSheetModal(for: self.window)
         }
     }
 

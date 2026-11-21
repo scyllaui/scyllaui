@@ -86,6 +86,80 @@ fn kill9_leaves_stale_socket_and_restart_recovers_state() {
     assert_eq!(snap["conversations"][0]["title"], "T");
 }
 
+/// 回归（2026-11-21）：测试后台不另起 Antigravity、Kimi、Grok 查额度。此前上面 kill9 那条测试用真实家目录起了真的
+/// `kimi web`，后台被 SIGKILL 后它留在后台，36 个孤儿进程由此而来。这里把三款换成只记一行的假程序，放进后台的 HOME。
+#[test]
+fn test_backend_does_not_run_quota_commands() {
+    use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
+    let dir = data_dir("noquota");
+    let home = home_of(&dir);
+    for exe in [".kimi-code/bin/kimi", ".grok/bin/grok", ".local/bin/agy"] {
+        let path = home.join(exe);
+        std::fs::DirBuilder::new().recursive(true).mode(0o700).create(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, "#!/bin/sh\necho \"$0 $*\" >> \"$HOME/ran\"\n").unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    let d = Daemon { child: Some(start_in(&dir, &[])), sock: dir.join("scyllauid.sock"), dir };
+    let (_app, _) = app(&d.sock, &["t1", "t2", "t3"]);
+    hook(&d.sock, "kimi", "t1", &[], json!({"hook_event_name":"SessionStart","session_id":"k-1"}));
+    let grok_env = [("GROK_SESSION_ID", "g-1"), ("GROK_HOOK_EVENT", "session_start")];
+    hook(&d.sock, "grok", "t2", &grok_env,
+        json!({"hook_event_name":"SessionStart","hookEventName":"session_start","sessionId":"g-1"}));
+    hook(&d.sock, "antigravity", "t3", &[],
+        json!({"hook_event_name":"SessionStart","conversationId":"a-1","workspacePaths":["/w"]}));
+    wait_until("三款的对话都已建立", || snapshot(&d.sock)["conversations"].as_array().is_some_and(|c| c.len() == 3));
+    // 一启动就读一次（core.rs `request_title`，不延迟），另起命令的线程在读取线程里立即起；等 2 秒足够。
+    std::thread::sleep(Duration::from_secs(2));
+    let ran = std::fs::read_to_string(home.join("ran")).unwrap_or_default();
+    assert_eq!(ran, "", "测试后台另起了查额度的命令");
+}
+
+/// 进程的启动时间（Unix 毫秒），与后台 procinfo.rs `start_ms` 同一口径。
+fn start_ms(pid: u32) -> i64 {
+    let mut info: libc::proc_bsdinfo = unsafe { std::mem::zeroed() };
+    let size = std::mem::size_of::<libc::proc_bsdinfo>() as i32;
+    let n = unsafe { libc::proc_pidinfo(pid as i32, libc::PROC_PIDTBSDINFO, 0, (&mut info as *mut libc::proc_bsdinfo).cast(), size) };
+    assert_eq!(n, size);
+    info.pbi_start_tvsec as i64 * 1000 + info.pbi_start_tvusec as i64 / 1000
+}
+
+/// 回归（2026-11-21）：后台查额度到一半被强制结束（或换版本接管）时另起的进程没人结束，`kimi web` 不会自己退出。启动时按
+/// `quota-children/` 的记录结束它们：认 SIGTERM 的、不认 SIGTERM 的（5 秒后 SIGKILL）都结束；启动时间对不上的（进程号已被
+/// 别的进程复用）不动；记录全部删掉。
+#[test]
+fn startup_ends_quota_processes_left_by_previous_backend() {
+    use std::os::unix::fs::DirBuilderExt;
+    use std::process::Stdio;
+    let dir = data_dir("reap");
+    let ledger = dir.join("quota-children");
+    std::fs::DirBuilder::new().recursive(true).mode(0o700).create(&ledger).unwrap();
+    let sh = |script: &str| Command::new("/bin/sh").args(["-c", script]).stdin(Stdio::null()).spawn().unwrap();
+    let mut polite = sh("exec /bin/sleep 60");
+    // 都会在 60 秒内自己退出：测试中途失败时不留下长期运行的进程。
+    let mut stubborn = sh("trap '' TERM; i=0; while [ $i -lt 60 ]; do /bin/sleep 1; i=$((i+1)); done");
+    let mut stranger = sh("exec /bin/sleep 60");
+    for (c, start) in [(&polite, start_ms(polite.id())), (&stubborn, start_ms(stubborn.id())), (&stranger, start_ms(stranger.id()) - 1000)] {
+        std::fs::write(ledger.join(c.id().to_string()), start.to_string()).unwrap();
+    }
+    std::fs::write(ledger.join("999999"), "1").unwrap();
+    let d = Daemon { child: Some(start_in(&dir, &[])), sock: dir.join("scyllauid.sock"), dir };
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let (mut a, mut b) = (None, None);
+    while (a.is_none() || b.is_none()) && Instant::now() < deadline {
+        a = a.or_else(|| polite.try_wait().unwrap());
+        b = b.or_else(|| stubborn.try_wait().unwrap());
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    use std::os::unix::process::ExitStatusExt;
+    assert_eq!(a.and_then(|s| s.signal()), Some(libc::SIGTERM), "认 SIGTERM 的没有被结束");
+    assert_eq!(b.and_then(|s| s.signal()), Some(libc::SIGKILL), "不认 SIGTERM 的没有被强制结束");
+    assert!(stranger.try_wait().unwrap().is_none(), "启动时间对不上的进程被结束了");
+    let _ = stranger.kill();
+    let _ = stranger.wait();
+    wait_until("记录全部删掉", || std::fs::read_dir(&ledger).unwrap().count() == 0);
+    drop(d);
+}
+
 #[test]
 fn shutdown_is_guarded_while_app_connected_and_cleans_up() {
     let mut d = start("shutdown");

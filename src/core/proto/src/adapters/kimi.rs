@@ -27,6 +27,10 @@ pub static ADAPTER: Adapter = Adapter {
     // PermissionResult 带与 PermissionRequest 相同的 `id`、`agent_id`（2.6.1 源码；子代理会话记录 interaction.resolved 为证）。
     // 子代理跑在主代理的一次工具调用里，不比这一轮活得久。
     subagent_approvals: super::SubagentApprovals { resolved_event: true, outlive_turn: false },
+    // 2.6.1：进程启动时读，同一进程里 `/new` 也不变，只能退出重开。（2026-11-18 实测，docs/s0-hook-compat.md）
+    hook_load: super::HookLoad::Process,
+    submit_record: true,
+    guide: super::Guide { new_session: None, quit: Some("/exit"), resume_last: Some("kimi -c") },
     matches,
     // 单个可执行文件，没有随包的版本文件（`updates/install.json` 记的是最近一次安装，不一定是正在运行的那个）。
     version: |p| Some(VersionSource::Command { path: p.path.to_owned() }),

@@ -58,6 +58,7 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate {
         let e = error as NSError
         guard e.domain == SUSparkleErrorDomain, e.code == Int(SUError.installationCanceledError.rawValue) else { return }
         let alert = NSAlert()
+        alert.useWideLayout()
         alert.messageText = String(localized: "没有安装更新")
         alert.informativeText = String(localized: "安装更新需要管理员授权：ScyllaUI 在「应用程序」里，当前账户无权替换它。刚才弹出的英文授权框（ScyllaUI wants permission to update）就是这一步。\n\n需要更新时，请再点「ScyllaUI › 检查更新…」，由管理员输入名称和密码；或请管理员登录后更新。")
         alert.addButton(withTitle: String(localized: "好"))

@@ -67,7 +67,9 @@ pub struct TitleWorker {
 }
 
 impl TitleWorker {
-    pub fn new(core: Sender<Cmd>) -> TitleWorker {
+    /// `quota_commands` 为 false 时不另起 Antigravity、Kimi、Grok 查额度（测试后台，docs/protocol.md 第 1 节）：它们以 `HOME`
+    /// 运行，测试里就是真实家目录；后台被强制结束时 `kimi web` 还会留在后台（2026-11-21 查明的 36 个孤儿进程）。
+    pub fn new(core: Sender<Cmd>, quota_commands: bool) -> TitleWorker {
         let home = std::env::var_os("HOME")
             .map(PathBuf::from)
             .unwrap_or_default();
@@ -76,7 +78,7 @@ impl TitleWorker {
             .map(PathBuf::from)
             .unwrap_or_else(|| home.join(".codex"));
         let mut reader = Reader::new(home, codex);
-        reader.quota_tx = Some(core.clone());
+        reader.quota_tx = quota_commands.then(|| core.clone());
         TitleWorker::with_reader(core, move |job| reader.read(job))
     }
 
@@ -580,17 +582,19 @@ fn quota_summary(quotas: &[Quota]) -> String {
 /// 执行命令取标准输出：环境只留 HOME 与最小 PATH，标准输入为空，在家目录下运行，超时即结束进程；退出码非零为 None。
 fn run_quiet(exe: &Path, args: &[&str], home: &Path, timeout: Duration) -> Option<Vec<u8>> {
     use std::process::{Command, Stdio};
-    let mut child = Command::new(exe)
-        .args(args)
-        .env_clear()
-        .env("HOME", home)
-        .env("PATH", "/usr/bin:/bin:/usr/sbin:/sbin")
-        .current_dir(home)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-        .ok()?;
+    let mut tracked = crate::cliquota::spawn(
+        Command::new(exe)
+            .args(args)
+            .env_clear()
+            .env("HOME", home)
+            .env("PATH", "/usr/bin:/bin:/usr/sbin:/sbin")
+            .current_dir(home)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null()),
+    )
+    .ok()?;
+    let child = &mut tracked.child;
     let mut stdout = child.stdout.take()?;
     let reader = std::thread::spawn(move || {
         let mut buf = Vec::new();

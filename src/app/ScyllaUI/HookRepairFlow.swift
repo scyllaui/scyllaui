@@ -9,17 +9,22 @@ enum HookRepairFlow {
         case repair, uninstall
     }
 
-    /// 「在 Codex 里打开 /hooks」（M4b 块 5 P1 方案 B）：由工作区设置；参数为优先的终端（nil 时自动找）与是否紧接修复之后。
+    /// 引导用户去 Codex 里信任（M4b 块 5 P1 方案 B，原「在 Codex 里打开 /hooks」）：由工作区设置；参数为优先的终端（nil 时自动找）与是否紧接修复之后。
     static var openCodexHooks: ((_ terminalID: String?, _ afterRepair: Bool) -> Void)?
 
-    /// 提示框较窄时 `/hooks` 会在「/」后折行，看不出是一条命令：插入零宽的 U+2060（WORD JOINER）让它整体换行。只用于说明文字。
-    static func keepHooksCommand(_ text: String) -> String {
-        text.replacingOccurrences(of: "/hooks", with: "/\u{2060}hooks")
-    }
+    /// 修复写入成功、且不需要再去 Codex 里信任时调用（参数为这次修复的工具）：由工作区设置，用来说明哪些正在运行的会话
+    /// 要重开后才同步（docs/design.md 4.7 节「会话是否真的在同步」）。
+    static var afterRepair: ((_ tools: [String]) -> Void)?
+    /// 此刻前台正在运行的 Agent（工具键）：由工作区设置，撤销确认框据此说明哪几款已在运行的会话会继续同步。
+    static var runningAgents: (() -> Set<String>)?
+
+    /// 提示框较窄时 `/hooks`、`/quit` 会在「/」后折行：见 `CodexTrustGuide.keepCommands`。只用于说明文字。
+    static func keepHooksCommand(_ text: String) -> String { CodexTrustGuide.keepCommands(text) }
 
     /// `tools` 为 nil 时：修复为可修复或未信任、且用户没在设置里撤销过的工具（侧栏提示栏列出的那些，决策 6）；
     /// 撤销由后台按缺省选四款（docs/protocol.md 第 4 节 `hooks.plan`）。
-    static func run(_ action: Action, tools: [String]? = nil, core: CoreClient) {
+    /// `stillSynced`：从「下次失效」点进来的——配置已失效，但那个会话还在同步，确认框里多说一句。
+    static func run(_ action: Action, tools: [String]? = nil, core: CoreClient, stillSynced: Bool = false) {
         core.request(["type": "hooks.status"]) { status in
             var chosen = tools
             if chosen == nil && action == .repair {
@@ -30,7 +35,7 @@ enum HookRepairFlow {
             var req: [String: Any] = ["type": "hooks.plan", "action": action.rawValue]
             if let chosen { req["tools"] = chosen }
             core.request(req) { plan in
-                DispatchQueue.main.async { confirm(action, tools: chosen, status: status, plan: plan, core: core) }
+                DispatchQueue.main.async { confirm(action, tools: chosen, status: status, plan: plan, core: core, stillSynced: stillSynced) }
             }
         }
     }
@@ -66,16 +71,17 @@ enum HookRepairFlow {
         case "codex_reenable": return String(localized: "重新启用 \(n) 条：\(names)（config.toml 中该条的 enabled 改为 true）")
         case "codex_trust":
             return keepHooksCommand(step["after_repair"] as? Bool == true
-                ? String(localized: "修复后需要在 Codex 里输入 /hooks，按提示信任 ScyllaUI 的 \(n) 条 Hook")
-                : String(localized: "需要在 Codex 里输入 /hooks，按提示信任 ScyllaUI 的 \(n) 条 Hook"))
+                ? String(localized: "修复后需要在 Codex 里信任 ScyllaUI 的 \(n) 条 Hook，写入后会说明怎么做")
+                : String(localized: "需要在 Codex 里信任 ScyllaUI 的 \(n) 条 Hook"))
         default: return step["kind"] as? String ?? ""
         }
     }
 
-    private static func confirm(_ action: Action, tools: [String]?, status: [String: Any], plan reply: [String: Any], core: CoreClient) {
+    private static func confirm(_ action: Action, tools: [String]?, status: [String: Any], plan reply: [String: Any], core: CoreClient,
+                                stillSynced: Bool) {
         let uninstall = action == .uninstall
-        let statuses = ((status["hooks"] as? [[String: Any]]) ?? []).compactMap(SBHookStatus.init(json:))
-            .filter { $0.broken && (tools?.contains($0.tool) ?? true) }
+        let allStatuses = ((status["hooks"] as? [[String: Any]]) ?? []).compactMap(SBHookStatus.init(json:))
+        let statuses = allStatuses.filter { $0.broken && (tools?.contains($0.tool) ?? true) }
         let plan = reply["plan"] as? [String: Any] ?? [:]
         let changes = plan["changes"] as? [[String: Any]] ?? []
         let home = NSHomeDirectory()
@@ -89,11 +95,23 @@ enum HookRepairFlow {
             if writes.contains(where: { $0["tool"] as? String == "codex" }) {
                 lines.append(String(localized: "Codex 的信任记录与 Hook 功能开关保留。"))
             }
+            // 不是运行中重读 Hook 的几款：已经在跑的会话还在用启动时读到的条目，撤销管不到它（2026-11-18 实测）。
+            // 「通常」：不是每次都这样（2026-11-21 实测 Codex 一个空闲 6 小时的会话撤销后不再同步）；不再同步的由后台
+            // 用会话记录对账认出，那一行显示「未同步」（docs/design.md 4.7 节）。
+            let running = runningAgents?() ?? []
+            let keeps = writes.compactMap { $0["tool"] as? String }.filter { tool in
+                running.contains(tool) && allStatuses.contains { $0.tool == tool && $0.load != nil && $0.load != "live" }
+            }
+            if !keeps.isEmpty {
+                let keepNames = keeps.map(SidebarModel.toolName).joined(separator: String(localized: "、"))
+                lines.append(String(localized: "已在运行的 \(keepNames) 会话通常还会继续同步；哪个会话不再同步了，它那一行会显示「未同步」。"))
+            }
         } else if !uninstall {
             for s in statuses {
                 let name = SidebarModel.toolName(s.tool)
                 lines.append(String(localized: "\(name)：\(s.reason)"))
             }
+            if stillSynced && !statuses.isEmpty { lines.append(String(localized: "这个会话还在同步，退出后不再同步。")) }
         }
         if !changes.isEmpty && !lines.isEmpty { lines.append("") }
         for c in changes {
@@ -131,11 +149,13 @@ enum HookRepairFlow {
             text.textContainer?.containerSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
             scroll.documentView = text
             alert.accessoryView = scroll
+        } else {
+            alert.useWideLayout()
         }
         if writes.isEmpty {
-            // 只剩 Codex 待信任（M4b 块 5 P1）：多一个按钮，去正在运行的 Codex 里打开 /hooks。
+            // 只剩 Codex 待信任（M4b 块 5 P1）：多一个按钮，引导用户去 Codex 里信任（2026-11-17 起按启动时间分路，见 CodexTrustGuide）。
             let trust = !uninstall && openCodexHooks != nil && statuses.contains { $0.tool == "codex" && $0.state == "untrusted" }
-            if trust { alert.addButton(withTitle: String(localized: "在 Codex 里打开 /hooks")) }
+            if trust { alert.addButton(withTitle: String(localized: "去信任…")) }
             alert.addButton(withTitle: String(localized: "好"))
             if alert.runModal() == .alertFirstButtonReturn, trust { openCodexHooks?(nil, false) }
             return
@@ -156,7 +176,9 @@ enum HookRepairFlow {
             let err = reply["error"] as? [String: Any]
             scyllauiLog.notice("hooks_\(action.rawValue, privacy: .public) tools=\(chosen.joined(separator: ","), privacy: .public) ok=\(ok) error=\((err?["code"] as? String) ?? "-", privacy: .public) backups=\(((reply["backups"] as? [String]) ?? []).joined(separator: ","), privacy: .public)")
             guard !ok else {
-                if trustAfter { DispatchQueue.main.async { openCodexHooks?(nil, true) } }
+                DispatchQueue.main.async {
+                    if trustAfter { openCodexHooks?(nil, true) } else if !uninstall { afterRepair?(chosen) }
+                }
                 return
             }
             DispatchQueue.main.async {

@@ -420,7 +420,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         notes.spacing = 12
         // 行首的橙色警示符号（用户要求）：说明文字多时，这一行不被看漏。
         let codexNote = item("exclamationmark.triangle.fill",
-                             String(localized: "装好后还要在 Codex 里输入 /hooks，把 ScyllaUI 的 Hook 设为信任，Codex 的状态同步才会生效。"),
+                             String(localized: "装好后打开 Codex，它会询问是否信任新的 Hook：按下方向键选中第 2 项「Trust all and continue」再按回车，Codex 的状态同步才会生效。"),
                              tint: .systemOrange, font: .systemFont(ofSize: 13), width: width)
         codexNote.isHidden = true
         // 后面接着「遇到问题」一页时，这里的按钮翻到下一页而不是关掉欢迎窗口。

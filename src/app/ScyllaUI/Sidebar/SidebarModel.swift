@@ -110,9 +110,16 @@ struct StatusInfo: Equatable {
     var quotaMonth: SBQuota? = nil
     /// 这款查不到额度的原因代码（`quota.note`，2026-11-01）：`login_required` 为 Grok 没登录 grok.com。
     var quotaNote: String? = nil
-    /// 前台识别出的 AI（工具键），不论状态同步是否生效、状态行不显示：「在 Codex 里打开 /hooks」据此找正在运行 Codex 的终端
+    /// 前台识别出的 AI（工具键），不论状态同步是否生效、状态行不显示：引导用户信任 Codex 的 Hook 时据此找正在运行 Codex 的终端
     /// （M4b 块 5 P1，docs/design.md 10.6 节）。
     var fgAgent: String? = nil
+    /// 这个前台 AI 进程的启动时间（Unix 毫秒）：引导用户信任 Codex 的 Hook 时，与写入 Hook 的时间比较（2026-11-17，
+    /// docs/design.md 4.7 节「引导用户信任」）。
+    var fgStartedAt: Int64? = nil
+    /// 这个前台 AI 进程的同步情况（`foreground.sync`：`off`、`old`、`new_session`、`restart`；在同步为 nil）与它启动时
+    /// 本项目的条目在不在（`foreground.entries_at_start`，查不到为 nil）。docs/design.md 4.7 节「会话是否真的在同步」。
+    var fgSync: String? = nil
+    var fgEntriesAtStart: Bool? = nil
     /// 这款 AI 能否读出 token 用量（快照的 `tools`）：不能时悬停提示写明「暂不支持」（docs/ui-methodology.md 1.7 节）。
     var usageSupported = true
     /// 同上，能否读出模型（2026-10-30 起快照的 `tools` 带 `model`）。
@@ -386,6 +393,9 @@ struct SBTerminal: Equatable {
     var fgVersion: String? = nil
     /// 这个 AI 进程最近一次 Hook 数据异常的原因代码（M4b 块 6，docs/protocol.md 第 5 节 `foreground.anomaly`）。
     var fgAnomaly: String? = nil
+    /// 这个 AI 进程的同步情况与它启动时条目在不在（docs/protocol.md 第 5 节 `foreground.sync`、`entries_at_start`）。
+    var fgSync: String? = nil
+    var fgEntriesAtStart: Bool? = nil
     /// 后台的终端提示（M3）：`cwd_denied`；`cwd_missing`（启动目录不存在、已在主目录打开，2026-11-13）。
     var notice: String? = nil
 }
@@ -398,6 +408,9 @@ struct SBHookStatus: Equatable {
     var fixable: Bool
     /// 已验证清单里这款最新的版本（M4b 块 6，「状态可能不准」详情里的退回参考）。
     var verifiedLatest: String? = nil
+    /// 这款何时读取 Hook（`live`、`session`、`process`）与引导里要写的命令（docs/design.md 4.7 节「会话是否真的在同步」）。
+    var load: String? = nil
+    var commands = SyncGuide.Commands()
 
     /// 「状态同步未生效」：除了正常与没装，都要提示。
     var broken: Bool { state != "ok" && state != "absent" }
@@ -524,7 +537,8 @@ extension SBTerminal {
             sessionID: str(a, "session_id"),
             fgKind: str(f, "kind") ?? "unknown", fgTool: str(f, "tool"), fgPID: int(f, "pid"), fgPath: str(f, "path"),
             fgStartedAt: int(f, "started_at"), fgVersion: str(f, "version"),
-            fgAnomaly: str(f, "anomaly"), notice: str(d, "notice"))
+            fgAnomaly: str(f, "anomaly"), fgSync: str(f, "sync"), fgEntriesAtStart: f["entries_at_start"] as? Bool,
+            notice: str(d, "notice"))
     }
 }
 
@@ -532,7 +546,9 @@ extension SBHookStatus {
     init?(json d: [String: Any]) {
         guard let tool = str(d, "tool"), let state = str(d, "state") else { return nil }
         self.init(tool: tool, state: state, problems: d["problems"] as? [String] ?? [], fixable: d["fixable"] as? Bool ?? false,
-                  verifiedLatest: str(d, "verified_latest"))
+                  verifiedLatest: str(d, "verified_latest"), load: str(d, "load"),
+                  commands: SyncGuide.Commands(command: str(d, "command"), newSession: str(d, "new_session"), quit: str(d, "quit"),
+                                               resumeLast: str(d, "resume_last")))
     }
 }
 
@@ -600,8 +616,11 @@ struct TaskRow: Equatable {
     var fgTool: String? = nil
     /// 终端行：前台是不认识的命令时它的程序名（如 `agy`）；历史提示词据此说明（2026-10-30）。
     var fgCommand: String? = nil
-    /// 终端行：前台这款 AI 的状态同步未生效、用户也没在设置里撤销过，第 1 行显示可点的「未同步」（M4b 块 5 P2）。
+    /// 终端行：前台这个 AI 进程此刻真的没在同步（后台的 `foreground.sync` 为 `off`、`new_session`、`restart`），
+    /// 第 1 行显示可点的「未同步」；用户撤销过的也显示（2026-11-20，docs/design.md 4.7 节「会话是否真的在同步」）。
     var unsynced = false
+    /// 终端行：配置已失效、但这个进程还在用启动时读到的条目同步（`old`），用户也没撤销过：显示可点的「下次失效」。
+    var syncNext = false
 }
 
 enum SidebarRow: Equatable {
@@ -1036,6 +1055,9 @@ final class SidebarModel {
                 quota: tool.flatMap { quotas[$0]?["7d"] }, quota5h: tool.flatMap { quotas[$0]?["5h"] },
                 quotaMonth: tool.flatMap { quotas[$0]?["month"] }, quotaNote: tool.flatMap { quotaNotes[$0] },
                 fgAgent: t.fgKind == "agent" ? t.fgTool : nil,
+                fgStartedAt: t.fgKind == "agent" ? t.fgStartedAt : nil,
+                fgSync: t.fgKind == "agent" ? t.fgSync : nil,
+                fgEntriesAtStart: t.fgKind == "agent" ? t.fgEntriesAtStart : nil,
                 usageSupported: !(tool.flatMap { unsupported[$0]?.contains("usage") } ?? false),
                 modelSupported: !(tool.flatMap { unsupported[$0]?.contains("model") } ?? false),
                 effortSupported: !(tool.flatMap { unsupported[$0]?.contains("effort") } ?? false))
@@ -1124,7 +1146,12 @@ final class SidebarModel {
         // 状态同步（M1 第 7 块）：只说前台这款 CLI。
         if t.fgKind == "agent", let tool = t.fgTool {
             row.fgTool = tool
-            if let h = hooks.first(where: { $0.tool == tool }), h.broken { row.unsynced = !hooksRemoved.contains(tool) }
+            // 以这个进程真实的同步情况为准，不只看配置文件（2026-11-20）。
+            switch t.fgSync {
+            case "off", "new_session", "restart": row.unsynced = true
+            case "old": row.syncNext = !hooksRemoved.contains(tool)
+            default: break
+            }
         }
         return row
     }

@@ -26,6 +26,10 @@ pub static ADAPTER: Adapter = Adapter {
     child_records: false,
     record_from_approval: false,
     subagent_approvals: super::SubagentApprovals { resolved_event: false, outlive_turn: false },
+    // 1.0.112：会话开始时读，`/new` 或重开后生效。（2026-11-18 实测，docs/s0-hook-compat.md）
+    hook_load: super::HookLoad::Session,
+    submit_record: true,
+    guide: super::Guide { new_session: Some("/new"), quit: Some("/exit"), resume_last: Some("copilot --continue") },
     matches,
     version,
     // 退出时提示的恢复命令（`Resume copilot --resume=<ID>`，2026-10-30 实测）。

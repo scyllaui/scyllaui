@@ -12,6 +12,11 @@ use serde_json::Value;
 pub struct Prompt {
     pub text: String,
     pub at: Option<i64>,
+    /// 这条记录是用户提交的提示词、写下它的同时 CLI 会发提交事件（UserPromptSubmit）：用来核对会话是否真的在同步
+    /// （docs/design.md 4.7 节「用会话记录对账」）。只有逐款核对过的写法为 true（2026-11-21 隔离实测，
+    /// `docs/s0-hook-compat.md`：Codex 0.169.0、Kimi 2.6.3、Grok 1.0.92、Copilot 1.0.105—1.0.114）；输入行的 `!命令`、
+    /// Codex 的 `/goal`、Kimi 不发提交事件的插话轮次，以及没核对过的写法与工具一律为 false。
+    pub submitted: bool,
 }
 
 /// 会话记录（JSON Lines，可以只是文件末尾的一段完整行）中的用户提示词，先后顺序；相邻的同一句只留一条。
@@ -43,7 +48,7 @@ pub fn user_prompts(source: ReplySource, text: &str) -> Vec<Prompt> {
             ReplySource::None | ReplySource::OpenCodeDb => {}
             ReplySource::ClaudeTranscript => {
                 if let Some(t) = claude_prompt(&v) {
-                    push(&mut out, t, iso_ms(&v["timestamp"]));
+                    push(&mut out, t, iso_ms(&v["timestamp"]), false);
                 }
             }
             ReplySource::CodexRollout => {
@@ -51,24 +56,25 @@ pub fn user_prompts(source: ReplySource, text: &str) -> Vec<Prompt> {
                 if v["type"] == "event_msg" && p["type"] == "user_message" {
                     if let Some(t) = p["message"].as_str() {
                         codex_events = true;
-                        push(&mut out, t.to_owned(), iso_ms(&v["timestamp"]));
+                        push(&mut out, t.to_owned(), iso_ms(&v["timestamp"]), false);
                     }
                 } else if v["type"] == "response_item" && p["type"] == "message" && p["role"] == "user" {
-                    if let Some(t) = codex_item(p) {
-                        push(&mut codex_items, t, iso_ms(&v["timestamp"]));
+                    if let Some((t, submitted)) = codex_item(p) {
+                        push(&mut codex_items, t, iso_ms(&v["timestamp"]), submitted);
                     }
                 }
             }
             ReplySource::KimiWire => {
                 if v["type"] == "turn.prompt" && v["origin"]["kind"] == "user" {
-                    push(&mut out, parts(&v["input"], "text"), v["time"].as_i64());
+                    // 一轮刚结束时的插话另开一轮（`trigger` 为 `notify`）不发提交事件（2026-11-15 实测 2.6.1）。
+                    push(&mut out, parts(&v["input"], "text"), v["time"].as_i64(), v["trigger"] == "normal");
                 } else if v["type"] == "context.append_message"
                     && v["message"]["origin"]["kind"] == "shell_command"
                     && v["message"]["origin"]["phase"] == "input"
                 {
                     // 输入行里的 `!命令`：记录为 `<bash-input>命令</bash-input>`，显示成用户输入时的样子。
                     if let Some(cmd) = between(&parts(&v["message"]["content"], "text"), "<bash-input>", "</bash-input>") {
-                        push(&mut out, format!("!{}", cmd.trim()), v["time"].as_i64());
+                        push(&mut out, format!("!{}", cmd.trim()), v["time"].as_i64(), false);
                     }
                 }
             }
@@ -77,7 +83,7 @@ pub fn user_prompts(source: ReplySource, text: &str) -> Vec<Prompt> {
                 // USER_EXPLICIT（2026-11-01 实测 1.4.12）。
                 if v["type"] == "USER_INPUT" && v["source"] == "USER_EXPLICIT" {
                     if let Some(c) = v["content"].as_str() {
-                        push(&mut out, between(c, "<USER_REQUEST>", "</USER_REQUEST>").unwrap_or(c).to_owned(), iso_ms(&v["created_at"]));
+                        push(&mut out, between(c, "<USER_REQUEST>", "</USER_REQUEST>").unwrap_or(c).to_owned(), iso_ms(&v["created_at"]), false);
                     }
                 }
             }
@@ -86,7 +92,7 @@ pub fn user_prompts(source: ReplySource, text: &str) -> Vec<Prompt> {
                 // `user.message`，带 `source: "agent-<会话 ID>"`，用户输入的没有 `source`（2026-11-13 长跑核对 1.0.105）。
                 if v["type"] == "user.message" && !v["data"]["source"].as_str().is_some_and(|s| s.starts_with("agent-")) {
                     if let Some(t) = v["data"]["content"].as_str() {
-                        push(&mut out, t.to_owned(), iso_ms(&v["timestamp"]));
+                        push(&mut out, t.to_owned(), iso_ms(&v["timestamp"]), true);
                     }
                 }
             }
@@ -95,7 +101,8 @@ pub fn user_prompts(source: ReplySource, text: &str) -> Vec<Prompt> {
                 if u["sessionUpdate"] == "user_message_chunk" {
                     let index = u["_meta"]["promptIndex"].as_i64();
                     // 输入行里的 `!命令`：片段带 `_meta.bash_command`、没有 promptIndex，正文不含感叹号。
-                    let piece = match u["content"]["_meta"]["bash_command"].as_str() {
+                    let bash = u["content"]["_meta"]["bash_command"].as_str();
+                    let piece = match bash {
                         Some(cmd) => format!("!{cmd}"),
                         None => u["content"]["text"].as_str().unwrap_or("").to_owned(),
                     };
@@ -104,21 +111,22 @@ pub fn user_prompts(source: ReplySource, text: &str) -> Vec<Prompt> {
                         Some((i, p)) if *i == index && index.is_some() => p.text.push_str(piece),
                         _ => {
                             if let Some((_, p)) = grok.take() {
-                                push(&mut out, p.text, p.at);
+                                push(&mut out, p.text, p.at, p.submitted);
                             }
-                            grok = Some((index, Prompt { text: piece.to_owned(), at: iso_ms(&v["timestamp"]) }));
+                            let submitted = bash.is_none() && index.is_some();
+                            grok = Some((index, Prompt { text: piece.to_owned(), at: iso_ms(&v["timestamp"]), submitted }));
                         }
                     }
                 } else if u["sessionUpdate"].is_string() {
                     if let Some((_, p)) = grok.take() {
-                        push(&mut out, p.text, p.at);
+                        push(&mut out, p.text, p.at, p.submitted);
                     }
                 }
             }
         }
     }
     if let Some((_, p)) = grok {
-        push(&mut out, p.text, p.at);
+        push(&mut out, p.text, p.at, p.submitted);
     }
     if source == ReplySource::CodexRollout && !codex_events {
         out = codex_items;
@@ -164,12 +172,12 @@ pub fn opencode_shell(parts: &[Value]) -> Option<String> {
     only["state"]["input"]["command"].as_str().map(|c| format!("!{}", c.trim()))
 }
 
-fn push(out: &mut Vec<Prompt>, text: String, at: Option<i64>) {
+fn push(out: &mut Vec<Prompt>, text: String, at: Option<i64>, submitted: bool) {
     let text = text.trim().to_owned();
     if text.is_empty() || out.last().is_some_and(|p| p.text == text) {
         return;
     }
-    out.push(Prompt { text, at });
+    out.push(Prompt { text, at, submitted });
 }
 
 fn parts(content: &Value, kind: &str) -> String {
@@ -218,12 +226,14 @@ fn between<'a>(s: &'a str, open: &str, close: &str) -> Option<&'a str> {
 /// Codex `response_item` 的用户消息：0.163 起每段内容有种类（`content_item_kinds`），取 `user.text` 与
 /// `/goal` 设定的目标（`user.goal`，显示为 `/goal 目标`；目标续跑注入的 `goal.internal_context` 不算）；
 /// 更早的版本没有种类，按开头滤掉注入的 AGENTS.md 说明与环境信息。正文里的包装见 `codex_text`，
-/// 粘贴的图片在正文后另起一行列出编号。
-fn codex_item(p: &Value) -> Option<String> {
+/// 粘贴的图片在正文后另起一行列出编号。第二项：这条里有用户提交的正文（种类 `user.text`，写下它的同时发提交事件，
+/// 2026-11-21 实测 0.169.0）；`/goal`、回答 Codex 的提问、没有种类的旧格式不算。
+fn codex_item(p: &Value) -> Option<(String, bool)> {
     let items = p["content"].as_array()?;
     let kinds = p["internal_chat_message_metadata_passthrough"]["content_item_kinds"].as_array();
     let mut texts: Vec<String> = Vec::new();
     let mut images: Vec<String> = Vec::new();
+    let mut submitted = false;
     let mut add = |t: &str| match codex_text(t) {
         CodexText::Text(s) => texts.push(s),
         CodexText::Image(n) => images.push(n),
@@ -235,6 +245,7 @@ fn codex_item(p: &Value) -> Option<String> {
                 let Some(t) = i["text"].as_str() else { continue };
                 if kind == "user.text" {
                     add(t);
+                    submitted |= !t.contains("<send_user_message_question_reply>");
                 } else if kind == "user.goal" {
                     if let Some(goal) = codex_goal(t) {
                         add(&format!("/goal {goal}"));
@@ -257,7 +268,7 @@ fn codex_item(p: &Value) -> Option<String> {
     if !images.is_empty() {
         texts.push(images.join(" "));
     }
-    (!texts.is_empty()).then(|| texts.join("\n"))
+    (!texts.is_empty()).then(|| (texts.join("\n"), submitted))
 }
 
 enum CodexText {
@@ -376,6 +387,40 @@ mod tests {
 
     fn texts(v: &[Prompt]) -> Vec<&str> {
         v.iter().map(|p| p.text.as_str()).collect()
+    }
+
+    /// 「写下它的同时发提交事件」的标记（会话记录对账用）：2026-11-21 隔离实测的记录原样（正文、ID 截短）。
+    /// Codex 0.169.0、Kimi 2.6.3、Grok 1.0.92；Copilot 取本机 1.0.114 的会话记录。
+    #[test]
+    fn submitted_marks_only_prompts_that_come_with_a_submit_event() {
+        let marks = |source, text: &str| user_prompts(source, text).iter().map(|p| (p.text.clone(), p.submitted)).collect::<Vec<_>>();
+        let own = |v: &[(&str, bool)]| v.iter().map(|(t, s)| ((*t).to_owned(), *s)).collect::<Vec<_>>();
+        // Codex：种类 user.text 的发提交事件；输入行的 `!命令`（shell.user_command）不算提示词；`/goal` 不发事件。
+        let codex = r##"{"timestamp":"2026-11-21T01:24:07.198Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"hi one"}],"internal_chat_message_metadata_passthrough":{"content_item_kinds":["user.text"]}}}
+{"timestamp":"2026-11-21T01:24:29.849Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"<user_shell_command>\n<command>\necho bang\n</command>\n</user_shell_command>"}],"internal_chat_message_metadata_passthrough":{"content_item_kinds":["shell.user_command"]}}}
+{"timestamp":"2026-11-21T01:25:36.104Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"<codex_internal_context source=\"user_goal\">\nUser set the goal: \"say done\"\nUser set goal status: \"active\".\n</codex_internal_context>"}],"internal_chat_message_metadata_passthrough":{"content_item_kinds":["user.goal"]}}}
+{"timestamp":"2026-11-21T01:25:40.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"<send_user_message_question_reply>[{\"question\":\"q\",\"answer\":\"选 A\"}]</send_user_message_question_reply>"}],"internal_chat_message_metadata_passthrough":{"content_item_kinds":["user.text"]}}}"##;
+        assert_eq!(marks(ReplySource::CodexRollout, codex), own(&[("hi one", true), ("/goal say done", false), ("选 A", false)]));
+        // 没有种类的旧格式没核对过：不算。
+        let old = r#"{"type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"跑测试"}]}}
+{"type":"event_msg","payload":{"type":"user_message","message":"跑测试"}}"#;
+        assert_eq!(marks(ReplySource::CodexRollout, old), own(&[("跑测试", false)]));
+        // Kimi：正常提交的一轮发提交事件；一轮刚结束时的插话（notify）、`!命令` 不发。
+        let kimi = r#"{"type":"turn.prompt","agentId":"main","input":[{"type":"text","text":"hi one"}],"origin":{"kind":"user"},"turnId":0,"trigger":"normal","time":1795224393896}
+{"type":"context.append_message","agentId":"main","message":{"role":"user","content":[{"type":"text","text":"<bash-input>\necho bang\n</bash-input>"}],"origin":{"kind":"shell_command","phase":"input"}},"time":1795224404740}
+{"type":"turn.prompt","agentId":"main","input":[{"type":"text","text":"插一句"}],"origin":{"kind":"user"},"turnId":1,"trigger":"notify","time":1795224410000}"#;
+        assert_eq!(marks(ReplySource::KimiWire, kimi), own(&[("hi one", true), ("!echo bang", false), ("插一句", false)]));
+        // Grok：带 promptIndex 的提示词发提交事件；`!命令`（带 bash_command、没有 promptIndex）不发。
+        let grok = r#"{"timestamp":1795224463,"method":"session/update","params":{"update":{"sessionUpdate":"user_message_chunk","content":{"type":"text","text":"hi one"},"_meta":{"modelId":"grok-4.6","promptIndex":0}}}}
+{"timestamp":1795224463,"method":"_x.ai/session/update","params":{"update":{"sessionUpdate":"turn_completed"}}}
+{"timestamp":1795224475,"method":"session/update","params":{"update":{"sessionUpdate":"user_message_chunk","content":{"type":"text","text":"echo bang","_meta":{"bash_command":"echo bang"}},"_meta":{"modelId":"grok-4.6"}}}}"#;
+        assert_eq!(marks(ReplySource::GrokUpdates, grok), own(&[("hi one", true), ("!echo bang", false)]));
+        // Copilot：用户输入的 user.message 发提交事件。
+        let copilot = r#"{"type":"user.message","timestamp":"2026-11-20T22:53:34.881Z","data":{"content":"reply ok 2"}}"#;
+        assert_eq!(marks(ReplySource::CopilotEvents, copilot), own(&[("reply ok 2", true)]));
+        // 运行中重读的几款不靠这个核对：一律不标。
+        let claude = r#"{"type":"user","timestamp":"2026-10-22T16:23:48.400Z","message":{"content":"修复登录"}}"#;
+        assert_eq!(marks(ReplySource::ClaudeTranscript, claude), own(&[("修复登录", false)]));
     }
 
     #[test]

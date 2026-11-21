@@ -7,8 +7,12 @@
 //! 三条通用规则（2026-11-14，docs/design.md 4.3 节「会话记录监听」）：记录的定位与打开在本线程做，打不开时每
 //! `RETRY_EVERY` 重试、最多 `RETRY_FOR`（只在有待打开的监听时才定时醒来），打开成功或放弃都回报核心线程；逐行记录
 //! 开始时补读末尾 `REPLAY_MAX` 字节对齐此前已写入的内容；带轮次号的事件把轮次交给核心线程核对，不自行停止监听。
+//! 另一种监听（`Scan::Submits`，docs/design.md 4.7 节「用会话记录对账」）：只找开始监听之后写入的、用户提交的提示词，
+//! 每条报给核心线程，由它核对对应的 Hook 事件到了没有；不补读，一直监听到核心线程叫停或记录没了。
 
 use crate::core::Cmd;
+use scyllaui_proto::adapters::prompts::user_prompts;
+use scyllaui_proto::adapters::reply::ReplySource;
 use scyllaui_proto::adapters::waiting::{agy_run, antigravity, AgyRead, LineScan, Scan, WaitScan, AGY_STEP_WAITING};
 use scyllaui_proto::Kind;
 use serde_json::Value;
@@ -189,6 +193,8 @@ enum Watch {
     /// Antigravity 对话库：盯所在目录（`-wal` 的建与删）、库文件与 `-wal`（有写入）；agy 空闲时关掉库、`-wal` 随之删除
     /// （2026-11-01 实测 1.4.12），所以这两个随时可能不在，按目录的变化重开。
     Db { path: PathBuf, dir: RawFd, db: Option<RawFd>, wal: Option<RawFd> },
+    /// 用户提交的提示词：从开始监听时的文件末尾起读，不补读。
+    Submits { file: LineFile, source: ReplySource },
 }
 
 struct LineFile {
@@ -205,6 +211,7 @@ impl Entry {
         match &self.watch {
             Watch::Lines { files, .. } => files.iter().map(|f| f.fd).collect(),
             Watch::Whole { fd, .. } => vec![*fd],
+            Watch::Submits { file, .. } => vec![file.fd],
             Watch::Db { dir, db, wal, .. } => [Some(*dir), *db, *wal].into_iter().flatten().collect(),
         }
     }
@@ -238,6 +245,16 @@ fn open(kq: RawFd, job: &Start) -> Option<(Entry, Option<Kind>)> {
             (Watch::Whole { fd, scan: f }, first)
         }
         Scan::AntigravityDb => (open_db(kq, &path)?, None),
+        Scan::Submits(source) => {
+            let fd = watch_path(kq, &path, libc::O_RDONLY)?;
+            // SAFETY: fd 有效；fstat 写入栈上的结构体。
+            let mut st: libc::stat = unsafe { std::mem::zeroed() };
+            if unsafe { libc::fstat(fd, &mut st) } != 0 {
+                close_fd(fd);
+                return None;
+            }
+            (Watch::Submits { file: LineFile { fd, sub: false, offset: st.st_size as u64, partial: Vec::new() }, source }, None)
+        }
     };
     let mut e = Entry { terminal_id: job.terminal_id.clone(), session_id: job.session_id.clone(), agent: job.agent.clone(), state, watch };
     // 对话库开始时读一次：记下执行次数，报告当时是否在等用户（与当前状态一致时核心线程不理会）。
@@ -345,6 +362,21 @@ fn run(kq: RawFd, rx: Receiver<WaitJob>, core: Sender<Cmd>) {
             Watch::Db { .. } => {
                 sync_db(kq, &tid, e, fd, gone, &mut owner);
                 judge_db(e).into_iter().collect()
+            }
+            Watch::Submits { file, source } => {
+                let found = read_submits(file, *source);
+                let (terminal_id, session_id) = (e.terminal_id.clone(), e.session_id.clone());
+                if found.is_empty() && gone {
+                    remove(&mut entries, &mut owner, &tid);
+                    continue;
+                }
+                for at in found {
+                    let msg = Cmd::RecordSubmit { terminal_id: terminal_id.clone(), session_id: session_id.clone(), at };
+                    if core.send(msg).is_err() {
+                        return;
+                    }
+                }
+                Vec::new()
             }
         };
         for kind in kinds {
@@ -557,6 +589,24 @@ fn read_new(fd: RawFd, offset: &mut u64, partial: &mut Vec<u8>, scan: LineScan, 
     }
 }
 
+/// 读新写入的完整行里用户提交的提示词（`Prompt::submitted`），返回各条的时间（记录里没有时间的为 None）；不完整的
+/// 一行留到下次。
+fn read_submits(f: &mut LineFile, source: ReplySource) -> Vec<Option<i64>> {
+    let mut buf = vec![0u8; 64 * 1024];
+    loop {
+        // SAFETY: 读入本函数持有的缓冲区，长度不超过其大小。
+        let n = unsafe { libc::pread(f.fd, buf.as_mut_ptr().cast(), buf.len(), f.offset as libc::off_t) };
+        if n <= 0 {
+            break;
+        }
+        f.offset += n as u64;
+        f.partial.extend_from_slice(&buf[..n as usize]);
+    }
+    let Some(end) = f.partial.iter().rposition(|&b| b == b'\n') else { return Vec::new() };
+    let done: Vec<u8> = f.partial.drain(..=end).collect();
+    user_prompts(source, &String::from_utf8_lossy(&done)).into_iter().filter(|p| p.submitted).map(|p| p.at).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -598,6 +648,41 @@ mod tests {
         assert_eq!(rejected(&rx, Duration::from_secs(1)), Some(("t1".into(), Some("s1".into()))));
         append(&path, &format!("{ERR}\n{MARK}\n"));
         assert!(rejected(&rx, Duration::from_millis(300)).is_none(), "认出后已停止监听");
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
+    /// 用户提交的提示词：开始监听之前写下的不算；之后写入的每条报一次（带记录里的时间），`!命令` 与分两次写入时
+    /// 还不完整的一行不报。
+    #[test]
+    fn submitted_prompts_written_after_start_are_reported() {
+        let d = test_dir("waitwatch-submits");
+        let path = d.join("events.jsonl");
+        let line = |text: &str, at: &str| format!(r#"{{"type":"user.message","timestamp":"{at}","data":{{"content":"{text}"}}}}"#);
+        std::fs::write(&path, format!("{}\n", line("旧的", "2026-11-21T01:00:00.000Z"))).unwrap();
+        let (tx, rx) = mpsc::channel();
+        let w = WaitWatch::new(tx).unwrap();
+        w.start_path("t1", Some("s1".into()), path.clone(), Scan::Submits(ReplySource::CopilotEvents));
+        let submit = |within: Duration| loop {
+            match rx.recv_timeout(within) {
+                Ok(Cmd::RecordSubmit { terminal_id, session_id, at }) => return Some((terminal_id, session_id, at)),
+                Ok(Cmd::WatchOpened { ok, .. }) => assert!(ok),
+                _ => return None,
+            }
+        };
+        std::thread::sleep(Duration::from_millis(100));
+        append(&path, "{\"type\":\"assistant.message\",\"data\":{}}\n");
+        assert_eq!(submit(Duration::from_millis(300)), None, "开始之前写下的提示词不算，回复也不算");
+        let new = line("新的", "2026-11-21T01:00:10.000Z");
+        append(&path, &new[..30]);
+        assert_eq!(submit(Duration::from_millis(300)), None, "一行还没写完");
+        append(&path, &format!("{}\n", &new[30..]));
+        assert_eq!(submit(Duration::from_secs(1)), Some(("t1".into(), Some("s1".into()), Some(1_795_222_810_000))));
+        append(&path, &format!("{}\n", line("再一条", "2026-11-21T01:00:20.000Z")));
+        assert!(submit(Duration::from_secs(1)).is_some(), "认出后继续监听");
+        w.stop("t1");
+        std::thread::sleep(Duration::from_millis(100));
+        append(&path, &format!("{}\n", line("停了以后", "2026-11-21T01:00:30.000Z")));
+        assert_eq!(submit(Duration::from_millis(300)), None, "叫停后不再报");
         let _ = std::fs::remove_dir_all(&d);
     }
 

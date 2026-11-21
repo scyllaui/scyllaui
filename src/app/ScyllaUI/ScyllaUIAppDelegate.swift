@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if InstallLocation.needsMove(bundlePath: Bundle.main.bundlePath) {
             scyllauiLog.notice("install_location needs_move path=\(Bundle.main.bundlePath, privacy: .public)")
             let alert = NSAlert()
+            alert.useWideLayout()
             alert.messageText = String(localized: "请先把 ScyllaUI 拖到「应用程序」")
             alert.informativeText = String(localized: "ScyllaUI 现在是从下载的磁盘映像或临时位置打开的。这样运行时，终端后台会从临时位置启动，系统也记不住你给的授权。请退出后，把 ScyllaUI 拖到「应用程序」文件夹，再从那里打开。")
             alert.addButton(withTitle: String(localized: "退出"))

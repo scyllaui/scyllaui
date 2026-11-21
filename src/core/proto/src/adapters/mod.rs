@@ -84,6 +84,13 @@ pub struct Adapter {
     pub record_from_approval: bool,
     /// 子代理的审批怎样算处理完（docs/design.md 4.3 节「子代理事件」例外）。
     pub subagent_approvals: SubagentApprovals,
+    /// 何时读取 Hook 配置（docs/design.md 4.7 节「会话是否真的在同步」；`docs/s0-hook-compat.md` 2026-11-18 实测）。
+    pub hook_load: HookLoad,
+    /// 会话记录里用户提交的提示词与提交事件一一对应，已逐款核对（`prompts::Prompt::submitted`）：靠推断算作在同步的
+    /// 会话，用它的会话记录对账（docs/design.md 4.7 节「用会话记录对账」）。运行中重读的几款不靠推断，不声明。
+    pub submit_record: bool,
+    /// 引导里要写给用户的命令；这款没有的为 None，引导里就不写那一步。
+    pub guide: Guide,
     matches: fn(&Process) -> bool,
     /// 版本从哪里读（M1 第 7 块，docs/design.md 3.1 节「版本来源」）；参数为被识别出的那个进程。
     version: fn(&Process) -> Option<VersionSource>,
@@ -91,6 +98,42 @@ pub struct Adapter {
     /// 原生事件名 → 统一事件；认不出的事件名为 None（`normalize` 按 `Kind::Other` 记录，`anomaly` 据此报异常）。
     map_event: fn(&str, Option<&str>) -> Option<Kind>,
     fields: Fields,
+}
+
+/// 这款 CLI 何时读取 Hook 配置：决定配置变化后，正在运行的会话还在不在同步。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HookLoad {
+    /// 运行中重读：配置一改，当前会话立即按新配置走。
+    Live,
+    /// 会话开始时读：当前会话不变，新会话或重开后生效。
+    Session,
+    /// 进程启动时读：同一进程里开新会话也不变，退出重开后生效。
+    Process,
+}
+
+impl HookLoad {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            HookLoad::Live => "live",
+            HookLoad::Session => "session",
+            HookLoad::Process => "process",
+        }
+    }
+}
+
+/// 引导用户让会话重新读取 Hook 时要写的命令（都由用户自己输入，ScyllaUI 不代输）。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Guide {
+    /// 在 CLI 里开新会话（如 `/new`）。
+    pub new_session: Option<&'static str>,
+    /// 在 CLI 里退出（如 `/quit`）。
+    pub quit: Option<&'static str>,
+    /// 在 Shell 里接着上一次对话打开（如 `codex resume --last`）。
+    pub resume_last: Option<&'static str>,
+}
+
+impl Guide {
+    pub const NONE: Guide = Guide { new_session: None, quit: None, resume_last: None };
 }
 
 /// 会话记录另查的办法。

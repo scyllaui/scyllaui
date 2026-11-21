@@ -55,6 +55,11 @@
       "version": "2.1.325",
       "verified": "2026-11-14",
       "sample": "claude-2.1.325-smoke.jsonl"
+    },
+    {
+      "version": "2.1.330",
+      "verified": "2026-11-21",
+      "sample": "claude-2.1.330-smoke.jsonl"
     }
   ],
   "codex": [
@@ -102,6 +107,11 @@
       "version": "0.169.0",
       "verified": "2026-11-14",
       "sample": "codex-0.169.0-smoke.jsonl"
+    },
+    {
+      "version": "0.171.0",
+      "verified": "2026-11-21",
+      "sample": "codex-0.171.0-smoke.jsonl"
     }
   ],
   "kimi": [
@@ -144,6 +154,16 @@
       "version": "2.6.1",
       "verified": "2026-11-14",
       "sample": "kimi-2.6.1-smoke.jsonl"
+    },
+    {
+      "version": "2.6.3",
+      "verified": "2026-11-21",
+      "sample": "kimi-2.6.3-smoke.jsonl"
+    },
+    {
+      "version": "2.7.2",
+      "verified": "2026-11-21",
+      "sample": "kimi-2.7.2-smoke.jsonl"
     }
   ],
   "grok": [
@@ -181,6 +201,11 @@
       "version": "1.0.77",
       "verified": "2026-11-06",
       "sample": "grok-1.0.77-smoke.jsonl"
+    },
+    {
+      "version": "1.0.92",
+      "verified": "2026-11-21",
+      "sample": "grok-1.0.92-smoke.jsonl"
     }
   ],
   "opencode": [
@@ -220,6 +245,11 @@
       "version": "1.0.112",
       "verified": "2026-11-14",
       "sample": "copilot-1.0.112-smoke.jsonl"
+    },
+    {
+      "version": "1.0.114",
+      "verified": "2026-11-21",
+      "sample": "copilot-1.0.114-smoke.jsonl"
     }
   ],
   "antigravity": [
@@ -242,6 +272,16 @@
       "version": "1.5.9",
       "verified": "2026-11-14",
       "sample": "antigravity-1.5.9-smoke.jsonl"
+    },
+    {
+      "version": "1.5.13",
+      "verified": "2026-11-21",
+      "sample": "antigravity-1.5.13-smoke.jsonl"
+    },
+    {
+      "version": "1.5.14",
+      "verified": "2026-11-21",
+      "sample": "antigravity-1.5.14-smoke.jsonl"
     }
   ]
 }

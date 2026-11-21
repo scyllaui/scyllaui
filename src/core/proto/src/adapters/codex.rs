@@ -42,6 +42,10 @@ pub static ADAPTER: Adapter = Adapter {
     child_records: false,
     record_from_approval: true,
     subagent_approvals: super::SubagentApprovals { resolved_event: false, outlive_turn: false },
+    // 0.169.0：会话开始时读，`/new` 或重开后生效。（2026-11-18 实测，docs/s0-hook-compat.md）
+    hook_load: super::HookLoad::Session,
+    submit_record: true,
+    guide: super::Guide { new_session: Some("/new"), quit: Some("/quit"), resume_last: Some("codex resume --last") },
     matches,
     version,
     // 恢复由 ScyllaUI 代输，有新版时 Codex 会停在自己的升级选择上、等人选（2026-10-29 长跑）；用户自己输入

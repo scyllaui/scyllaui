@@ -7,14 +7,103 @@
 //! - Grok：`grok agent --no-leader stdio`（ACP），`initialize` 后调扩展方法 `_x.ai/billing`，关掉标准输入即退出。
 //!
 //! 都在调用方另起的线程里运行，超时即结束进程；失败返回原因，调用方记一行日志。
+//!
+//! 另起的进程（含 Antigravity）都经 `spawn` 记在数据目录的 `quota-children/` 下，结束后删掉记录；后台查到一半被强制结束、
+//! 崩溃或换版本接管时来不及结束它们，下次启动由 `reap_leftovers` 结束（`kimi web` 不会自己退出，见 docs/design.md 3.1.1 节）。
 
 use scyllaui_proto::adapters::usage::{grok_quotas, kimi_quotas, kimi_web_address, Quota};
+use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{SocketAddr, TcpStream};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::sync::mpsc;
+use std::sync::{mpsc, OnceLock};
 use std::time::{Duration, Instant};
+
+/// 记录目录；`reap_leftovers` 设好之前（如单元测试）不记录。
+static LEDGER: OnceLock<PathBuf> = OnceLock::new();
+
+/// 另起的查额度进程与它的记录（`quota-children/<进程号>`，内容为启动时间毫秒）。进程结束后才能丢掉，丢掉时删记录。
+pub struct Tracked {
+    pub child: Child,
+    mark: Option<PathBuf>,
+}
+
+impl Drop for Tracked {
+    fn drop(&mut self) {
+        if let Some(p) = &self.mark {
+            let _ = fs::remove_file(p);
+        }
+    }
+}
+
+/// 起进程并记下进程号与启动时间（用来认出是不是同一个进程，进程号会被复用）。
+pub fn spawn(cmd: &mut Command) -> std::io::Result<Tracked> {
+    let child = cmd.spawn()?;
+    let mark = LEDGER.get().and_then(|dir| {
+        let pid = child.id() as i32;
+        let start = crate::procinfo::start_ms(pid)?;
+        let p = dir.join(pid.to_string());
+        fs::write(&p, start.to_string()).ok()?;
+        Some(p)
+    });
+    Ok(Tracked { child, mark })
+}
+
+/// 启动时（已取得单实例锁、还没开始查额度）调用：设好记录目录，结束上次留下的查额度进程。只结束进程号与启动时间都对得上的；
+/// 结束在另起的线程里做，不拖慢启动。
+pub fn reap_leftovers(data_dir: &Path) {
+    use std::os::unix::fs::DirBuilderExt;
+    let dir = data_dir.join("quota-children");
+    if let Err(e) = fs::DirBuilder::new().mode(0o700).create(&dir) {
+        if e.kind() != std::io::ErrorKind::AlreadyExists {
+            log!("查额度进程的记录目录不可用（{e}），不记录");
+            return;
+        }
+    }
+    let left: Vec<PathBuf> = fs::read_dir(&dir)
+        .map(|rd| rd.filter_map(|e| e.ok()).map(|e| e.path()).collect())
+        .unwrap_or_default();
+    let _ = LEDGER.set(dir);
+    if left.is_empty() {
+        return;
+    }
+    std::thread::spawn(move || {
+        for p in left {
+            let pid = p.file_name().and_then(|n| n.to_str()).and_then(|n| n.parse::<i32>().ok());
+            let start = fs::read_to_string(&p).ok().and_then(|s| s.trim().parse::<i64>().ok());
+            if let (Some(pid), Some(start)) = (pid, start) {
+                if pid > 1 && crate::procinfo::start_ms(pid) == Some(start) {
+                    let how = terminate(pid);
+                    log!("结束上次留下的查额度进程 {pid}（{how}）");
+                }
+            }
+            let _ = fs::remove_file(&p);
+        }
+    });
+}
+
+/// 先 SIGTERM，5 秒不退再 SIGKILL。换版本接管后它仍是本进程的子进程，顺带回收。
+fn terminate(pid: i32) -> &'static str {
+    let gone = || {
+        // SAFETY: 只回收这个进程号；不是本进程的子进程时返回错误，不影响别处。
+        unsafe { libc::waitpid(pid, std::ptr::null_mut(), libc::WNOHANG) };
+        !crate::procinfo::process_exists(pid)
+    };
+    // SAFETY: 进程号与启动时间已核对，是本程序起的查额度进程。
+    unsafe { libc::kill(pid, libc::SIGTERM) };
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while Instant::now() < deadline {
+        if gone() {
+            return "SIGTERM";
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    // SAFETY: 同上。
+    unsafe { libc::kill(pid, libc::SIGKILL) };
+    std::thread::sleep(Duration::from_millis(200));
+    if gone() { "SIGKILL" } else { "SIGKILL 后仍在" }
+}
 
 /// 等 CLI 启动、回应的上限。
 const STEP_TIMEOUT: Duration = Duration::from_secs(20);
@@ -82,18 +171,17 @@ fn wait_line<T>(rx: &mpsc::Receiver<String>, deadline: Instant, mut pick: impl F
 
 /// Kimi 的 5 小时、7 天（按月计的账号还有月）额度。
 pub fn kimi_web(exe: &Path, home: &Path) -> Result<Vec<Quota>, QuotaMiss> {
-    let mut child = command(exe, &["web", "--no-open", "--port", "0"], home)
-        .stdin(Stdio::null())
-        .spawn()
+    let mut tracked = spawn(command(exe, &["web", "--no-open", "--port", "0"], home).stdin(Stdio::null()))
         .map_err(|_| "启动失败")?;
+    let child = &mut tracked.child;
     let got = (|| -> Result<Vec<Quota>, QuotaMiss> {
-        let rx = lines(&mut child).ok_or("没有输出")?;
+        let rx = lines(child).ok_or("没有输出")?;
         let (port, token) = wait_line(&rx, Instant::now() + STEP_TIMEOUT, kimi_web_address).ok_or("没有等到本机地址")?;
         let body = http_get(port, "/api/v1/oauth/usage", &token).ok_or("请求失败")?;
         let v: serde_json::Value = serde_json::from_slice(&body).map_err(|_| "返回认不出")?;
         Ok(kimi_quotas(&v, scyllaui_proto::now_ms()))
     })();
-    stop(&mut child);
+    stop(child);
     got
 }
 
@@ -113,12 +201,11 @@ fn http_get(port: u16, path: &str, token: &str) -> Option<Vec<u8>> {
 
 /// Grok 账号本期（本机为每周）额度。
 pub fn grok_billing(exe: &Path, home: &Path) -> Result<Vec<Quota>, QuotaMiss> {
-    let mut child = command(exe, &["agent", "--no-leader", "stdio"], home)
-        .stdin(Stdio::piped())
-        .spawn()
+    let mut tracked = spawn(command(exe, &["agent", "--no-leader", "stdio"], home).stdin(Stdio::piped()))
         .map_err(|_| "启动失败")?;
+    let child = &mut tracked.child;
     let got = (|| -> Result<Vec<Quota>, QuotaMiss> {
-        let rx = lines(&mut child).ok_or("没有输出")?;
+        let rx = lines(child).ok_or("没有输出")?;
         let mut stdin = child.stdin.take().ok_or("没有输入")?;
         let reply = |id: i64| {
             move |line: &str| serde_json::from_str::<serde_json::Value>(line).ok().filter(|m| m["id"] == id)
@@ -140,6 +227,30 @@ pub fn grok_billing(exe: &Path, home: &Path) -> Result<Vec<Quota>, QuotaMiss> {
         Ok(grok_quotas(&m["result"], scyllaui_proto::now_ms()))
     })();
     // 关掉标准输入它会自己退出（约 4 秒），这里不等，直接结束。
-    stop(&mut child);
+    stop(child);
     got
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 查额度时记下进程号与启动时间，进程结束、丢掉后记录随之删掉。
+    #[test]
+    fn spawn_records_and_drop_removes() {
+        let data = std::env::temp_dir().join(format!("scyllauid-cliquota-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&data);
+        fs::create_dir_all(&data).unwrap();
+        reap_leftovers(&data);
+        let mut t = spawn(Command::new("/bin/sleep").arg("30")).unwrap();
+        let pid = t.child.id() as i32;
+        let mark = data.join("quota-children").join(pid.to_string());
+        let start: i64 = fs::read_to_string(&mark).unwrap().parse().unwrap();
+        assert_eq!(Some(start), crate::procinfo::start_ms(pid));
+        stop(&mut t.child);
+        assert!(mark.exists(), "进程结束前记录不该删");
+        drop(t);
+        assert!(!mark.exists());
+        let _ = fs::remove_dir_all(&data);
+    }
 }

@@ -4,6 +4,7 @@
 
 use crate::git::{GitStatus, GitWorker, Job};
 use crate::hooks::{analyze_all, HookWatch};
+use crate::hooktime::{self, Facts, Sync, Timeline};
 use crate::title::{TitleJob, TitleWorker};
 use crate::version::{VersionJob, VersionWorker};
 use crate::waitwatch::WaitWatch;
@@ -164,6 +165,13 @@ pub enum Cmd {
         /// 事件属于哪个子代理（Antigravity 子代理的对话库）：按这个子代理的事件处理。
         agent: Option<String>,
     },
+    /// WaitWatch 在会话记录里读到一条用户提交的提示词（`Scan::Submits`，docs/design.md 4.7 节「用会话记录对账」）；
+    /// `at` 为记录里的时间（毫秒），没有时为 None。
+    RecordSubmit {
+        terminal_id: String,
+        session_id: Option<String>,
+        at: Option<i64>,
+    },
     /// WaitWatch 打开会话记录的结果（2026-11-14）：`ok` 为假表示重试到时间仍定位不到或打不开。
     WatchOpened {
         /// 监听的标识（`Start::key`）。
@@ -284,6 +292,17 @@ struct Pane {
     inherited: bool,
     /// 最近一次 Hook 异常（M4b 块 6，docs/design.md 10.6 节 6a）：「状态可能不准」的原因。只在内存中。
     anomaly: Option<PaneAnomaly>,
+    /// 最近一次从这个终端收到 Hook 事件的工具与时间（Unix 毫秒）：判断前台进程在不在同步的事实依据
+    /// （docs/design.md 4.7 节「会话是否真的在同步」）。只在内存中。
+    last_hook: Option<(Tool, i64)>,
+    /// 前台 Agent 进程的同步情况（同上）；在同步且配置正常、或前台不是 Agent 时为 None。只在内存中，随配置、前台、事件重算。
+    sync: Option<Sync>,
+    /// 会话记录对账（4.7 节「用会话记录对账」）：记录里读到一条用户提交的提示词，等到这个时间看它的事件到了没有。
+    /// 依次为到期时间、前台 Agent 的工具与进程号、提示词的时刻（Unix 毫秒）。只在内存中。
+    submit_check: Option<(Instant, Tool, i32, i64)>,
+    /// 对账的结论：这个进程（工具、进程号）在这个时刻提交了提示词而事件没到。收到它的事件即清除，换了进程即无效。
+    /// 只在内存中；换版本接管时随接管文件带到新进程。
+    silent: Option<(Tool, i32, i64)>,
 }
 
 struct PaneVersion {
@@ -322,6 +341,10 @@ impl Pane {
             inherited: false,
             anomaly: None,
             resync: false,
+            last_hook: None,
+            sync: None,
+            submit_check: None,
+            silent: None,
         }
     }
 }
@@ -369,6 +392,8 @@ pub struct Core {
     hook_watch: HookWatch,
     hooks: Vec<Status>,
     cli_home: String,
+    /// 每款 Hook 配置状态变化的时间（hook-timeline.json）：判断一个 Agent 进程启动时条目在不在。
+    hook_times: Timeline,
     versions: VersionWorker,
     /// 测试后台（`--data-dir` 指向别处）没有指定 `SCYLLAUI_CLI_HOME` 时为 true：拒绝修复，避免测试改到真实配置。
     real_config_guard: bool,
@@ -488,6 +513,7 @@ impl Core {
             hook_watch,
             hooks: Vec::new(),
             cli_home,
+            hook_times: Timeline::default(),
             versions,
             real_config_guard: false,
             waits: HashMap::new(),
@@ -533,7 +559,7 @@ impl Core {
             let next = self
                 .panes
                 .values()
-                .flat_map(|p| [p.exit_deadline.map(|(t, _)| t), p.fg_followup, p.ended_until])
+                .flat_map(|p| [p.exit_deadline.map(|(t, _)| t), p.fg_followup, p.ended_until, p.submit_check.map(|c| c.0)])
                 .flatten()
                 .min();
             let cmd = match next {
@@ -551,6 +577,7 @@ impl Core {
             self.expire_exits(Instant::now());
             self.expire_followups(Instant::now());
             self.expire_ended(Instant::now());
+            self.expire_submits(Instant::now());
         }
     }
 
@@ -612,6 +639,7 @@ impl Core {
             Cmd::SessionRecord { terminal_id, session_id, kind, turn, agent } => {
                 self.session_record(&terminal_id, session_id, kind, turn, agent)
             }
+            Cmd::RecordSubmit { terminal_id, session_id, at } => self.record_submit(&terminal_id, session_id, at),
             Cmd::WatchOpened { key, session_id, ok } => {
                 let current = self.watching.get(&key).is_some_and(|k| k.session == session_id);
                 if !ok {
@@ -1093,6 +1121,11 @@ impl Core {
         self
     }
 
+    pub fn hook_times(mut self, times: Timeline) -> Core {
+        self.hook_times = times;
+        self
+    }
+
     /// 接管旧进程的会话后（main.rs 已交给 PTY 宿主，宿主已开始等待 Shell 退出）：标为保活终端，还原只在内存中的终端提示
     /// 与当前目录（否则换版本后「目录无权限」消失、副标题退回启动目录，2026-10-23 修正）。库里已不存活的终端直接挂断。
     pub fn adopt(&mut self, adopted: Vec<pty::takeover::Adopted>) {
@@ -1226,6 +1259,7 @@ impl Core {
             "unseen": p.unseen,
             "fg_pid": fg_pid,
             "fg_start_ms": fg_pid.and_then(procinfo::start_ms),
+            "silent": p.silent.filter(|(t, q, _)| *t == tool && Some(*q) == fg_pid).map(|(_, _, at)| at),
             "waiting": self.waits.contains_key(id),
             "wait_notice": self.waits.get(id).and_then(|w| w.notice.clone()),
             "wait_seq": self.wait_seq.get(id),
@@ -1239,9 +1273,6 @@ impl Core {
     fn restore_agent(&mut self, id: &str, a: &Value) {
         let Some(p) = self.panes.get_mut(id) else { return };
         let Some(state) = PaneState::from_handoff(&a["state"]) else { return };
-        if matches!(state.state, AgentState::Unknown | AgentState::Ended) {
-            return;
-        }
         let same_process = match p.foreground {
             Foreground::Agent { pid, tool, .. } => {
                 Some(tool) == state.tool
@@ -1250,12 +1281,24 @@ impl Core {
             }
             _ => false,
         };
+        // 会话记录对账的结论（4.7 节）跟着进程走：还是同一个进程就带过来，不论下面状态还不还原。
+        if let (true, Some(at), Foreground::Agent { pid, tool, .. }) = (same_process, a["silent"].as_i64(), &p.foreground) {
+            p.silent = Some((*tool, *pid, at));
+        }
+        if matches!(state.state, AgentState::Unknown | AgentState::Ended) {
+            return;
+        }
         if !same_process || p.conversation != a["conversation_id"].as_i64() || p.state.session_id != state.session_id {
             log!("接管：终端 {id} 的前台或对话已不是交接时的那个，状态维持未知");
             return;
         }
         log!("接管：终端 {id} 还原为 {}", state.state.as_str());
         let (tool, cid) = (state.tool, p.conversation);
+        // 状态能还原，说明交接前这个进程在同步：记作刚收到过它的事件，免得换版本后误判成没在同步。交接前已经对账出
+        // 没在同步的不记。
+        if let (Some(t), None) = (tool, p.silent) {
+            p.last_hook = Some((t, now_ms()));
+        }
         p.state = state;
         p.unseen = a["unseen"] == true;
         p.resync = true;
@@ -1499,19 +1542,40 @@ impl Core {
     /// 四款的状态；监听线程还没给出结果时当场分析一次。
     fn current_hooks(&mut self) -> &[Status] {
         if self.hooks.is_empty() {
-            self.hooks = analyze_all(&self.cli_home);
+            let statuses = analyze_all(&self.cli_home);
+            self.observe_hooks(&statuses, true);
+            self.hooks = statuses;
         }
         &self.hooks
     }
 
     /// 每款附上版本（M4b 块 6，「设置 › Agent」显示）：优先正在终端里运行的，没在运行时取最近一次对话记下的；都没有不附。
     /// 另附清单里最新的已验证版本（「状态可能不准」的详情里给用户作退回参考）。
+    /// 再附主配置文件的修改时间 `changed_at`（2026-11-17）：App 拿它与 Codex 的启动时间比较，决定怎样引导用户信任
+    /// （docs/design.md 4.7 节「引导用户信任」）；每次现读，不走缓存，文件不存在或读不到时不附。
     fn hooks_json(&self) -> Value {
         let list = if self.hooks.is_empty() { analyze_all(&self.cli_home) } else { self.hooks.clone() };
         json!(list
             .iter()
             .map(|s| {
                 let mut v = s.to_json();
+                // 何时读取 Hook 与引导里要写的命令（docs/design.md 4.7 节「会话是否真的在同步」）。
+                let a = adapter(s.tool);
+                v["load"] = json!(a.hook_load.as_str());
+                v["command"] = json!(a.command);
+                // 这款配置状态最近一次变化的时间（时间线）：引导里写「写入 Hook 的时间」用，比文件修改时间准。
+                if let Some(at) = self.hook_times.changed_at(s.tool) {
+                    v["state_changed_at"] = json!(at);
+                }
+                for (key, cmd) in [("new_session", a.guide.new_session), ("quit", a.guide.quit), ("resume_last", a.guide.resume_last)] {
+                    if let Some(cmd) = cmd {
+                        v[key] = json!(cmd);
+                    }
+                }
+                let changed = std::fs::metadata(&s.path).and_then(|m| m.modified()).ok();
+                if let Some(d) = changed.and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()) {
+                    v["changed_at"] = json!(d.as_millis() as i64);
+                }
                 let running = self
                     .panes
                     .values()
@@ -1553,9 +1617,159 @@ impl Core {
                 );
             }
         }
+        // 本进程第一次分析出的结果：与时间线最近一条不同的话，变化发生在后台没在运行的时候，时刻不明。
+        let first = self.hooks.is_empty();
+        self.observe_hooks(&statuses, first);
         self.hooks = statuses;
         let hooks = self.hooks_json();
         self.push(json!({"type": "hooks.upsert", "hooks": hooks}));
+        self.refresh_sync_all();
+    }
+
+    /// 把各款此刻的状态记进时间线（与最近一条相同的不记）。
+    fn observe_hooks(&mut self, statuses: &[Status], gap: bool) {
+        let now = now_ms();
+        for s in statuses {
+            self.hook_times.observe(s.tool, s.state, now, gap);
+        }
+    }
+
+    /// 判断这个终端前台 Agent 进程同步情况要用的事实（docs/design.md 4.7 节「会话是否真的在同步」）。前台不是 Agent、
+    /// 或配置还没分析出来时为 None。
+    fn sync_facts(&self, p: &Pane) -> Option<Facts> {
+        let Foreground::Agent { pid, tool, .. } = p.foreground else {
+            return None;
+        };
+        let now = self.hooks.iter().find(|s| s.tool == tool)?.state;
+        let started = procinfo::start_ms(pid);
+        Some(Facts {
+            load: adapter(tool).hook_load,
+            now,
+            changed: self.hook_times.changed_at(tool),
+            started,
+            last_hook: p.last_hook.filter(|(t, _)| *t == tool).map(|(_, at)| at),
+            at_start: started.and_then(|s| self.hook_times.state_at(tool, s)),
+            silent: p.silent.filter(|(t, q, _)| *t == tool && *q == pid).map(|(_, _, at)| at),
+        })
+    }
+
+    /// 这个终端前台 Agent 进程的同步情况。
+    fn sync_of_pane(&self, p: &Pane) -> Option<Sync> {
+        hooktime::sync_of(&self.sync_facts(p)?)
+    }
+
+    /// 会话记录对账要开的监听（docs/design.md 4.7 节「用会话记录对账」）：前台这款声明了 `submit_record`、结论靠推断
+    /// （`hooktime::inferred`）、会话记录定位得到。记录的位置与历史提示词相同（`prompts.rs`）。同一对话在别的终端也
+    /// 开着时不核对：记录里的提示词可能是那边提交的。等待核对结果期间（`submit_check`）监听不停。
+    fn submit_watch(&self, id: &str, p: &Pane) -> Option<(WatchKey, crate::waitwatch::Start)> {
+        use crate::waitwatch::{Source, Start};
+        use scyllaui_proto::adapters::reply::ReplySource;
+        use scyllaui_proto::adapters::waiting::Scan;
+        let Foreground::Agent { pid, tool, .. } = p.foreground else {
+            return None;
+        };
+        let a = adapter(tool);
+        if !a.submit_record || p.state.tool != Some(tool) || !p.conflict.is_empty() {
+            return None;
+        }
+        if p.submit_check.is_none() && !hooktime::inferred(&self.sync_facts(p)?) {
+            return None;
+        }
+        let sid = p.state.session_id.as_ref().filter(|s| valid_session_id(s))?;
+        let source = match a.reply_source {
+            ReplySource::CopilotEvents => Source::Path(Path::new(&self.cli_home).join(a.session_record?(sid))),
+            ReplySource::KimiWire => Source::KimiIndex { home: PathBuf::from(&self.cli_home), session: sid.clone() },
+            _ => Source::Path(PathBuf::from(p.state.transcript_path.as_ref()?)),
+        };
+        let key = WatchKey { session: Some(sid.clone()), turn: Some(format!("sync:{pid}")) };
+        let job = Start {
+            key: format!("{id}#sync"),
+            terminal_id: id.to_owned(),
+            session_id: Some(sid.clone()),
+            source,
+            scan: Scan::Submits(a.reply_source),
+            turn: None,
+            waiting: false,
+            resync: false,
+            sub: false,
+            agent: None,
+        };
+        Some((key, job))
+    }
+
+    /// 会话记录里读到一条用户提交的提示词（`Cmd::RecordSubmit`）：等 `SUBMIT_WAIT_MS`，到时看这个终端的事件到了没有
+    /// （`expire_submits`）。已经在等的不重记：先到的那条最早到期。
+    fn record_submit(&mut self, tid: &str, session_id: Option<String>, at: Option<i64>) {
+        let Some(p) = self.panes.get_mut(tid) else { return };
+        if p.state.session_id != session_id || p.submit_check.is_some() {
+            return;
+        }
+        let Foreground::Agent { pid, tool, .. } = p.foreground else { return };
+        // 记录里的时间不会晚于现在；没有时间的用读到它的时刻。
+        let now = now_ms();
+        let at = at.map_or(now, |t| t.min(now));
+        let wait = Duration::from_millis(hooktime::SUBMIT_WAIT_MS as u64);
+        p.submit_check = Some((Instant::now() + wait, tool, pid, at));
+    }
+
+    /// 到期的对账：从提示词时刻前 `hooktime::SUBMIT_EARLY_MS` 起到现在都没收到这个终端这款工具的事件，而前台还是
+    /// 那个进程，记为没在同步并重算、推送。
+    fn expire_submits(&mut self, now: Instant) {
+        let due: Vec<String> =
+            self.panes.iter().filter(|(_, p)| p.submit_check.is_some_and(|c| c.0 <= now)).map(|(id, _)| id.clone()).collect();
+        if due.is_empty() {
+            return;
+        }
+        for id in due {
+            let Some(p) = self.panes.get_mut(&id) else { continue };
+            let Some((_, tool, pid, at)) = p.submit_check.take() else { continue };
+            let same = matches!(p.foreground, Foreground::Agent { pid: q, tool: t, .. } if q == pid && t == tool);
+            let heard = p.last_hook.is_some_and(|(t, e)| t == tool && e >= at - hooktime::SUBMIT_EARLY_MS);
+            if !same || heard {
+                continue;
+            }
+            log!("会话记录对账：{id} 的 {} 提交了提示词而事件没到，记为没在同步", tool.as_str());
+            p.silent = Some((tool, pid, at));
+            if self.refresh_sync(&id) {
+                if let Err(Fail(_, e)) = self.push_terminal(&id, None) {
+                    log!("推送终端失败：{e}");
+                }
+            }
+        }
+        self.refresh_watches();
+    }
+
+    /// 重算一个终端的同步情况，返回有没有变。变成「没在同步」的那一刻把 Agent 状态置为「未知」：不保留最后一次事件的
+    /// 状态（4.3 节：同步未生效时为「未知」），绑定的对话不动。
+    fn refresh_sync(&mut self, id: &str) -> bool {
+        let Some(sync) = self.panes.get(id).map(|p| self.sync_of_pane(p)) else {
+            return false;
+        };
+        let Some(p) = self.panes.get_mut(id) else {
+            return false;
+        };
+        if p.sync == sync {
+            return false;
+        }
+        log!("同步情况：{id} {} → {}", p.sync.map_or("-", Sync::as_str), sync.map_or("-", Sync::as_str));
+        p.sync = sync;
+        if sync == Some(Sync::Off) && !matches!(p.state.state, AgentState::Unknown | AgentState::Ended) {
+            log!("同步未生效：{id} 的 Agent 状态由 {} 置为未知", p.state.state.as_str());
+            p.state.state = AgentState::Unknown;
+        }
+        true
+    }
+
+    /// Hook 配置状态变化后重算全部终端，有变化的推送。
+    fn refresh_sync_all(&mut self) {
+        let ids: Vec<String> = self.panes.keys().cloned().collect();
+        for id in ids {
+            if self.refresh_sync(&id) {
+                if let Err(Fail(_, e)) = self.push_terminal(&id, None) {
+                    log!("推送终端失败：{e}");
+                }
+            }
+        }
     }
 
     /// 请求中的 `action`（M4a）：`repair`（缺省）或 `uninstall`。
@@ -1872,7 +2086,21 @@ impl Core {
         {
             ev.kind = Kind::Other;
         }
+        // 收到这个终端的事件：它在同步的事实依据（docs/design.md 4.7 节「会话是否真的在同步」）。先重算，这次事件的推送就带上。
+        if let Some(p) = self.panes.get_mut(tid) {
+            p.last_hook = Some((tool, now_ms()));
+            if p.silent.is_some_and(|(t, ..)| t == tool) {
+                log!("会话记录对账：{tid} 又收到 {} 的事件，不再记为没在同步", tool.as_str());
+                p.silent = None;
+            }
+        }
+        let sync_changed = self.refresh_sync(tid);
         self.apply_event(tool, tid, &ev, trace);
+        if sync_changed {
+            if let Err(Fail(_, e)) = self.push_terminal(tid, None) {
+                log!("推送终端失败：{e}");
+            }
+        }
         // Hook 到达时读一次前台（原由 App 在收到带 trace 的推送时读，docs/design.md 4.2 节）。
         self.refresh_foreground(tid);
         // 「需确认」带着待批准的命令原文（Codex）：盯这个 AI 进程，后代里出现执行这条命令的进程即批准（approval.rs）。
@@ -2244,7 +2472,7 @@ impl Core {
         }
     }
 
-    /// 会话记录监听的对账：适配器声明了 `waiting_scan` 的工具在待审批时监听，声明了 `scan_while_running` 的在运行中也
+    /// 会话记录监听的对账：靠推断算作在同步的会话盯它新提交的提示词（`submit_watch`）；适配器声明了 `waiting_scan` 的工具在待审批时监听，声明了 `scan_while_running` 的在运行中也
     /// 监听，声明了 `turns_by_record` 的在 Ready、出错时也监听；状态离开这些即停止。记录路径优先用适配器按会话 ID
     /// 推出的位置（在 `cli_home` 下），其次用 Hook 给出的。
     fn refresh_watches(&mut self) {
@@ -2256,6 +2484,9 @@ impl Core {
             self.panes.get(id).is_some_and(|p| p.state.session_id == *main && !matches!(p.state.state, AgentState::Ended | AgentState::Unknown))
         });
         for (id, p) in &self.panes {
+            if let Some((key, job)) = self.submit_watch(id, p) {
+                want.insert(job.key.clone(), (key, job));
+            }
             let Some(tool) = p.state.tool else { continue };
             let a = adapter(tool);
             let Some(scan) = a.waiting_scan else { continue };
@@ -2392,6 +2623,14 @@ impl Core {
                 // 「状态可能不准」（M4b 块 6）：只给记下它的那个进程。
                 if let Some(a) = p.anomaly.as_ref().filter(|a| a.tool == tool && a.pid.is_none_or(|x| x == pid)) {
                     fg["anomaly"] = json!(a.code);
+                }
+                // 这个进程的同步情况，以及它启动时本项目的条目在不在（查得到才附；Codex 信任引导据此分路）。
+                if let Some(s) = p.sync {
+                    fg["sync"] = json!(s.as_str());
+                }
+                let at_start = procinfo::start_ms(pid).and_then(|s| self.hook_times.state_at(tool, s));
+                if let Some(present) = at_start.and_then(hooktime::entries_present) {
+                    fg["entries_at_start"] = json!(present);
                 }
             }
             fg
@@ -2579,8 +2818,13 @@ impl Core {
             Foreground::Shell { .. } | Foreground::Command { .. } => pane.anomaly = None,
             Foreground::Unknown => {}
         }
-        if pane.foreground != fg {
+        let fg_changed = pane.foreground != fg;
+        if fg_changed {
             pane.foreground = fg;
+        }
+        // 前台换了进程：同步情况跟着重算，与前台变化一起推送。
+        let sync_changed = self.refresh_sync(id);
+        if fg_changed || sync_changed {
             self.push_terminal(id, None)?;
         }
         // Shell 命令结束时 App 也会上报前台（M2 第 2 块，Git 改动数的触发）。
@@ -6100,7 +6344,219 @@ mod tests {
         assert_eq!(codex(&b)["verified_latest"], json!(verified_list(Tool::Codex).last().unwrap()));
     }
 
+    /// `hooks.status` 附主配置文件的修改时间（2026-11-17，引导用户信任时与 Codex 的启动时间比较）：文件不存在时不附，
+    /// 写入后是它此刻的修改时间，每次现读。
+    #[test]
+    fn hook_status_carries_config_change_time() {
+        let mut b = bench("hook-changed-at");
+        let home = test_dir("hook-changed-at-home");
+        b.core.cli_home = home.display().to_string();
+        let codex = |b: &Bench| b.core.hooks_json().as_array().unwrap().iter().find(|h| h["tool"] == "codex").unwrap().clone();
+        assert!(codex(&b).get("changed_at").is_none(), "没有配置文件时不附");
+        let file = home.join(".codex/hooks.json");
+        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+        std::fs::write(&file, "{\"hooks\": {}}").unwrap();
+        let mtime = |f: &Path| f.metadata().unwrap().modified().unwrap().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64;
+        let h = codex(&b);
+        assert_eq!(h["path"], json!(file.display().to_string()));
+        assert_eq!(h["changed_at"], json!(mtime(&file)));
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        std::fs::write(&file, "{\"hooks\": {\"Stop\": []}}").unwrap();
+        let later = codex(&b)["changed_at"].as_i64().unwrap();
+        assert!(later > h["changed_at"].as_i64().unwrap() && later == mtime(&file), "改动后是新的修改时间");
+    }
+
     fn fg_anomaly(b: &Bench, t: &str) -> Value {
         b.core.terminal_json(t).ok().flatten().unwrap()["foreground"]["anomaly"].clone()
+    }
+
+    /// 「会话是否真的在同步」的测试用：一款的配置状态；前台设为本测试进程（启动时间读得到）。
+    fn hook_status(tool: Tool, state: HookState) -> Vec<Status> {
+        vec![Status { tool, state, path: String::new(), problems: Vec::new(), fixable: false }]
+    }
+
+    fn agent_fg(b: &mut Bench, t: &str, tool: Tool) -> i64 {
+        let pid = std::process::id() as i32;
+        b.core.panes.get_mut(t).unwrap().foreground = Foreground::Agent { pid, path: tool.as_str().into(), tool };
+        procinfo::start_ms(pid).expect("读得到本进程的启动时间")
+    }
+
+    fn term(b: &Bench, t: &str) -> Value {
+        b.core.terminal_json(t).ok().flatten().unwrap()
+    }
+
+    /// 运行中重读的工具（Claude）：配置一失效，这个会话就没在同步——状态立即置为「未知」、`sync` 为 `off` 并推送，
+    /// 不停在最后一次事件的 Running（2026-11-20，用户撤销后看到状态像卡住）。之后又收到它的事件，按事实算还在同步。
+    #[test]
+    fn live_tool_goes_unknown_at_once_when_its_hooks_stop_working() {
+        let mut b = bench("sync-live");
+        let t = "b0b0b0b0-0000-4000-8000-0000000000a1";
+        let (_app, rx, _) = b.app(&[t]);
+        let started = agent_fg(&mut b, t, Tool::Claude);
+        b.core.hook_times.observe(Tool::Claude, HookState::Ok, started - 10_000, false);
+        b.core.hooks_changed(hook_status(Tool::Claude, HookState::Ok));
+        b.hook(t, "claude", json!({"hook_event_name": "SessionStart", "session_id": "s1", "transcript_path": "/x.jsonl"}));
+        b.hook(t, "claude", json!({"hook_event_name": "UserPromptSubmit", "session_id": "s1", "prompt": "hi"}));
+        let v = term(&b, t);
+        assert_eq!((v["agent"]["state"].clone(), v["foreground"].get("sync").cloned()), (json!("running"), None));
+        drain(&rx);
+        b.core.hooks_changed(hook_status(Tool::Claude, HookState::Missing));
+        let pushed = drain(&rx).iter().rev().find(|m| m["type"] == "terminal.upsert").expect("配置失效要推送终端")["terminal"].clone();
+        assert_eq!((pushed["agent"]["state"].clone(), pushed["foreground"]["sync"].clone()), (json!("unknown"), json!("off")));
+        assert_eq!(pushed["conversation_id"], term(&b, t)["conversation_id"], "绑定的对话不动");
+        assert!(pushed["conversation_id"].is_i64());
+        // 失效之后还收到它的事件：它在用旧条目同步，状态照常更新。
+        std::thread::sleep(Duration::from_millis(3));
+        b.hook(t, "claude", json!({"hook_event_name": "UserPromptSubmit", "session_id": "s1", "prompt": "again"}));
+        let v = term(&b, t);
+        assert_eq!((v["agent"]["state"].clone(), v["foreground"]["sync"].clone()), (json!("running"), json!("old")));
+        // 修复后恢复正常。
+        b.core.hooks_changed(hook_status(Tool::Claude, HookState::Ok));
+        assert!(term(&b, t)["foreground"].get("sync").is_none());
+    }
+
+    /// 会话开始时读、进程启动时读的工具：进程启动时条目还没写入，之后修复——配置正常，但这个进程读不到，
+    /// `sync` 为 `new_session`（Codex）或 `restart`（Kimi），并给出 `entries_at_start: false`；收到它的事件后不再提示。
+    #[test]
+    fn a_session_older_than_the_entries_is_told_to_reopen() {
+        let mut b = bench("sync-reopen");
+        let (c, k) = ("b0b0b0b0-0000-4000-8000-0000000000b1", "b0b0b0b0-0000-4000-8000-0000000000b2");
+        let (_app, rx, _) = b.app(&[c, k]);
+        let started = agent_fg(&mut b, c, Tool::Codex);
+        agent_fg(&mut b, k, Tool::Kimi);
+        for tool in [Tool::Codex, Tool::Kimi] {
+            b.core.hook_times.observe(tool, HookState::Missing, started - 10_000, false);
+        }
+        let mut all = hook_status(Tool::Codex, HookState::Missing);
+        all.extend(hook_status(Tool::Kimi, HookState::Missing));
+        b.core.hooks_changed(all);
+        assert_eq!(term(&b, c)["foreground"]["sync"], "off", "还没修复：没在同步");
+        drain(&rx);
+        let mut all = hook_status(Tool::Codex, HookState::Ok);
+        all.extend(hook_status(Tool::Kimi, HookState::Ok));
+        b.core.hooks_changed(all);
+        assert_eq!(drain(&rx).iter().filter(|m| m["type"] == "terminal.upsert").count(), 2, "两个终端都推送");
+        let (vc, vk) = (term(&b, c), term(&b, k));
+        assert_eq!((vc["foreground"]["sync"].clone(), vc["foreground"]["entries_at_start"].clone()), (json!("new_session"), json!(false)));
+        assert_eq!(vk["foreground"]["sync"], "restart");
+        // Codex 里 /new 之后提交了一条：收到事件，不再提示。
+        std::thread::sleep(Duration::from_millis(3));
+        b.hook(c, "codex", json!({"hook_event_name": "SessionStart", "session_id": "n1", "transcript_path": "/x.jsonl"}));
+        assert!(term(&b, c)["foreground"].get("sync").is_none());
+        assert_eq!(term(&b, k)["foreground"]["sync"], "restart", "别的终端不受影响");
+    }
+
+    /// 会话开始时读的工具，会话中途条目没了：这个进程还在用启动时读到的条目同步，`sync` 为 `old`，状态不动；
+    /// 失效之后才启动的进程是 `off`。
+    #[test]
+    fn a_session_that_loaded_the_entries_is_still_synced_after_removal() {
+        let mut b = bench("sync-old");
+        let t = "b0b0b0b0-0000-4000-8000-0000000000c1";
+        let (_app, rx, _) = b.app(&[t]);
+        let started = agent_fg(&mut b, t, Tool::Codex);
+        b.core.hook_times.observe(Tool::Codex, HookState::Ok, started - 10_000, false);
+        b.core.hooks_changed(hook_status(Tool::Codex, HookState::Ok));
+        b.hook(t, "codex", json!({"hook_event_name": "SessionStart", "session_id": "o1", "transcript_path": "/x.jsonl"}));
+        b.hook(t, "codex", json!({"hook_event_name": "UserPromptSubmit", "session_id": "o1", "prompt": "hi"}));
+        drain(&rx);
+        b.core.hooks_changed(hook_status(Tool::Codex, HookState::Missing));
+        let v = term(&b, t);
+        assert_eq!((v["agent"]["state"].clone(), v["foreground"]["sync"].clone()), (json!("running"), json!("old")));
+        assert!(drain(&rx).iter().any(|m| m["type"] == "terminal.upsert"), "变成 old 也推送");
+        // 时间线上这个进程启动时就已失效（失效在前、启动在后）：没在同步。
+        let mut b = bench("sync-old-2");
+        let (_app, _rx, _) = b.app(&[t]);
+        let started = agent_fg(&mut b, t, Tool::Codex);
+        b.core.hook_times.observe(Tool::Codex, HookState::Ok, started - 20_000, false);
+        b.core.hook_times.observe(Tool::Codex, HookState::Missing, started - 10_000, false);
+        b.core.hooks_changed(hook_status(Tool::Codex, HookState::Missing));
+        assert_eq!(term(&b, t)["foreground"]["sync"], "off");
+    }
+
+    /// 会话记录对账（2026-11-21 正式版实测的缺陷）：撤销后被算作「还在用内存里的条目同步」的会话，会话记录里出现它
+    /// 提交的提示词而事件没到，改判没在同步、状态置为未知；修复回去后它仍不发事件，提示开新会话；收到它的事件后恢复。
+    #[test]
+    fn a_prompt_in_the_record_without_its_event_flips_an_inferred_session() {
+        let mut b = bench("sync-reconcile");
+        let t = "b0b0b0b0-0000-4000-8000-0000000000d1";
+        let (_app, rx, _) = b.app(&[t]);
+        let key = format!("{t}#sync");
+        let started = agent_fg(&mut b, t, Tool::Codex);
+        b.core.hook_times.observe(Tool::Codex, HookState::Ok, started - 10_000, false);
+        b.core.hooks_changed(hook_status(Tool::Codex, HookState::Ok));
+        b.hook(t, "codex", json!({"hook_event_name": "SessionStart", "session_id": "01a1fbb3-f403-7d81-b0cb-c3db8bff8109", "transcript_path": "/x.jsonl"}));
+        b.hook(t, "codex", json!({"hook_event_name": "UserPromptSubmit", "session_id": "01a1fbb3-f403-7d81-b0cb-c3db8bff8109", "prompt": "hi"}));
+        b.hook(t, "codex", json!({"hook_event_name": "Stop", "session_id": "01a1fbb3-f403-7d81-b0cb-c3db8bff8109"}));
+        b.core.refresh_watches();
+        assert!(!b.core.watching.contains_key(&key), "配置没变过的会话不核对");
+        let sid = Some("01a1fbb3-f403-7d81-b0cb-c3db8bff8109".to_owned());
+        // 撤销：算作还在用内存里的条目同步，开始盯它的会话记录。
+        b.core.hooks_changed(hook_status(Tool::Codex, HookState::Missing));
+        b.core.refresh_watches();
+        assert_eq!(term(&b, t)["foreground"]["sync"], "old");
+        assert!(b.core.watching.contains_key(&key), "靠推断的会话要核对");
+        // 记录里的提示词，它的事件到了（提交事件早到几毫秒）：照旧。
+        b.hook(t, "codex", json!({"hook_event_name": "UserPromptSubmit", "session_id": "01a1fbb3-f403-7d81-b0cb-c3db8bff8109", "prompt": "还在"}));
+        b.core.record_submit(t, sid.clone(), Some(now_ms()));
+        assert!(b.core.panes[t].submit_check.is_some());
+        b.core.expire_submits(Instant::now());
+        assert!(b.core.panes[t].submit_check.is_some(), "没到时间不下结论");
+        b.core.expire_submits(Instant::now() + Duration::from_secs(6));
+        assert_eq!(term(&b, t)["foreground"]["sync"], "old");
+        b.hook(t, "codex", json!({"hook_event_name": "Stop", "session_id": "01a1fbb3-f403-7d81-b0cb-c3db8bff8109"}));
+        assert_eq!(term(&b, t)["agent"]["state"], "ready");
+        // 之后它不再发事件（最近一次事件是很久以前的）：记录里又有一条提示词，事件没到。
+        b.core.panes.get_mut(t).unwrap().last_hook = Some((Tool::Codex, now_ms() - 60_000));
+        drain(&rx);
+        b.core.record_submit(t, Some("别的会话".into()), None);
+        assert!(b.core.panes[t].submit_check.is_none(), "不是这个终端当前会话的记录不理会");
+        b.core.record_submit(t, sid.clone(), None);
+        b.core.expire_submits(Instant::now() + Duration::from_secs(6));
+        let pushed = drain(&rx).iter().rev().find(|m| m["type"] == "terminal.upsert").expect("改判要推送终端")["terminal"].clone();
+        assert_eq!((pushed["agent"]["state"].clone(), pushed["foreground"]["sync"].clone()), (json!("unknown"), json!("off")));
+        assert!(!b.core.watching.contains_key(&key), "已经得出没在同步，不用再盯");
+        // 换版本接管：结论随接管文件带到新进程（同一个进程才带）。
+        let saved = b.core.agent_handoff(t).expect("带状态");
+        assert!(saved["silent"].is_i64());
+        b.core.panes.get_mut(t).unwrap().silent = None;
+        b.core.restore_agent(t, &saved);
+        assert!(b.core.panes[t].silent.is_some(), "同一个进程：带过来");
+        // 修复回去，它仍不发事件：配置正常，但要开新会话。
+        b.core.hooks_changed(hook_status(Tool::Codex, HookState::Ok));
+        assert_eq!(term(&b, t)["foreground"]["sync"], "new_session");
+        // /new 之后提交：收到它的事件，恢复同步，不再提示；之后配置没再变，不用盯。
+        std::thread::sleep(Duration::from_millis(3));
+        b.hook(t, "codex", json!({"hook_event_name": "SessionStart", "session_id": "01a1fbb3-f403-7d81-b0cb-c3db8bff8110", "transcript_path": "/y.jsonl"}));
+        assert!(term(&b, t)["foreground"].get("sync").is_none());
+        b.core.refresh_watches();
+        assert!(!b.core.watching.contains_key(&key));
+        // 运行中重读的工具不核对。
+        let c = "b0b0b0b0-0000-4000-8000-0000000000d2";
+        let mut b = bench("sync-reconcile-live");
+        let (_app, _rx, _) = b.app(&[c]);
+        let started = agent_fg(&mut b, c, Tool::Claude);
+        b.core.hook_times.observe(Tool::Claude, HookState::Ok, started - 10_000, false);
+        b.core.hooks_changed(hook_status(Tool::Claude, HookState::Ok));
+        b.hook(c, "claude", json!({"hook_event_name": "SessionStart", "session_id": "s1", "transcript_path": "/x.jsonl"}));
+        b.core.hooks_changed(hook_status(Tool::Claude, HookState::Missing));
+        b.core.refresh_watches();
+        assert!(!b.core.watching.contains_key(&format!("{c}#sync")));
+    }
+
+    /// `hooks.status` 每款附「何时读取 Hook」与引导里要写的命令；没有的命令不附。
+    #[test]
+    fn hook_status_carries_load_class_and_guide_commands() {
+        let b = bench("hook-load");
+        let hooks = b.core.hooks_json();
+        let of = |tool: &str| hooks.as_array().unwrap().iter().find(|h| h["tool"] == tool).unwrap().clone();
+        for (tool, load) in [("claude", "live"), ("opencode", "live"), ("antigravity", "live"), ("codex", "session"), ("grok", "session"), ("copilot", "session"), ("kimi", "process")] {
+            assert_eq!(of(tool)["load"], load, "{tool}");
+        }
+        let codex = of("codex");
+        assert_eq!((codex["new_session"].clone(), codex["quit"].clone(), codex["resume_last"].clone()), (json!("/new"), json!("/quit"), json!("codex resume --last")));
+        let kimi = of("kimi");
+        assert!(kimi.get("new_session").is_none(), "Kimi 同一进程里开新会话没用，不给这条");
+        assert_eq!((kimi["quit"].clone(), kimi["resume_last"].clone()), (json!("/exit"), json!("kimi -c")));
+        assert!(of("claude").get("quit").is_none(), "运行中重读的不需要引导");
     }
 }

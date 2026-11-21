@@ -24,6 +24,10 @@ pub static ADAPTER: Adapter = Adapter {
     child_records: false,
     record_from_approval: false,
     subagent_approvals: super::SubagentApprovals { resolved_event: false, outlive_turn: false },
+    // 1.0.77：会话开始时读，`/new` 或重开后生效。（2026-11-18 实测，docs/s0-hook-compat.md）
+    hook_load: super::HookLoad::Session,
+    submit_record: true,
+    guide: super::Guide { new_session: Some("/new"), quit: Some("/quit"), resume_last: Some("grok --continue") },
     matches,
     version,
     // 默认沿用原 ID（加 `--fork-session` 才生成新 ID）。

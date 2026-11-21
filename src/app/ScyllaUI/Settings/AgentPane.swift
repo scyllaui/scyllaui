@@ -1,6 +1,6 @@
 // 设置「Agent」（M4a，docs/design.md 10.4 节决策 6）：四款 CLI 的状态同步（Hook）各一行：图标与名称（下一行为版本与是否
-// 已验证，M4b 块 6）、状态（4.7 节七种，下一行为配置文件路径，中间截断，悬停看全；2026-10-28 起铺满窗口宽度）与按钮：缺失或停用「修复…」、正常「撤销…」、未信任「去信任…」（在正在运行的 Codex 里
-// 打开 /hooks，M4b 块 5 P1）、策略锁定等「说明…」、没装的不给按钮；未信任时另给「撤销…」（Codex 修复后要在 Codex 里信任才算
+// 已验证，M4b 块 6）、状态（4.7 节七种，下一行为配置文件路径，中间截断，悬停看全；2026-10-28 起铺满窗口宽度）与按钮：缺失或停用「修复…」、正常「撤销…」、未信任「去信任…」（引导用户去正在运行的 Codex 里
+// 信任：重开或 /hooks，M4b 块 5 P1、2026-11-17）、策略锁定等「说明…」、没装的不给按钮；未信任时另给「撤销…」（Codex 修复后要在 Codex 里信任才算
 // 正常，期间也要能撤销）。
 // 修复与撤销走 HookRepairFlow；随快照与 `hooks.upsert` 刷新。首次运行引导的 Hook 页用不带按钮的同一份列表（块 4）。
 
@@ -193,7 +193,7 @@ final class AgentPane: NSViewController {
         switch s.state {
         case "ok": HookRepairFlow.run(.uninstall, tools: [tool], core: core)
         case "missing" where s.fixable, "disabled" where s.fixable: HookRepairFlow.run(.repair, tools: [tool], core: core)
-        // 未信任：去正在运行的 Codex 里打开 /hooks；工作区没设置时退回修复流程的说明（没有要写的文件）。
+        // 未信任：引导用户去正在运行的 Codex 里信任（重开或 /hooks）；工作区没设置时退回修复流程的说明（没有要写的文件）。
         case "untrusted":
             if let open = HookRepairFlow.openCodexHooks { open(nil, false) } else { HookRepairFlow.run(.repair, tools: [tool], core: core) }
         default:

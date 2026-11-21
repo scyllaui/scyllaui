@@ -35,6 +35,10 @@ pub static ADAPTER: Adapter = Adapter {
     child_records: false,
     record_from_approval: false,
     subagent_approvals: super::SubagentApprovals { resolved_event: false, outlive_turn: false },
+    // 2.1.326：配置一改，当前会话立即按新配置走。（2026-11-18 实测，docs/s0-hook-compat.md）
+    hook_load: super::HookLoad::Live,
+    submit_record: false,
+    guide: super::Guide::NONE,
     matches,
     version: |p| {
         if let Some(v) = native_version(p.path) {

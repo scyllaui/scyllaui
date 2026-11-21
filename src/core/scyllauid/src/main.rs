@@ -16,6 +16,7 @@ mod conn;
 mod core;
 mod git;
 mod hooks;
+mod hooktime;
 mod procinfo;
 mod prompts;
 mod pty;
@@ -86,6 +87,8 @@ fn main() {
         None => lock(&data_dir.join("scyllauid.lock")),
     };
     pty::takeover::set_cloexec(_lock.as_raw_fd(), true);
+    // 上次（被强制结束、崩溃或换版本接管前）没来得及结束的查额度进程（docs/design.md 3.1.1 节）。
+    cliquota::reap_leftovers(&data_dir);
 
     let sock = socket_path(&data_dir);
     if sock.as_os_str().len() > MAX_SOCK_PATH {
@@ -124,7 +127,8 @@ fn main() {
         .unwrap_or_else(|e| fail(&format!("创建 kqueue 失败：{e}")));
     let kq = git::GitWatch::new(tx.clone()).unwrap_or_else(|e| fail(&format!("创建 kqueue 失败：{e}")));
     let git = git::GitWorker::new(kq, tx.clone());
-    let titles = title::TitleWorker::new(tx.clone());
+    let test_backend = Some(&data_dir) != default_data_dir().as_ref();
+    let titles = title::TitleWorker::new(tx.clone(), !test_backend);
     let routes = route::RouteWorker::new(tx.clone());
     // 四款 CLI 的配置所在的家目录：测试时由 App 以 SCYLLAUI_CLI_HOME 指向临时目录（docs/protocol.md 第 1 节）。
     // 原样使用，不规范化：Codex 信任记录的键按 HOME 原样拼接。
@@ -139,7 +143,6 @@ fn main() {
     let versions = version::VersionWorker::new(tx.clone());
     let waits = waitwatch::WaitWatch::new(tx.clone()).unwrap_or_else(|e| fail(&format!("创建 kqueue 失败：{e}")));
     log!("CLI 配置目录 {cli_home}{}", if guard { "（测试后台，只读）" } else { "" });
-    let test_backend = Some(&data_dir) != default_data_dir().as_ref();
     let host = pty::Host::new(tx.clone());
     let listen_fd = listener.as_raw_fd();
     let (gate, accept) = conn::accept_loop(listener, tx.clone());
@@ -152,7 +155,8 @@ fn main() {
         .listener(listen_fd, gate)
         .approvals(approval::ApprovalWatch::new(tx.clone()).unwrap_or_else(|e| fail(&format!("创建 kqueue 失败：{e}"))))
         .prompts(prompts::PromptWorker::new(tx.clone()))
-        .workspace(workspace::WorkspaceDirs::load(data_dir.join("workspace.json")));
+        .workspace(workspace::WorkspaceDirs::load(data_dir.join("workspace.json")))
+        .hook_times(hooktime::Timeline::load(data_dir.join("hook-timeline.json")));
     if let Some(adopted) = adopted {
         log!("换版本接管：接到 {} 个保活终端", adopted.len());
         core.adopt(adopted);

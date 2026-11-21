@@ -364,6 +364,16 @@ final class BadgeView: NSView {
         if onClick != nil { addCursorRect(bounds, cursor: .pointingHand) }
     }
 
+    // 可点的徽标对辅助功能是一个按钮：读屏能读出文字并按下（2026-11-20；此前只有鼠标点得到）。不可点的仍不是独立元素。
+    override func isAccessibilityElement() -> Bool { onClick != nil }
+    override func accessibilityRole() -> NSAccessibility.Role? { .button }
+    override func accessibilityLabel() -> String? { text }
+    override func accessibilityPerformPress() -> Bool {
+        guard let onClick else { return false }
+        onClick()
+        return true
+    }
+
     func set(_ text: String, fg: NSColor, bg: NSColor) {
         self.text = text
         self.fg = fg
@@ -445,8 +455,6 @@ final class TaskCell: HoverCellView, SidebarCell, NSTextFieldDelegate {
         confirm.set(String(localized: "需确认"), fg: ScyllaUIStyle.waiting, bg: ScyllaUIStyle.waitingBg)
         unseen.set(String(localized: "待查看"), fg: ScyllaUIStyle.accent, bg: ScyllaUIStyle.accentBg)
         conflict.set(String(localized: "冲突"), fg: ScyllaUIStyle.error, bg: ScyllaUIStyle.errorBg)
-        unsynced.set(String(localized: "未同步"), fg: ScyllaUIStyle.waiting, bg: ScyllaUIStyle.waitingBg)
-        unsynced.toolTip = String(localized: "这款 Agent 的状态同步未生效，侧栏看不到它在做什么。点按查看并修复。")
         unsynced.onClick = { [weak self] in self?.onUnsynced?() }
         let badges = NSStackView(views: [unsynced, confirm, unseen, remove])
         badges.orientation = .horizontal
@@ -604,7 +612,15 @@ final class TaskCell: HoverCellView, SidebarCell, NSTextFieldDelegate {
                 ? String(localized: "这个终端的启动目录已不存在（可能已被删除、重命名或移走），Shell 已在主目录打开，没有代输启动命令。目录还在别处时，可在那里新开终端。")
                 : String(localized: "后台进不了这个终端的启动目录，Shell 已在其他目录启动，没有代输启动命令。可在「系统设置 › 隐私与安全性 › 文件与文件夹」中允许 ScyllaUI 访问，再新开终端。")
         }
-        unsynced.isHidden = !r.unsynced
+        // 「未同步」与「下次失效」共用一个徽标：前者是这个会话此刻没在同步，后者是它还在同步、退出后就不同步了。
+        let syncText = r.unsynced ? String(localized: "未同步") : String(localized: "下次失效")
+        if unsynced.text != syncText {
+            unsynced.set(syncText, fg: ScyllaUIStyle.waiting, bg: ScyllaUIStyle.waitingBg)
+            unsynced.toolTip = r.unsynced
+                ? String(localized: "这个 Agent 的状态没在同步，侧栏看不到它在做什么。点按查看怎么处理。")
+                : String(localized: "这款 Agent 的状态同步配置已失效。这个会话还在同步，退出后就不再同步。点按查看并修复。")
+        }
+        unsynced.isHidden = !(r.unsynced || r.syncNext)
         time.stringValue = r.time
         // 目录单行、截掉开头（保留末段）；其余最多两行、末尾截断。只在变化时设置：重设会让这一行重新排版，
         // 一批对话同时结束时侧栏会明显变慢（2026-10-25 块 11 并行回归实测）。

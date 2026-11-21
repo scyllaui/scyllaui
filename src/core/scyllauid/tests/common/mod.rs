@@ -34,8 +34,17 @@ pub fn data_dir(name: &str) -> PathBuf {
     dir
 }
 
+/// 后台的 `HOME`：数据目录下的 `home`（0700，随数据目录一起删除）。不用真实家目录：后台会以 `HOME` 读各款 CLI 的
+/// 配置与会话记录（2026-11-21 测试后台曾以真实家目录起真的 `kimi web`，被 SIGKILL 后留下孤儿进程）。
+pub fn home_of(dir: &Path) -> PathBuf {
+    dir.join("home")
+}
+
 pub fn spawn(dir: &Path, extra: &[&str]) -> Child {
+    use std::os::unix::fs::DirBuilderExt;
+    std::fs::DirBuilder::new().recursive(true).mode(0o700).create(home_of(dir)).unwrap();
     Command::new(env!("CARGO_BIN_EXE_scyllauid"))
+        .env("HOME", home_of(dir))
         .arg("--data-dir")
         .arg(dir)
         .args(extra)

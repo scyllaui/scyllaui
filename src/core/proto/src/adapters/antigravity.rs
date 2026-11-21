@@ -31,6 +31,10 @@ pub static ADAPTER: Adapter = Adapter {
     // 子代理比主会话这一轮活得久（2026-11-14 实测 1.5.8：主会话 Stop 时子代理还在等审批），审批的出现与消失都从
     // 子代理的对话库认（`child_records`），主会话一轮结束不清掉还在等的审批。
     subagent_approvals: super::SubagentApprovals { resolved_event: false, outlive_turn: true },
+    // 1.5.10：只测了项目级 Hook 文件，全局文件按它推断。（2026-11-18 实测，docs/s0-hook-compat.md）
+    hook_load: super::HookLoad::Live,
+    submit_record: false,
+    guide: super::Guide::NONE,
     matches,
     version,
     // 退出时提示的恢复命令（`agy --conversation=<ID>`，2026-11-01 实测）。

@@ -39,7 +39,7 @@ final class PromptHistoryPanelTests: XCTestCase {
         XCTAssertEqual(PromptHistoryPanel.noConversationMessage(tool: "opencode", unsynced: false, command: nil),
                        "还没对上 OpenCode 的这次会话，发出一条提示词后显示。", "AI 在运行、还没收到这次会话的事件")
         XCTAssertEqual(PromptHistoryPanel.noConversationMessage(tool: "claude", unsynced: true, command: nil),
-                       "Claude Code 的状态同步未生效，对不上它的会话；点侧栏这一行的「未同步」修复。", "发提示词也对不上时不说「发出一条」")
+                       "Claude Code 的状态没在同步，对不上它的会话；点侧栏这一行的「未同步」处理。", "发提示词也对不上时不说「发出一条」")
         XCTAssertEqual(PromptHistoryPanel.noConversationMessage(tool: nil, unsynced: false, command: "agy"),
                        "前台运行的 agy 不是 ScyllaUI 已接入的 Agent，没有历史提示词。", "不认识的命令不说成 Shell")
         // 不支持历史提示词的工具：写明不支持，不借用「记录已不在」（docs/ui-methodology.md 1.7 节）。

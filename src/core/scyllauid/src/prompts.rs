@@ -156,7 +156,7 @@ fn opencode_prompts(home: &Path, session: &str) -> rusqlite::Result<Option<Vec<P
             .iter()
             .filter_map(|(kind, at, data)| {
                 let data = serde_json::from_str::<Value>(data).ok()?;
-                Some(Prompt { text: opencode_v2_prompt(kind, &data)?, at: Some(*at) })
+                Some(Prompt { text: opencode_v2_prompt(kind, &data)?, at: Some(*at), submitted: false })
             })
             .collect();
         return Ok(Some(out));
@@ -193,7 +193,7 @@ fn opencode_prompts(home: &Path, session: &str) -> rusqlite::Result<Option<Vec<P
             },
         };
         if let Some(text) = text {
-            out.push(Prompt { text, at: Some(*at) });
+            out.push(Prompt { text, at: Some(*at), submitted: false });
         }
     }
     Ok(Some(out))
