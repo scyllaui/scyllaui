@@ -161,67 +161,38 @@ final class SidebarModelTests: XCTestCase {
         info.segments(now: now).compactMap(\.tooltip)
     }
 
-    /// 标题栏状态行（M2 第 2 块）：为 0 的改动项不显示，读不到的段整段省略，不是仓库时没有括号。
+    /// 标题栏状态行（M2 第 2 块；2026-11-21 去掉项目、分支与改动、模型与推理强度，CPU / Mem 从右侧移来跟在额度后面）：
+    /// 读不到的段整段省略；Total、CPU 与内存的值同用绿色（`value`），悬停只挂 CPU / Mem 的统计口径。
     func testStatusLineText() {
-        let g = SBGit(dirty: true, added: 12, deleted: 0, untracked: 3)
-        var info = StatusInfo(projectID: 1, project: "scyllaui", branch: "main", git: g, model: "claude-opus-5-5")
-        XCTAssertEqual(info.text(), "[scyllaui] (main* +12 ?3)   Model: claude-opus-5-5")
-        // 0.3.5：CPU / Mem 移到标题栏右侧，左侧不再有；推理强度跟在模型后面，只在有模型时显示。
-        func stats(_ cpu: Double?, _ mem: Int64?) -> String { StatusInfo.statsSpans(cpu: cpu, mem: mem).map(\.text).joined() }
-        XCTAssertEqual(stats(12.4, 880_803_840), "CPU: 12% • Mem: 840 MB")
-        XCTAssertEqual(stats(nil, 2_147_483_648), "Mem: 2.0 GB", "第一次采样没有 CPU")
-        XCTAssertEqual(stats(0, nil), "CPU: 0%")
-        XCTAssertEqual(stats(nil, nil), "")
-        info.effort = "xhigh"
-        XCTAssertEqual(info.text(), "[scyllaui] (main* +12 ?3)   Model: claude-opus-5-5 (xhigh)")
-        XCTAssertEqual(tips(info), [], "行上已显示的不再写进悬停提示（2026-10-30）")
-        info.git = SBGit(dirty: false, added: 0, deleted: 0, untracked: 0)
-        info.model = nil
-        XCTAssertEqual(info.text(), "[scyllaui] (main)", "干净的仓库、没有模型时也不显示推理强度")
-        info.git = nil
-        XCTAssertEqual(info.text(), "[scyllaui] (main)", "改动数读不到时只有分支")
-        info.branch = nil
-        XCTAssertEqual(info.text(), "[scyllaui]", "不是仓库")
-        // 2026-10-18 改版：按段取色。项目名单独一段，+N 绿、-M 红（ScyllaUI 局部例外），Model / CPU / Mem 的值用主题蓝，
-        // 推理强度连同括号用次要色。
-        var colored = StatusInfo(projectID: 1, project: "p", branch: "dev", git: SBGit(dirty: true, added: 2, deleted: 1, untracked: 4), model: "m")
-        colored.effort = "high"
-        XCTAssertEqual(colored.spans().map { "\($0.role):\($0.text)" },
-                       ["project:[p]", "muted: (dev*", "added: +2", "deleted: -1", "muted: ?4", "muted:)", "separator:   ",
-                        "muted:Model: ", "accent:m", "muted: (high)"])
-        XCTAssertEqual(StatusInfo.statsSpans(cpu: 3, mem: 1_048_576).map { "\($0.role):\($0.text)" },
-                       ["muted:CPU: ", "accent:3%", "separator: • ", "muted:Mem: ", "accent:1 MB"])
-        // 右侧的悬停提示写明统计口径（2026-10-16 用户确认：Shell 及其所有子进程，不含 root 的 login）；左侧不再写。
+        let info = StatusInfo(tool: "codex", usage: SBUsage(total: 1_234))
+        func stats(_ cpu: Double?, _ mem: Int64?) -> StatusInfo.Stats { StatusInfo.Stats(cpu: cpu, mem: mem, processes: 2) }
+        XCTAssertEqual(info.text(stats: stats(12.4, 880_803_840)), "Total: 1.2K   CPU: 12% • Mem: 840 MB")
+        XCTAssertEqual(info.text(stats: stats(nil, 2_147_483_648)), "Total: 1.2K   Mem: 2.0 GB", "第一次采样没有 CPU")
+        XCTAssertEqual(StatusInfo().text(stats: stats(0, nil)), "CPU: 0%", "纯 Shell 只有 CPU / Mem")
+        XCTAssertEqual(StatusInfo().text(), "", "什么都读不到时为空")
+        XCTAssertEqual(info.spans(stats: stats(3, 1_048_576)).map { "\($0.role):\($0.text)" },
+                       ["muted:Total: ", "value:1.2K", "separator:   ", "muted:CPU: ", "value:3%", "separator: • ", "muted:Mem: ", "value:1 MB"])
+        // 统计口径（2026-10-16 用户确认：Shell 及其所有子进程，不含 root 的 login）挂在 CPU、Mem 两段上。
         let tip = StatusInfo.statsTooltip(cpu: 99.9, mem: 5_662_310, processes: 2) ?? ""
         XCTAssertTrue(tip.contains("Shell 及其所有子进程（2 个）：CPU 99.9%，内存 5 MB"), tip)
         XCTAssertTrue(tip.contains("不含系统以 root 身份运行的登录进程 login"), tip)
         XCTAssertNil(StatusInfo.statsTooltip(cpu: nil, mem: nil, processes: 0), "还没有采样")
-        XCTAssertEqual(tips(info), [], "CPU / Mem 的口径只挂在右侧（2026-11-01 按段悬停），左侧不再拼")
+        XCTAssertEqual(info.segments(stats: stats(1, 1_048_576)).map { $0.tooltip != nil }, [true, false, true, false, true],
+                       "CPU、Mem 带口径；没有额度时原因挂在 Total 上")
     }
 
-    /// 状态行信息取自推送：项目的 `git`、`usage.upsert` 的模型；只有这一栏显示的 AI 与绑定对话同款时才带模型。
+    /// 状态行信息取自推送：只有这一栏显示的 AI 与绑定对话同款时才带这款的用量。
     func testStatusInfoFromPushes() {
         let m = model()
-        var p = project(1, "p", order: 0, branch: "main")
-        p["git"] = ["dirty": true, "added": 2, "deleted": 1, "untracked": 0]
-        m.apply(["type": "snapshot", "rev": 1, "recent_total": 0, "projects": [p],
+        m.apply(["type": "snapshot", "rev": 1, "recent_total": 0, "projects": [project(1, "p", order: 0, branch: "main")],
                  "terminals": [terminal("a", project: 1, state: "ready", tool: "codex", fg: "agent", fgTool: "codex", conversation: 7),
                                terminal("b", project: 1, state: "ready", tool: "claude", fg: "agent", fgTool: "codex", conversation: 8)],
                  "conversations": [conversation(7, project: 1, tool: "codex"), conversation(8, project: 1, tool: "claude")],
-                 "usage": [["conversation_id": 7, "usage": ["model": "gpt-6.1-sol", "model_source": "hook"]],
-                           ["conversation_id": 8, "usage": ["model": "claude-opus-5-5", "model_source": "log"]]]])
-        var infos = m.statusInfos(build(m))
-        XCTAssertEqual(infos["a"], StatusInfo(projectID: 1, project: "p", projectDir: "/w/p", branch: "main",
-                                              git: SBGit(dirty: true, added: 2, deleted: 1, untracked: 0), model: "gpt-6.1-sol",
-                                              tool: "codex", usage: SBUsage(model: "gpt-6.1-sol"), fgAgent: "codex"))
-        XCTAssertNil(infos["b"]?.model, "前台是 Codex、绑定的是 Claude 对话：不显示 Claude 的模型")
-        m.apply(["type": "usage.upsert", "rev": 2, "conversation_id": 7, "usage": ["model": "gpt-6.2", "model_source": "hook", "effort": "xhigh"]])
-        m.apply(["type": "project.upsert", "rev": 3, "project": project(1, "p", order: 0, branch: "main")])
-        infos = m.statusInfos(build(m))
-        XCTAssertEqual(infos["a"]?.model, "gpt-6.2")
-        XCTAssertEqual(infos["a"]?.effort, "xhigh", "推理强度随用量推送（0.3.5）")
-        XCTAssertNil(infos["b"]?.effort)
-        XCTAssertNil(infos["a"]?.git, "不再是标题栏显示的项目：没有改动数")
+                 "usage": [["conversation_id": 7, "usage": ["total_tokens": 35]],
+                           ["conversation_id": 8, "usage": ["total_tokens": 99]]]])
+        let infos = m.statusInfos(build(m))
+        XCTAssertEqual(infos["a"], StatusInfo(tool: "codex", usage: SBUsage(total: 35), fgAgent: "codex"))
+        XCTAssertNil(infos["b"]?.usage, "前台是 Codex、绑定的是 Claude 对话：不显示 Claude 的用量")
     }
 
     /// 状态行的 Total 与周额度（M2 第 3 块）：Total 缩写、倒计时不足 1 天改为「小时 + 分」、已过重置时间不显示；
@@ -233,45 +204,45 @@ final class SidebarModelTests: XCTestCase {
         XCTAssertEqual([0, 49.9, 50, 79.9, 80, 100].map(StatusInfo.quotaRole), [.quotaLow, .quotaLow, .quotaMid, .quotaMid, .quotaHigh, .quotaHigh])
         let now: Int64 = 1_800_000_000_000
         let day: Int64 = 86_400_000
-        var u = SBUsage(model: "gpt-6.1-sol", total: 1_234_567)
+        var u = SBUsage(total: 1_234_567)
         (u.input, u.cacheRead, u.cacheWrite, u.output) = (200_000, 1_000_000, 0, 34_567)
-        var info = StatusInfo(projectID: 1, project: "p", branch: nil, git: nil, model: "gpt-6.1-sol", tool: "codex", usage: u,
+        var info = StatusInfo(tool: "codex", usage: u,
                               quota: SBQuota(usedPercent: 34.4, resetsAt: now + 2 * day + 5 * 3_600_000 + 59_000, asOf: now - 60_000, source: "log"))
-        XCTAssertEqual(info.text(now: now), "[p]   Total: 1.2M • 7d: 34% (2d5h)   Model: gpt-6.1-sol")
+        XCTAssertEqual(info.text(now: now), "Total: 1.2M • 7d: 34% (2d5h)")
         XCTAssertEqual(tips(info, now).count, 1, "只有额度一段带悬停（重置的具体时间）")
         XCTAssertTrue(tips(info, now)[0].hasPrefix("重置时间："), tips(info, now)[0])
         info.quota?.resetsAt = now + 5 * 3_600_000 + 12 * 60_000
-        XCTAssertEqual(info.text(now: now), "[p]   Total: 1.2M • 7d: 34% (5h12m)   Model: gpt-6.1-sol")
+        XCTAssertEqual(info.text(now: now), "Total: 1.2M • 7d: 34% (5h12m)")
         info.quota?.resetsAt = now
-        XCTAssertEqual(info.text(now: now), "[p]   Total: 1.2M   Model: gpt-6.1-sol", "已过重置时间不显示")
+        XCTAssertEqual(info.text(now: now), "Total: 1.2M", "已过重置时间不显示")
         XCTAssertEqual(tips(info, now), ["额度：还没读到。Agent 启动或一轮结束后读取；用第三方 API 时没有额度"], "原因挂在 Total 上")
         // 5 小时额度（2026-10-31）：在 7d 之前；可以单独关掉。统一规则（2026-11-01）：账号没有或不限制的窗口不显示，不用「-」。
         info.quota?.resetsAt = now + 2 * day
         info.quota5h = SBQuota(usedPercent: 5.4, resetsAt: now + 77 * 60_000, asOf: now, source: "statusline", window: "5h")
-        XCTAssertEqual(info.text(now: now), "[p]   Total: 1.2M • 5h: 5% (1h17m) • 7d: 34% (2d0h)   Model: gpt-6.1-sol")
+        XCTAssertEqual(info.text(now: now), "Total: 1.2M • 5h: 5% (1h17m) • 7d: 34% (2d0h)")
         XCTAssertEqual(info.spans(now: now).first { $0.text == "5%" }?.role, .quotaLow)
-        XCTAssertEqual(info.spans(now: now, hidden: [.quota5h]).map(\.text).joined(), "[p]   Total: 1.2M • 7d: 34% (2d0h)   Model: gpt-6.1-sol")
+        XCTAssertEqual(info.spans(now: now, hidden: [.quota5h]).map(\.text).joined(), "Total: 1.2M • 7d: 34% (2d0h)")
         info.quota5h = SBQuota(usedPercent: 0, resetsAt: 0, asOf: now, source: "log", window: "5h", unlimited: true)
-        XCTAssertEqual(info.text(now: now), "[p]   Total: 1.2M • 7d: 34% (2d0h)   Model: gpt-6.1-sol", "不限制的窗口不显示")
+        XCTAssertEqual(info.text(now: now), "Total: 1.2M • 7d: 34% (2d0h)", "不限制的窗口不显示")
         XCTAssertEqual(SBQuota(json: ["window": "5h", "unlimited": true, "as_of": 1, "source": "log"]),
                        SBQuota(usedPercent: 0, resetsAt: 0, asOf: 1, source: "log", window: "5h", unlimited: true))
         XCTAssertEqual(SBQuota(json: ["used_percent": 3.0, "resets_at": 2, "as_of": 1])?.window, "7d", "旧后台没有 window 时为 7 天")
         // 月额度（2026-11-01，Copilot）：在 7d 之后，可以单独关掉。
         (info.quota5h, info.quota, info.tool) = (nil, nil, "copilot")
         info.quotaMonth = SBQuota(usedPercent: 0.6, resetsAt: now + 29 * day + 3_600_000, asOf: now, source: "log", window: "month")
-        XCTAssertEqual(info.text(now: now), "[p]   Total: 1.2M • Month: 1% (29d1h)   Model: gpt-6.1-sol")
-        XCTAssertEqual(info.spans(now: now, hidden: [.quotaMonth]).map(\.text).joined(), "[p]   Total: 1.2M   Model: gpt-6.1-sol")
+        XCTAssertEqual(info.text(now: now), "Total: 1.2M • Month: 1% (29d1h)")
+        XCTAssertEqual(info.spans(now: now, hidden: [.quotaMonth]).map(\.text).joined(), "Total: 1.2M")
         // 按量计费（2026-11-01）：额度位置只显示 API，账号额度不显示；可以单独关掉。
         info.usage?.billing = "api"
-        XCTAssertEqual(info.text(now: now), "[p]   Total: 1.2M • API   Model: gpt-6.1-sol")
+        XCTAssertEqual(info.text(now: now), "Total: 1.2M • API")
         XCTAssertEqual(tips(info, now), ["按量计费，没有 5 小时、7 天或月额度"])
-        XCTAssertEqual(info.spans(now: now, hidden: [.api]).map(\.text).joined(), "[p]   Total: 1.2M   Model: gpt-6.1-sol")
-        XCTAssertEqual(tips(StatusInfo(projectID: 1, project: "p", model: "m", tool: "kimi", usage: info.usage), now), ["按量计费，没有 5 小时、7 天或月额度"])
+        XCTAssertEqual(info.spans(now: now, hidden: [.api]).map(\.text).joined(), "Total: 1.2M")
+        XCTAssertEqual(tips(StatusInfo(tool: "kimi", usage: info.usage), now), ["按量计费，没有 5 小时、7 天或月额度"])
         info.usage?.billing = nil
         info.quotaMonth = nil
         // 没有额度时的原因：Claude 只经 statusline 桥，OpenCode 暂不读取，Grok 没登录 grok.com；其余为还没读到。
         info.tool = "claude"
-        XCTAssertEqual(tips(info, now).first?.contains("scyllaui statusline-bridge install"), true)
+        XCTAssertEqual(tips(info, now).first?.contains("在「设置 › Agent」里接入额度"), true)
         info.tool = "grok"
         info.quotaNote = "login_required"
         XCTAssertEqual(tips(info, now), ["额度：查 Grok 的额度要先登录 grok.com（在终端运行 grok login）"])
@@ -282,15 +253,11 @@ final class SidebarModelTests: XCTestCase {
         info.usage = nil
         info.tool = "opencode"
         info.usageSupported = false
-        XCTAssertEqual(info.text(now: now), "[p]   Total: -   Model: gpt-6.1-sol", "必显示项读不到时占位并写明")
+        XCTAssertEqual(info.text(now: now), "Total: -", "必显示项读不到时占位并写明")
         XCTAssertEqual(tips(info, now), ["Total：ScyllaUI 暂不读取 OpenCode 的用量\n额度：ScyllaUI 暂不读取 OpenCode 的额度"],
                        "写明是 ScyllaUI 没读，不说成工具不支持，也不写成「还没有记录」")
         info.tool = "copilot"
-        (info.model, info.modelSupported) = (nil, false)
-        XCTAssertEqual(tips(info, now), ["Total：ScyllaUI 暂不读取 Copilot 的用量\n额度：还没读到。Agent 启动或一轮结束后读取；用第三方 API 时没有额度",
-                                         "模型：ScyllaUI 暂不读取 Copilot 的模型"])
-        (info.model, info.modelSupported, info.effortSupported) = ("gpt-6-luna", true, false)
-        XCTAssertEqual(tips(info, now).last, "推理强度：ScyllaUI 暂不读取 Copilot 的推理强度", "推理强度读不到时写在模型上")
+        XCTAssertEqual(tips(info, now), ["Total：ScyllaUI 暂不读取 Copilot 的用量\n额度：还没读到。Agent 启动或一轮结束后读取；用第三方 API 时没有额度"])
         info.tool = nil
         XCTAssertEqual(tips(info, now), [], "纯 Shell 没有悬停提示")
 
@@ -313,7 +280,6 @@ final class SidebarModelTests: XCTestCase {
         m.apply(["type": "usage.upsert", "rev": 3, "conversation_id": 8, "usage": ["model": "claude-opus-5-5", "model_source": "statusline"]])
         infos = m.statusInfos(build(m))
         XCTAssertEqual(infos["b"]?.quota?.source, "statusline")
-        XCTAssertEqual(infos["b"]?.model, "claude-opus-5-5")
         XCTAssertNil(infos["b"]?.usage?.total, "还没读到 token")
         // 5 小时窗口另存一份，不覆盖 7 天（2026-10-31）。
         m.apply(["type": "quota.upsert", "rev": 4, "tool": "claude",
@@ -338,42 +304,21 @@ final class SidebarModelTests: XCTestCase {
         XCTAssertNil(m.statusInfos(build(m))["a"]?.quotaNote, "读到额度后原因清掉")
     }
 
-    /// 按可用宽度排版（2026-11-01 标准化）：先把项目名截到最少 12 个字符、再把分支截到最少 8 个（截在中间，悬停看全），
-    /// 还放不下依次去掉倒计时、推理强度、改动数、Total、模型。测量按每个字符 1 个单位。
+    /// 按可用宽度排版（2026-11-21 简化）：放不下依次去掉倒计时、Total，仍放不下的由文字框从尾部截断。测量按每个字符 1 个单位。
     func testStatusLineFitsWidth() {
         let now: Int64 = 1_800_000_000_000
-        var u = SBUsage(model: "gpt-6.1-sol", total: 1_234_567)
-        u.effort = "high"
-        let info = StatusInfo(projectID: 1, project: "06-project-agent-terminal-with-a-long-name", projectDir: "/w/06-project-agent-terminal-with-a-long-name",
-                              branch: "feature/status-line-layout", git: SBGit(dirty: true, added: 3, deleted: 1, untracked: 0),
-                              model: "gpt-6.1-sol", effort: "high", tool: "codex", usage: u,
+        let info = StatusInfo(tool: "codex", usage: SBUsage(total: 1_234_567),
                               quota: SBQuota(usedPercent: 34, resetsAt: now + 2 * 86_400_000, asOf: now, source: "log"))
+        let stats = StatusInfo.Stats(cpu: 12, mem: 840 * 1_048_576)
         func fit(_ w: CGFloat) -> String {
-            info.fitted(width: w, now: now) { CGFloat($0.map(\.text).joined().count) }.flatMap(\.spans).map(\.text).joined()
+            info.fitted(width: w, now: now, stats: stats) { CGFloat($0.map(\.text).joined().count) }.flatMap(\.spans).map(\.text).joined()
         }
-        let full = info.text(now: now)
+        let full = info.text(now: now, stats: stats)
+        XCTAssertEqual(full, "Total: 1.2M • 7d: 34% (2d0h)   CPU: 12% • Mem: 840 MB")
         XCTAssertEqual(fit(CGFloat(full.count)), full, "放得下原样")
-        XCTAssertEqual(StatusInfo.middle("abcdefghijklmnop", 12), "abcdef…lmnop")
-        XCTAssertEqual(StatusInfo.middle("short", 12), "short")
-        let tail = " (feature/status-line-layout* +3 -1)   Total: 1.2M • 7d: 34% (2d0h)   Model: gpt-6.1-sol (high)"
-        XCTAssertEqual(fit(CGFloat(tail.count + 22)), "[06-project…long-name]" + tail, "先截项目名，取放得下的最长（20 个字符）")
-        XCTAssertEqual(fit(CGFloat(tail.count + 4)),
-                       "[06-pro…-name] (feature/…-layout* +3 -1)   Total: 1.2M • 7d: 34% (2d0h)   Model: gpt-6.1-sol (high)",
-                       "项目名截到 12 个字符还放不下，再截分支（这里截到 16 个）")
-        XCTAssertEqual(fit(60), "[06-pro…-name] (featu…ayout*)   7d: 34%   Model: gpt-6.1-sol",
-                       "依次去掉倒计时、推理强度、改动数、Total 后余下 3 个字符，分支放宽到 11 个")
-        XCTAssertEqual(fit(20), "[06-pro…-name] (feat…out*)   7d: 34%", "最后去掉模型；项目名与额度百分比留到最后，其余由文字框截断")
-        // 让出次要部分后有余量，项目名放回能放下的最长（2026-11-02 正式版验收发现停在最短）。
-        let repo = StatusInfo(projectID: 1, project: "06-project-agent-terminal", branch: "main", model: "claude-sonnet-5-5", effort: "medium",
-                              tool: "claude", usage: u, quota: SBQuota(usedPercent: 35, resetsAt: now + 86_400_000, asOf: now, source: "statusline"))
-        func fitRepo(_ w: CGFloat) -> String {
-            repo.fitted(width: w, now: now) { CGFloat($0.map(\.text).joined().count) }.flatMap(\.spans).map(\.text).joined()
-        }
-        XCTAssertEqual(fitRepo(50), "[06-project-agent-terminal] (main)   7d: 35%", "去掉模型后项目名放回全名")
-        XCTAssertEqual(fitRepo(40), "[06-project…t-terminal] (main)   7d: 35%", "余量不够全名时取放得下的最长（21 个字符）")
-        let segs = info.fitted(width: 60, now: now) { CGFloat($0.map(\.text).joined().count) }
-        XCTAssertEqual(segs.first?.tooltip, "/w/06-project-agent-terminal-with-a-long-name", "项目名悬停显示完整路径")
-        XCTAssertEqual(segs.first { $0.kind == .branch }?.tooltip, "feature/status-line-layout", "被截的分支悬停看全")
+        XCTAssertEqual(fit(CGFloat(full.count - 1)), "Total: 1.2M • 7d: 34%   CPU: 12% • Mem: 840 MB", "先去掉倒计时")
+        XCTAssertEqual(fit(30), "7d: 34%   CPU: 12% • Mem: 840 MB", "再去掉 Total")
+        XCTAssertEqual(fit(10), "7d: 34%   CPU: 12% • Mem: 840 MB", "其余由文字框截断")
     }
 
     /// 搜索与只看待处理（M2 第 4 块）：命中的终端与「搜索结果」原地替换；旧查询的应答丢弃；新应答到达前沿用旧结果；
@@ -453,6 +398,33 @@ final class SidebarModelTests: XCTestCase {
         XCTAssertEqual(task(t, "t:a").map { [$0.cwdDenied, $0.cwdMissing] }, [true, false])
         XCTAssertEqual(task(t, "t:b").map { [$0.cwdDenied, $0.cwdMissing] }, [false, true])
         XCTAssertEqual(task(t, "t:c").map { [$0.cwdDenied, $0.cwdMissing] }, [false, false])
+    }
+
+    /// Claude 的额度桥（2026-11-22）：被别的工具改掉（`replaced`）或被改过（`broken`）时，前台是 Claude、状态在同步的终端行也显示
+    /// 「未同步」；桥正常或从没要过的不显示；其他各款不受影响。
+    func testClaudeQuotaBridgeLost() {
+        let m = model()
+        func hook(_ tool: String, bridge: String? = nil) -> [String: Any] {
+            var h: [String: Any] = ["tool": tool, "state": "ok", "path": "/h/\(tool)", "problems": [], "fixable": false]
+            if let bridge { h["bridge"] = bridge }
+            return h
+        }
+        m.apply(["type": "snapshot", "rev": 1, "recent_total": 0, "projects": [project(1, "p", order: 0)],
+                 "terminals": [terminal("c", project: 1, state: "ready", tool: "claude", fg: "agent", fgTool: "claude"),
+                               terminal("x", project: 1, fg: "agent", fgTool: "codex")],
+                 "conversations": [], "hooks": [hook("claude", bridge: "off"), hook("codex")]])
+        XCTAssertEqual(task(build(m), "t:c")?.quotaLost, false, "从没要过桥的不提示")
+        m.apply(["type": "hooks.upsert", "rev": 2, "hooks": [hook("claude", bridge: "replaced"), hook("codex")]])
+        let t = build(m)
+        XCTAssertEqual(task(t, "t:c").map { [$0.quotaLost, $0.unsynced] }, [true, false], "状态在同步，只是额度读不到")
+        XCTAssertEqual(task(t, "t:x")?.quotaLost, false)
+        m.apply(["type": "hooks.upsert", "rev": 3, "hooks": [hook("claude", bridge: "on"), hook("codex")]])
+        XCTAssertEqual(task(build(m), "t:c")?.quotaLost, false, "修好后消失")
+        let broken = SBHookStatus(json: hook("claude", bridge: "broken"))
+        XCTAssertEqual(broken?.bridgeLost, true)
+        XCTAssertEqual(broken?.broken, false, "额度桥不算状态同步未生效")
+        XCTAssertTrue(broken?.bridgeReason?.contains("~/.claude/settings.json") == true)
+        XCTAssertNil(SBHookStatus(json: hook("codex"))?.bridge)
     }
 
     /// 底部提示栏（M1 第 7 块）：状态同步未生效 2026-10-28 起不进提示栏（入口只留终端行的「未同步」）。M4b 块 6 起只是版本

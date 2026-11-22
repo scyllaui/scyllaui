@@ -21,6 +21,10 @@ final class AgentPane: NSViewController {
     private var statuses: [String: SBHookStatus] = [:]
     private var grid: NSGridView?
     private var note: NSTextField?
+    /// Claude 一行下面的额度桥（statusline，2026-11-22）：状态与「接入额度…」「撤销额度…」「修复额度…」；只在设置里显示。
+    private let bridgeLabel = NSTextField(labelWithString: "")
+    private let bridgeButton = NSButton(title: "", target: nil, action: nil)
+    private var bridgeRow: NSGridRow?
 
     /// Hook 状态（`SBHookStatus`）有更新时调用，供引导页按状态改按钮。
     var onUpdate: (([SBHookStatus]) -> Void)?
@@ -99,8 +103,23 @@ final class AgentPane: NSViewController {
             let actions = NSStackView(views: [button, undo])
             actions.setHuggingPriority(.defaultHigh, for: .horizontal)
             rows.append(detail.map { [head, $0, actions] } ?? [head, state, path])
+            if tool == "claude" && showsButtons {
+                bridgeLabel.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+                bridgeLabel.textColor = .secondaryLabelColor
+                bridgeLabel.lineBreakMode = .byTruncatingTail
+                bridgeLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+                bridgeButton.bezelStyle = .rounded
+                bridgeButton.target = self
+                bridgeButton.action = #selector(bridgeAct)
+                rows.append([NSGridCell.emptyContentView, bridgeLabel, bridgeButton])
+            }
         }
         let grid = NSGridView(views: rows)
+        if showsButtons, let i = rows.firstIndex(where: { $0.contains(bridgeLabel) }) {
+            bridgeRow = grid.row(at: i)
+            bridgeRow?.topPadding = -8
+            bridgeRow?.isHidden = true
+        }
         grid.rowSpacing = 14
         grid.columnSpacing = 14
         for i in 0..<grid.numberOfRows { grid.row(at: i).yPlacement = .center }
@@ -183,6 +202,7 @@ final class AgentPane: NSViewController {
             }
             button.isHidden = button.title.isEmpty
             undo.isHidden = s.state != "untrusted"
+            if s.tool == "claude" { updateBridge(s) }
         }
         onUpdate?(Array(statuses.values))
         (parent as? SettingsTabController)?.fitWindow()
@@ -203,6 +223,34 @@ final class AgentPane: NSViewController {
             guard let window = view.window else { return }
             alert.beginSheetModal(for: window)
         }
+    }
+
+    /// Claude 的额度桥一行：没装 Claude 或后台没给（旧后台）时不显示。
+    private func updateBridge(_ s: SBHookStatus) {
+        guard let row = bridgeRow else { return }
+        row.isHidden = s.state == "absent" || s.bridge == nil
+        bridgeLabel.textColor = s.bridgeLost ? .systemOrange : .secondaryLabelColor
+        bridgeLabel.toolTip = s.bridgeReason
+        switch s.bridge {
+        case "on":
+            bridgeLabel.stringValue = String(localized: "额度：已接入，标题栏显示 Claude 的 5h、7d 额度")
+            bridgeButton.title = String(localized: "撤销额度…")
+        case "replaced":
+            bridgeLabel.stringValue = String(localized: "额度：额度桥被别的工具改掉了")
+            bridgeButton.title = String(localized: "修复额度…")
+        case "broken":
+            bridgeLabel.stringValue = String(localized: "额度：额度桥的命令被改过，未自动处理")
+            bridgeButton.title = ""
+        default:
+            bridgeLabel.stringValue = String(localized: "额度：未接入，标题栏不显示 Claude 的 5h、7d 额度")
+            bridgeButton.title = String(localized: "接入额度…")
+        }
+        bridgeButton.isHidden = bridgeButton.title.isEmpty
+    }
+
+    @objc private func bridgeAct() {
+        guard let s = statuses["claude"] else { return }
+        HookRepairFlow.runBridge(install: s.bridge != "on", core: core)
     }
 
     @objc private func undo(_ sender: NSButton) {

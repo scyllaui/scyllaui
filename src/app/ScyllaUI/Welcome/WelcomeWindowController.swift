@@ -34,6 +34,10 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
     private let version: String
     private let onClose: () -> Void
     private var agents: AgentPane?
+    /// 「安装状态同步」页里的「同时接入 Claude 的额度」（2026-11-22）：默认勾选；Claude 没装、已接入或撤销过状态同步时隐藏。
+    private let bridgeBox = NSButton(checkboxWithTitle: String(localized: "同时接入 Claude 的 5h、7d 额度（不在 Claude 底部显示任何内容）"), target: nil, action: nil)
+    /// 最近一次的 Hook 状态：勾选或取消「同时接入额度」时按它重算按钮。
+    private var hookStatuses: [SBHookStatus] = []
     private var splash: SplashView?
     private var playScheduled = false
 
@@ -268,7 +272,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         note.preferredMaxLayoutWidth = width
         return pageView(symbol: "doc.text",
                         title: String(localized: "使用须知"),
-                        body: String(localized: "ScyllaUI 是开源软件，按 GPL-3.0-or-later 发布。使用前请了解以下几点。"),
+                        body: String(localized: "使用前请了解以下几点。"),  // 开源与许可写在正文里，这里不单独提示（2026-11-21 用户要求）
                         extra: [scroll, note],
                         buttons: [button(String(localized: "继续 →"), #selector(nextPage))],
                         width: width)
@@ -428,9 +432,19 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         let done = button(String(localized: "以后再说"), last ? #selector(finish) : #selector(nextPage))
         let install = button(String(localized: "查看改动并安装…"), #selector(install))
         install.isHidden = true
-        list.onUpdate = { statuses in
-            // 有可修复的（或 Codex 待信任）时「查看改动并安装…」是默认按钮，否则只剩「完成」。
-            let fixable = statuses.contains { $0.fixable || $0.state == "untrusted" }
+        bridgeBox.state = .on
+        bridgeBox.isHidden = true
+        bridgeBox.font = .systemFont(ofSize: 13)
+        bridgeBox.target = self
+        bridgeBox.action = #selector(bridgeToggled)
+        let box = bridgeBox
+        list.onUpdate = { [weak self] statuses in
+            self?.hookStatuses = statuses
+            let claude = statuses.first { $0.tool == "claude" }
+            box.isHidden = claude == nil || claude?.state == "absent" || claude?.bridge == nil || claude?.bridge == "on"
+                || Prefs.hooksRemoved.contains("claude")
+            // 有可修复的（或 Codex 待信任、或要接入 Claude 的额度）时「查看改动并安装…」是默认按钮，否则只剩「完成」。
+            let fixable = statuses.contains { $0.fixable || $0.state == "untrusted" } || (!box.isHidden && box.state == .on)
             install.isHidden = !fixable
             install.keyEquivalent = fixable ? "\r" : ""
             done.keyEquivalent = fixable ? "" : "\r"
@@ -441,7 +455,7 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         let v = pageView(symbol: "dot.radiowaves.left.and.right",
                          title: String(localized: "安装状态同步"),
                          body: nil,
-                         extra: [notes, list.view, codexNote],
+                         extra: [notes, list.view, bridgeBox, codexNote],
                          buttons: [done, install],
                          width: width, back: true)
         install.keyEquivalent = ""
@@ -529,7 +543,11 @@ final class WelcomeWindowController: NSObject, NSWindowDelegate {
         window.close()
     }
 
-    @objc private func install() { HookRepairFlow.run(.repair, core: core) }
+    @objc private func bridgeToggled() { agents?.onUpdate?(hookStatuses) }
+
+    @objc private func install() {
+        HookRepairFlow.run(.repair, core: core, bridge: !bridgeBox.isHidden && bridgeBox.state == .on ? true : nil)
+    }
 
     @objc private func openPrivacySettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders") {

@@ -35,13 +35,19 @@ enum ScyllaUIStyle {
     // 7.2 徽标内边距 3 / 8。
     static let badgeInsets = NSEdgeInsets(top: 3, left: 8, bottom: 3, right: 8)
 
-    // 2.3 ScyllaUI 字号阶梯（pt）。2026-10-12 参照 ChatGPT 桌面版 Codex 侧栏改大后再大 1 号（用户确认），原为 11—13。
-    static let sectionFont = NSFont.systemFont(ofSize: 14, weight: .semibold)
-    static let projectFont = NSFont.systemFont(ofSize: 15, weight: .medium)
-    static let toolFont = NSFont.systemFont(ofSize: 15, weight: .semibold)
-    static let stateFont = NSFont.systemFont(ofSize: 14, weight: .regular)
-    static let detailFont = NSFont.systemFont(ofSize: 14, weight: .regular)
-    static let badgeFont = NSFont.systemFont(ofSize: 12, weight: .medium)
+    // 2.3 ScyllaUI 字体（2026-11-21 用户确认）：侧栏、历史提示词栏与标题栏都用终端的默认字体 JetBrains Mono（Ghostty 内嵌的
+    // 同一份，随 App 打包 Regular 与 SemiBold，Info.plist 的 ATSApplicationFontsPath 登记），正文 13 号，与终端默认字号一致；
+    // 层级靠字重和颜色，分组标题与徽标 12 号。中文由系统自动换成苹方。不随终端的 ⌘+ / ⌘- 缩放。
+    static func mono(_ size: CGFloat, semibold: Bool = false) -> NSFont {
+        NSFont(name: semibold ? "JetBrainsMono-SemiBold" : "JetBrainsMono-Regular", size: size)
+            ?? .monospacedSystemFont(ofSize: size, weight: semibold ? .semibold : .regular)
+    }
+    static let sectionFont = mono(12, semibold: true)
+    static let projectFont = mono(13, semibold: true)
+    static let toolFont = mono(13, semibold: true)
+    static let stateFont = mono(13)
+    static let detailFont = mono(13)
+    static let badgeFont = mono(12)
 
     // 固定行高（不用自动行高）。
     static let sectionRowHeight: CGFloat = 34

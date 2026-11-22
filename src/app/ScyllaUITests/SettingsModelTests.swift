@@ -69,40 +69,40 @@ final class AppearanceOverridesTests: XCTestCase {
 final class StatusSegmentTests: XCTestCase {
     private let now: Int64 = 1_800_000_000_000
 
+    private let stats = StatusInfo.Stats(cpu: 12, mem: 840 * 1_048_576, processes: 3)
+
     private func info() -> StatusInfo {
-        StatusInfo(projectID: 1, project: "scyllaui", branch: "main", git: SBGit(dirty: true, added: 3, deleted: 1, untracked: 2),
-                   model: "gpt-6", effort: "xhigh", tool: "codex",
-                   usage: SBUsage(model: "gpt-6", total: 1_234_567),
+        StatusInfo(tool: "codex", usage: SBUsage(total: 1_234_567),
                    quota: SBQuota(usedPercent: 34, resetsAt: now + 3_600_000 * 53, asOf: now, source: "log"))
     }
 
     private func text(_ hidden: Set<StatusSegment>) -> String {
-        info().spans(now: now, hidden: hidden).map(\.text).joined()
+        info().spans(now: now, hidden: hidden, stats: stats).map(\.text).joined()
     }
 
+    /// 2026-11-21：项目、分支与改动、模型与推理强度不再显示；CPU 与内存跟在额度后面，同一行。
     func testAllShownMatchesDefault() {
-        XCTAssertEqual(text([]), info().text(now: now))
-        XCTAssertEqual(text([]), "[scyllaui] (main* +3 -1 ?2)   Total: 1.2M • 7d: 34% (2d5h)   Model: gpt-6 (xhigh)")
+        XCTAssertEqual(text([]), info().text(now: now, stats: stats))
+        XCTAssertEqual(text([]), "Total: 1.2M • 7d: 34% (2d5h)   CPU: 12% • Mem: 840 MB")
     }
 
     func testHiddenSegmentsAreOmitted() {
-        XCTAssertEqual(text([.project]), "(main* +3 -1 ?2)   Total: 1.2M • 7d: 34% (2d5h)   Model: gpt-6 (xhigh)", "项目名关掉时分支不带前导空格")
-        XCTAssertEqual(text([.git]), "[scyllaui]   Total: 1.2M • 7d: 34% (2d5h)   Model: gpt-6 (xhigh)")
-        XCTAssertEqual(text([.total]), "[scyllaui] (main* +3 -1 ?2)   7d: 34% (2d5h)   Model: gpt-6 (xhigh)")
-        XCTAssertEqual(text([.effort]), "[scyllaui] (main* +3 -1 ?2)   Total: 1.2M • 7d: 34% (2d5h)   Model: gpt-6")
-        XCTAssertEqual(text([.model]), "[scyllaui] (main* +3 -1 ?2)   Total: 1.2M • 7d: 34% (2d5h)", "模型关掉时推理强度一并不显示")
+        XCTAssertEqual(text([.total]), "7d: 34% (2d5h)   CPU: 12% • Mem: 840 MB")
+        XCTAssertEqual(text([.cpu]), "Total: 1.2M • 7d: 34% (2d5h)   Mem: 840 MB")
     }
 
     func testWholeGroupsDisappearWithoutStraySeparators() {
-        XCTAssertEqual(text([.project, .git]), "Total: 1.2M • 7d: 34% (2d5h)   Model: gpt-6 (xhigh)", "左组全关时不留开头的组间空白")
-        XCTAssertEqual(text([.total, .quota]), "[scyllaui] (main* +3 -1 ?2)   Model: gpt-6 (xhigh)")
+        XCTAssertEqual(text([.total, .quota]), "CPU: 12% • Mem: 840 MB", "额度组全关时不留开头的组间空白")
+        XCTAssertEqual(text([.cpu, .mem]), "Total: 1.2M • 7d: 34% (2d5h)", "CPU、内存都关时不留结尾的组间空白")
         XCTAssertEqual(text(Set(StatusSegment.allCases)), "")
     }
 
-    func testStatsSpansRespectHidden() {
-        let s = { (h: Set<StatusSegment>) in StatusInfo.statsSpans(cpu: 12, mem: 840 * 1_048_576, hidden: h).map(\.text).joined() }
-        XCTAssertEqual(s([]), "CPU: 12% • Mem: 840 MB")
-        XCTAssertEqual(s([.cpu]), "Mem: 840 MB")
-        XCTAssertEqual(s([.cpu, .mem]), "")
+    func testStatsSegmentsUseValueColorAndTooltip() {
+        let segs = StatusInfo.statsSegments(stats)
+        XCTAssertEqual(segs.map(\.kind), [.cpu, .mem])
+        XCTAssertEqual(segs.flatMap(\.spans).filter { $0.role == .value }.map(\.text), ["12%", "840 MB"], "数值与 Total 同为绿色")
+        XCTAssertTrue(segs.allSatisfy { $0.tooltip?.contains("Shell 及其所有子进程（3 个）") == true })
+        XCTAssertEqual(StatusInfo.statsSegments(stats, hidden: [.cpu, .mem]).count, 0)
+        XCTAssertEqual(StatusInfo.statsSegments(StatusInfo.Stats()).count, 0, "还没采样时不显示")
     }
 }

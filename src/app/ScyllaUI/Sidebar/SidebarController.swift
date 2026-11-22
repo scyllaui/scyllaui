@@ -342,6 +342,7 @@ final class SidebarController: NSObject, NSOutlineViewDataSource, NSOutlineViewD
         scrollView.translatesAutoresizingMaskIntoConstraints = false
 
         searchField.placeholderString = String(localized: "搜索")
+        searchField.font = ScyllaUIStyle.detailFont
         searchField.sendsSearchStringImmediately = true
         searchField.sendsWholeSearchString = false
         searchField.target = self

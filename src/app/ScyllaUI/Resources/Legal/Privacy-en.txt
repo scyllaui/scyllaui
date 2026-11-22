@@ -1,6 +1,6 @@
 ScyllaUI Privacy and Data Notice
 
-Version: 2026-11-08
+Version: 2026-11-22
 
 In short: ScyllaUI goes online only to check for updates, and does not collect or upload any usage data. Your data stays on your own Mac; we receive something from you only when you choose to report a problem (see sections 6 and 7).
 
@@ -37,7 +37,7 @@ This English version is a translation. If it differs from the Chinese version, t
 Only two kinds:
 
 - Status sync (hooks): ScyllaUI adds its own entries to each CLI's configuration, such as ~/.claude/settings.json and ~/.codex/hooks.json. ScyllaUI first lists the changes in the app and writes them only after you confirm. You can undo them per agent in Settings › Agent.
-- The Claude Code statusline bridge: used to show Claude's quota; it is written only when you run scyllaui statusline-bridge install yourself, and running the install command means you agree. To see the changes first, run scyllaui statusline-bridge diff. Undo it with scyllaui statusline-bridge uninstall.
+- The Claude Code statusline bridge: used to show Claude's quota; it writes ScyllaUI's command into statusLine in ~/.claude/settings.json (an existing status line keeps showing as before). When you install status sync it is checked by default along with Claude, and you can uncheck it; the changes are listed first and written only after you confirm. You can connect or remove it on its own in Settings › Agent, or with scyllaui statusline-bridge install / uninstall.
 
 In both cases the original files are backed up before anything is written; undoing removes only the entries ScyllaUI wrote and leaves your own settings untouched.
 
@@ -81,7 +81,7 @@ Help › Report a Problem… creates a diagnostic package on your Mac:
 
 8. Removing Everything
 
-1. Undo status sync for each agent in Settings › Agent; if you installed the statusline bridge, also run scyllaui statusline-bridge uninstall.
+1. Undo status sync for each agent in Settings › Agent; undoing Claude also removes the statusline bridge.
 2. Quit ScyllaUI, then right-click it in the Dock and choose "Stop Running in Background" to end the background process, then delete the app.
 3. Delete the data, log and diagnostic package folders listed above, as well as ~/Library/Caches/dev.scyllaui.app, ~/Library/Caches/dev.scyllaui.app.sparkle (caches left by checking for and downloading updates) and ~/Library/HTTPStorages/dev.scyllaui.app, then run defaults delete dev.scyllaui.app in Terminal to clear preferences.
 

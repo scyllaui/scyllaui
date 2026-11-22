@@ -1,6 +1,6 @@
 ScyllaUI 使用须知
 
-版本：2026-11-15
+版本：2026-11-22
 版权人：张思远（Siyuan Zhang）
 联系方式：support@thinkfarlabs.com
 
@@ -40,7 +40,7 @@ ScyllaUI 不属于任何第三方 CLI，与它们的开发者没有关联，也�
 
 5. 对您系统的修改
 
-为同步 Agent 状态、显示用量，ScyllaUI 会在第三方 CLI 的配置文件里写入它自己的条目：状态同步（Hook）在 App 里先列出改动，经您确认后才写入；Claude Code 的 statusline 桥只在您自己运行安装命令时写入（可以先运行查看改动的命令）。写入前都会备份原文件，您可以随时撤销。除此之外，ScyllaUI 不修改第三方 CLI 的配置。
+为同步 Agent 状态、显示用量，ScyllaUI 会在第三方 CLI 的配置文件里写入它自己的条目：状态同步（Hook）在 App 里先列出改动，经您确认后才写入；Claude Code 的 statusline 桥（用于显示 Claude 的额度）在安装状态同步时默认一起勾选，您可以取消，同样经您确认后才写入。写入前都会备份原文件，您可以随时撤销。除此之外，ScyllaUI 不修改第三方 CLI 的配置。
 
 
 6. 隐私

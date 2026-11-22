@@ -8,7 +8,7 @@ import Foundation
 
 enum WelcomePolicy {
     /// 当前使用须知的版本（`Resources/Legal/Notice-*.txt` 的「版本」行）；改内容时升级，所有用户会再看到一次。
-    static let noticeVersion = "2026-11-15"
+    static let noticeVersion = "2026-11-22"
 
     struct Decision: Equatable {
         var splash = false

@@ -24,18 +24,40 @@ enum HookRepairFlow {
     /// `tools` 为 nil 时：修复为可修复或未信任、且用户没在设置里撤销过的工具（侧栏提示栏列出的那些，决策 6）；
     /// 撤销由后台按缺省选四款（docs/protocol.md 第 4 节 `hooks.plan`）。
     /// `stillSynced`：从「下次失效」点进来的——配置已失效，但那个会话还在同步，确认框里多说一句。
-    static func run(_ action: Action, tools: [String]? = nil, core: CoreClient, stillSynced: Bool = false) {
+    /// `bridge`：Claude 的额度桥（statusline，2026-11-22）顺带装（true）或撤（false），nil 不动；撤销缺省连桥一起撤（后台定）。
+    /// 修复时要装桥而 Claude 不在待修复的工具里（Hook 正常、只差桥），把 Claude 加进来。
+    static func run(_ action: Action, tools: [String]? = nil, core: CoreClient, stillSynced: Bool = false, bridge: Bool? = nil) {
         core.request(["type": "hooks.status"]) { status in
             var chosen = tools
+            let all = ((status["hooks"] as? [[String: Any]]) ?? []).compactMap(SBHookStatus.init(json:))
+            let removed = Prefs.hooksRemoved
             if chosen == nil && action == .repair {
-                let removed = Prefs.hooksRemoved
-                chosen = ((status["hooks"] as? [[String: Any]]) ?? []).compactMap(SBHookStatus.init(json:))
-                    .filter { ($0.fixable || $0.state == "untrusted") && !removed.contains($0.tool) }.map(\.tool)
+                chosen = all.filter { ($0.fixable || $0.state == "untrusted") && !removed.contains($0.tool) }.map(\.tool)
+            }
+            if bridge == true, var c = chosen, !c.contains("claude"), !removed.contains("claude"),
+               let claude = all.first(where: { $0.tool == "claude" }), claude.state != "absent", claude.bridge != "on" {
+                c.append("claude")
+                chosen = c
             }
             var req: [String: Any] = ["type": "hooks.plan", "action": action.rawValue]
             if let chosen { req["tools"] = chosen }
+            if let bridge { req["statusline_bridge"] = bridge }
             core.request(req) { plan in
-                DispatchQueue.main.async { confirm(action, tools: chosen, status: status, plan: plan, core: core, stillSynced: stillSynced) }
+                DispatchQueue.main.async {
+                    confirm(action, tools: chosen, status: status, plan: plan, core: core, stillSynced: stillSynced, bridge: bridge)
+                }
+            }
+        }
+    }
+
+    /// 只接入或撤销 Claude 的额度桥，不动 Hook（设置 › Agent、Claude 终端行的「未同步」，2026-11-22）。
+    static func runBridge(install: Bool, core: CoreClient) {
+        core.request(["type": "hooks.status"]) { status in
+            core.request(["type": "hooks.plan", "scope": "statusline", "statusline_bridge": install]) { plan in
+                DispatchQueue.main.async {
+                    confirm(.repair, tools: ["claude"], status: status, plan: plan, core: core, stillSynced: false, bridge: install,
+                            bridgeOnly: true)
+                }
             }
         }
     }
@@ -69,6 +91,9 @@ enum HookRepairFlow {
             let keys = ((step["keys"] as? [String]) ?? []).joined(separator: String(localized: "、"))
             return String(localized: "打开 Hook 功能（config.toml 的 \(keys) 改为 true）") + also
         case "codex_reenable": return String(localized: "重新启用 \(n) 条：\(names)（config.toml 中该条的 enabled 改为 true）")
+        case "statusline_install":
+            return String(localized: "接入额度：在 statusLine 写入 ScyllaUI 的桥（原有的状态栏照旧显示；原来没有的，Claude 底部不显示任何内容）")
+        case "statusline_uninstall": return String(localized: "撤销额度接入：statusLine 还原为接入前的样子")
         case "codex_trust":
             return keepHooksCommand(step["after_repair"] as? Bool == true
                 ? String(localized: "修复后需要在 Codex 里信任 ScyllaUI 的 \(n) 条 Hook，写入后会说明怎么做")
@@ -78,7 +103,7 @@ enum HookRepairFlow {
     }
 
     private static func confirm(_ action: Action, tools: [String]?, status: [String: Any], plan reply: [String: Any], core: CoreClient,
-                                stillSynced: Bool) {
+                                stillSynced: Bool, bridge: Bool? = nil, bridgeOnly: Bool = false) {
         let uninstall = action == .uninstall
         let allStatuses = ((status["hooks"] as? [[String: Any]]) ?? []).compactMap(SBHookStatus.init(json:))
         let statuses = allStatuses.filter { $0.broken && (tools?.contains($0.tool) ?? true) }
@@ -89,7 +114,11 @@ enum HookRepairFlow {
         var lines: [String] = []
         let writes = changes.filter { !(($0["files"] as? [[String: Any]]) ?? []).isEmpty }
         let names = writes.compactMap { $0["tool"] as? String }.map(SidebarModel.toolName).joined(separator: String(localized: "、"))
-        if uninstall && !writes.isEmpty {
+        if bridgeOnly {
+            lines.append(bridge == true
+                ? String(localized: "Claude 只把 5 小时与 7 天额度交给它自己的 statusline。接入后，ScyllaUI 终端里的 Claude 会把这些数据转给标题栏；Claude 底部不多显示任何内容，在别的终端里什么都不做。新开的 Claude 会话才生效。")
+                : String(localized: "statusLine 还原为接入前的样子，标题栏不再显示 Claude 的 5 小时与 7 天额度。"))
+        } else if uninstall && !writes.isEmpty {
             // 写明撤销的是哪款；信任记录与 Hook 功能开关只有 Codex 有，只在撤销 Codex 时说（2026-11-01 用户指出各款都写了这句）。
             lines.append(String(localized: "只删除 ScyllaUI 写入的条目，您自己的 Hook 与其他设置不动。撤销后侧栏收不到 \(names) 的状态，只能显示运行或退出。"))
             if writes.contains(where: { $0["tool"] as? String == "codex" }) {
@@ -128,7 +157,10 @@ enum HookRepairFlow {
             }
         }
         let alert = NSAlert()
-        if uninstall {
+        if bridgeOnly {
+            alert.messageText = writes.isEmpty ? String(localized: "没有要改的")
+                : bridge == true ? String(localized: "接入 Claude 的额度？") : String(localized: "撤销 Claude 的额度接入？")
+        } else if uninstall {
             alert.messageText = writes.isEmpty ? String(localized: "没有要撤销的条目") : String(localized: "撤销 \(names) 的状态同步？")
         } else {
             alert.messageText = writes.isEmpty ? String(localized: "状态同步未生效") : String(localized: "修复状态同步？")
@@ -160,24 +192,27 @@ enum HookRepairFlow {
             if alert.runModal() == .alertFirstButtonReturn, trust { openCodexHooks?(nil, false) }
             return
         }
-        alert.addButton(withTitle: uninstall ? String(localized: "撤销") : String(localized: "修复"))
+        alert.addButton(withTitle: bridgeOnly ? (bridge == true ? String(localized: "接入") : String(localized: "撤销"))
+                        : uninstall ? String(localized: "撤销") : String(localized: "修复"))
         alert.addButton(withTitle: String(localized: "取消"))
-        alert.buttons.first?.hasDestructiveAction = uninstall
+        alert.buttons.first?.hasDestructiveAction = uninstall || (bridgeOnly && bridge == false)
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         let chosen = writes.compactMap { $0["tool"] as? String }
         // 修复后 Codex 还要信任：写入成功后接着提示这一步（M4b 块 5 P1）。
         let trustAfter = !uninstall && changes.contains { (($0["steps"] as? [[String: Any]]) ?? []).contains { $0["kind"] as? String == "codex_trust" } }
         // 撤销的工具在写入之前记下，推送来的新状态（缺少条目）就不会在侧栏提示；失败时取消（docs/design.md 10.4 节决策 6）。
         let before = Prefs.hooksRemoved
-        Prefs.hooksRemoved = uninstall ? before.union(chosen) : before.subtracting(chosen)
-        let req: [String: Any] = ["type": "hooks.repair", "tools": chosen, "fingerprint": plan["fingerprint"] ?? "", "action": action.rawValue]
+        if !bridgeOnly { Prefs.hooksRemoved = uninstall ? before.union(chosen) : before.subtracting(chosen) }
+        var req: [String: Any] = ["type": "hooks.repair", "tools": chosen, "fingerprint": plan["fingerprint"] ?? "", "action": action.rawValue]
+        if let bridge { req["statusline_bridge"] = bridge }
+        if bridgeOnly { req["scope"] = "statusline" }
         core.request(req) { reply in
             let ok = reply["ok"] as? Bool == true
             let err = reply["error"] as? [String: Any]
-            scyllauiLog.notice("hooks_\(action.rawValue, privacy: .public) tools=\(chosen.joined(separator: ","), privacy: .public) ok=\(ok) error=\((err?["code"] as? String) ?? "-", privacy: .public) backups=\(((reply["backups"] as? [String]) ?? []).joined(separator: ","), privacy: .public)")
+            scyllauiLog.notice("hooks_\(action.rawValue, privacy: .public) bridge=\(bridge.map { String($0) } ?? "-", privacy: .public) scope=\(bridgeOnly ? "statusline" : "hooks", privacy: .public) tools=\(chosen.joined(separator: ","), privacy: .public) ok=\(ok) error=\((err?["code"] as? String) ?? "-", privacy: .public) backups=\(((reply["backups"] as? [String]) ?? []).joined(separator: ","), privacy: .public)")
             guard !ok else {
                 DispatchQueue.main.async {
-                    if trustAfter { openCodexHooks?(nil, true) } else if !uninstall { afterRepair?(chosen) }
+                    if trustAfter { openCodexHooks?(nil, true) } else if !uninstall && !bridgeOnly { afterRepair?(chosen) }
                 }
                 return
             }

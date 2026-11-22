@@ -10,6 +10,9 @@
 	<string>$(SCYLLAUI_UPDATE_PUBLIC_KEY)</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
+	<!-- 侧栏、历史提示词栏与标题栏用的 JetBrains Mono（docs/design.md 第 5 节「字体」），在资源目录根下。 -->
+	<key>ATSApplicationFontsPath</key>
+	<string>.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- 只放行本机地址，供本机测试源用 http；正式更新源是 https。 -->

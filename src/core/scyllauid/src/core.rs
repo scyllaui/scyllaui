@@ -2,6 +2,7 @@
 //! 核心线程从不在 socket 上阻塞：输出经各连接的有界队列交给写线程，队列满即断开该连接，
 //! App 重连后重新取快照。
 
+use crate::bridgepref::BridgePref;
 use crate::git::{GitStatus, GitWorker, Job};
 use crate::hooks::{analyze_all, HookWatch};
 use crate::hooktime::{self, Facts, Sync, Timeline};
@@ -18,6 +19,7 @@ use crate::workspace::WorkspaceDirs;
 use scyllaui_proto::adapters::usage::{claude_statusline_quotas, Quota, Tokens, Window};
 use scyllaui_proto::adapters::{adapter, valid_session_id, verified, verified_list, TitleSource};
 use scyllaui_proto::hookcfg::{self, Action as HookAction, Plan, State as HookState, Status};
+use scyllaui_proto::statusline;
 use scyllaui_proto::{
     normalize, now_ms, now_us, AgentState, Applied, HookEvent, Kind, PaneState, Tool, BUILD_ID,
     PROTOCOL_VERSION,
@@ -394,6 +396,8 @@ pub struct Core {
     cli_home: String,
     /// 每款 Hook 配置状态变化的时间（hook-timeline.json）：判断一个 Agent 进程启动时条目在不在。
     hook_times: Timeline,
+    /// 用户要不要 Claude 的 statusline 桥（statusline-bridge.json，2026-11-22）。
+    bridge_pref: BridgePref,
     versions: VersionWorker,
     /// 测试后台（`--data-dir` 指向别处）没有指定 `SCYLLAUI_CLI_HOME` 时为 true：拒绝修复，避免测试改到真实配置。
     real_config_guard: bool,
@@ -514,6 +518,7 @@ impl Core {
             hooks: Vec::new(),
             cli_home,
             hook_times: Timeline::default(),
+            bridge_pref: BridgePref::default(),
             versions,
             real_config_guard: false,
             waits: HashMap::new(),
@@ -1126,6 +1131,11 @@ impl Core {
         self
     }
 
+    pub fn bridge_pref(mut self, pref: BridgePref) -> Core {
+        self.bridge_pref = pref;
+        self
+    }
+
     /// 接管旧进程的会话后（main.rs 已交给 PTY 宿主，宿主已开始等待 Shell 退出）：标为保活终端，还原只在内存中的终端提示
     /// 与当前目录（否则换版本后「目录无权限」消失、副标题退回启动目录，2026-10-23 修正）。库里已不存活的终端直接挂断。
     pub fn adopt(&mut self, adopted: Vec<pty::takeover::Adopted>) {
@@ -1559,6 +1569,10 @@ impl Core {
             .iter()
             .map(|s| {
                 let mut v = s.to_json();
+                // 要过桥、现在却不在了（被别的工具改掉）才提示；从没要过的不提示（2026-11-22）。
+                if s.bridge == Some("off") && self.bridge_pref.wanted {
+                    v["bridge"] = json!("replaced");
+                }
                 // 何时读取 Hook 与引导里要写的命令（docs/design.md 4.7 节「会话是否真的在同步」）。
                 let a = adapter(s.tool);
                 v["load"] = json!(a.hook_load.as_str());
@@ -1616,6 +1630,10 @@ impl Core {
                     s.problems.join("、")
                 );
             }
+        }
+        // 桥已经装着（如用户以前手动装过）就记为要桥，之后被改掉会提示（2026-11-22）。
+        if statuses.iter().any(|s| s.bridge == Some("on")) {
+            self.bridge_pref.set(true);
         }
         // 本进程第一次分析出的结果：与时间线最近一条不同的话，变化发生在后台没在运行的时候，时刻不明。
         let first = self.hooks.is_empty();
@@ -1799,11 +1817,42 @@ impl Core {
         }
     }
 
+    /// 请求中 Claude 的 statusline 桥（2026-11-22，docs/protocol.md 第 4 节）：`statusline_bridge` 为 true 装、false 撤；
+    /// 缺省时修复不动桥，撤销连桥一起撤（一键撤销 ScyllaUI 写的全部东西）。只在 `tools` 含 Claude 时有意义。
+    fn hook_bridge(msg: &Value, action: HookAction) -> Result<Option<bool>, Fail> {
+        match msg.get("statusline_bridge") {
+            None | Some(Value::Null) => Ok((action == HookAction::Uninstall).then_some(false)),
+            Some(Value::Bool(b)) => Ok(Some(*b)),
+            Some(_) => Err(bad("statusline_bridge 须为布尔值")),
+        }
+    }
+
+    /// 按请求生成改动（不写文件）。`scope` 为 `statusline` 时只装或撤 Claude 的桥、不动 Hook（设置里单独开关额度，
+    /// 2026-11-22）；否则为各款的 Hook，Claude 按 `statusline_bridge` 顺带装撤桥。返回改动与这次请求对桥的选择。
+    fn plans_for_msg(&mut self, msg: &Value) -> Result<(Vec<Plan>, HookAction, Option<bool>), Fail> {
+        let action = Self::hook_action(msg)?;
+        let bridge = Self::hook_bridge(msg, action)?;
+        match msg.get("scope").and_then(Value::as_str) {
+            None | Some("hooks") => {}
+            Some("statusline") => {
+                let install = bridge.ok_or_else(|| bad("scope 为 statusline 时须给 statusline_bridge"))?;
+                let plan = statusline::Bridge::read(Path::new(&self.cli_home))
+                    .and_then(|b| b.plan(install))
+                    .map_err(|e| bad(&e))?;
+                return Ok((plan.into_iter().collect(), action, Some(install)));
+            }
+            Some(x) => return Err(bad(&format!("scope 只能是 hooks 或 statusline，收到「{x}」"))),
+        }
+        let tools = self.hook_tools(msg, action)?;
+        let bridge = bridge.filter(|_| tools.contains(&Tool::Claude));
+        Ok((self.plans_for(&tools, action, bridge), action, bridge))
+    }
+
     /// 为修复或撤销生成改动（不写文件）。不能处理的工具（修复时的策略锁定、读不了）不在结果里，原因见 `hooks.status`。
-    fn plans_for(&self, tools: &[Tool], action: HookAction) -> Vec<Plan> {
+    fn plans_for(&self, tools: &[Tool], action: HookAction, bridge: Option<bool>) -> Vec<Plan> {
         tools
             .iter()
-            .filter_map(|t| match hookcfg::plan(&hookcfg::read(*t, &self.cli_home), action) {
+            .filter_map(|t| match hookcfg::plan_with(&hookcfg::read(*t, &self.cli_home), action, bridge) {
                 Ok(p) => p,
                 Err(e) => {
                     log!("{} 不能{}：{e}", t.as_str(), if action == HookAction::Uninstall { "撤销" } else { "修复" });
@@ -1814,9 +1863,7 @@ impl Core {
     }
 
     fn hooks_plan(&mut self, msg: &Value) -> Result<Value, Fail> {
-        let action = Self::hook_action(msg)?;
-        let tools = self.hook_tools(msg, action)?;
-        let plans = self.plans_for(&tools, action);
+        let (plans, _, _) = self.plans_for_msg(msg)?;
         Ok(json!({"plan": {
             "changes": plans.iter().map(Plan::to_json).collect::<Vec<_>>(),
             "fingerprint": hookcfg::fingerprint(&plans),
@@ -1825,13 +1872,11 @@ impl Core {
 
     /// 按 `hooks.plan` 的结果写入；文件此后被改过（指纹不符）即放弃，请求方重新生成。
     fn hooks_repair(&mut self, msg: &Value) -> Result<Value, Fail> {
-        let action = Self::hook_action(msg)?;
-        let tools = self.hook_tools(msg, action)?;
         let fingerprint = msg["fingerprint"].as_str().ok_or_else(|| bad("缺少 fingerprint"))?;
+        let (plans, action, bridge) = self.plans_for_msg(msg)?;
         if self.real_config_guard {
             return Err(bad("测试后台没有指定 SCYLLAUI_CLI_HOME，不修改真实的 CLI 配置"));
         }
-        let plans = self.plans_for(&tools, action);
         if hookcfg::fingerprint(&plans) != fingerprint {
             return Err(Fail("conflict", "配置文件在确认之后被改动，请重新生成改动".into()));
         }
@@ -1842,6 +1887,9 @@ impl Core {
         let verb = if action == HookAction::Uninstall { "撤销" } else { "修复" };
         for p in &plans {
             log!("{verb} Hook 配置：{}：{}", p.tool.as_str(), p.actions.join("；"));
+        }
+        if let Some(b) = bridge {
+            self.bridge_pref.set(b);
         }
         self.hooks_changed(analyze_all(&self.cli_home));
         self.hook_watch.recheck();
@@ -6201,6 +6249,63 @@ mod tests {
 
     /// Hook 配置的状态、生成改动与修复（M1 第 7 块，docs/protocol.md 第 4、5 节）：快照带 `hooks`；指纹不符或文件
     /// 在生成改动后被改过都回 `conflict` 且不写；修复后推送 `hooks.upsert` 并留备份。
+    /// Claude 的 statusline 桥（2026-11-22）：随修复一起装、记下「要桥」；被别的工具改掉后报 `replaced`；只撤桥不动 Hook；
+    /// 撤销状态同步缺省连桥一起撤。
+    #[test]
+    fn statusline_bridge_with_hooks() {
+        let mut b = bench("bridge");
+        let settings = b.dir.join(".claude/settings.json");
+        fs::create_dir_all(settings.parent().unwrap()).unwrap();
+        fs::write(&settings, "{\n  \"theme\": \"dark\"\n}\n").unwrap();
+        let (app, rx, snap) = b.app(&[]);
+        let of = |v: &Value| v.as_array().unwrap().iter().find(|s| s["tool"] == "claude").unwrap().clone();
+        assert_eq!(of(&snap["hooks"])["bridge"], "off", "没要过的不提示");
+        let mut repair = |b: &mut Bench, req: Value| -> Value {
+            let mut plan = req.clone();
+            plan["type"] = json!("hooks.plan");
+            let (reply, _) = b.req(app, &rx, plan);
+            let mut r = req;
+            r["type"] = json!("hooks.repair");
+            r["fingerprint"] = reply["plan"]["fingerprint"].clone();
+            let (r, _) = b.req(app, &rx, r);
+            assert_eq!(r["ok"], true, "{r}");
+            r
+        };
+        // 修复时一并装桥：一个文件改动，Hook 与桥都在。
+        let (reply, _) = b.req(app, &rx, json!({"type": "hooks.plan", "tools": ["claude"], "statusline_bridge": true}));
+        let changes = reply["plan"]["changes"].as_array().unwrap().clone();
+        assert_eq!(changes[0]["files"].as_array().unwrap().len(), 1);
+        assert!(changes[0]["steps"].as_array().unwrap().iter().any(|s| s["kind"] == "statusline_install"), "{reply}");
+        let r = repair(&mut b, json!({"tools": ["claude"], "statusline_bridge": true}));
+        assert_eq!((of(&r["hooks"])["state"].clone(), of(&r["hooks"])["bridge"].clone()), (json!("ok"), json!("on")));
+        assert!(b.core.bridge_pref.wanted);
+        // 别的工具把 statusLine 换掉：Hook 仍正常，桥报 replaced。
+        let mut v: Value = serde_json::from_str(&fs::read_to_string(&settings).unwrap()).unwrap();
+        v["statusLine"] = json!({"type": "command", "command": "tt-statusline"});
+        fs::write(&settings, serde_json::to_string_pretty(&v).unwrap() + "\n").unwrap();
+        b.core.handle(Cmd::HooksChanged { statuses: analyze_all(&b.dir.display().to_string()) });
+        let upsert = drain(&rx).into_iter().find(|m| m["type"] == "hooks.upsert").expect("推送 hooks.upsert");
+        assert_eq!((of(&upsert["hooks"])["state"].clone(), of(&upsert["hooks"])["bridge"].clone()), (json!("ok"), json!("replaced")));
+        // 只修桥：包住对方的命令，不动 Hook。
+        let r = repair(&mut b, json!({"scope": "statusline", "statusline_bridge": true}));
+        assert_eq!(of(&r["hooks"])["bridge"], "on");
+        let text = fs::read_to_string(&settings).unwrap();
+        assert!(text.contains("scyllaui-statusline-bridge-v1") && text.contains("tt-statusline"));
+        // 只撤桥：还原为对方的命令，不再提示。
+        let r = repair(&mut b, json!({"scope": "statusline", "statusline_bridge": false}));
+        assert_eq!((of(&r["hooks"])["state"].clone(), of(&r["hooks"])["bridge"].clone()), (json!("ok"), json!("off")));
+        assert!(!b.core.bridge_pref.wanted);
+        assert!(fs::read_to_string(&settings).unwrap().contains("\"command\": \"tt-statusline\""));
+        let (r, _) = b.req(app, &rx, json!({"type": "hooks.plan", "scope": "statusline"}));
+        assert_eq!(r["error"]["code"], "bad_request", "只动桥须写明装还是撤");
+        // 撤销状态同步缺省连桥一起撤。
+        repair(&mut b, json!({"scope": "statusline", "statusline_bridge": true}));
+        let r = repair(&mut b, json!({"tools": ["claude"], "action": "uninstall"}));
+        assert_eq!((of(&r["hooks"])["state"].clone(), of(&r["hooks"])["bridge"].clone()), (json!("missing"), json!("off")));
+        assert!(fs::read_to_string(&settings).unwrap().contains("\"command\": \"tt-statusline\""));
+        assert!(!b.core.bridge_pref.wanted);
+    }
+
     #[test]
     fn hooks_plan_and_repair() {
         let mut b = bench("hooks");
@@ -6372,7 +6477,7 @@ mod tests {
 
     /// 「会话是否真的在同步」的测试用：一款的配置状态；前台设为本测试进程（启动时间读得到）。
     fn hook_status(tool: Tool, state: HookState) -> Vec<Status> {
-        vec![Status { tool, state, path: String::new(), problems: Vec::new(), fixable: false }]
+        vec![Status { tool, state, path: String::new(), problems: Vec::new(), fixable: false, bridge: None }]
     }
 
     fn agent_fg(b: &mut Bench, t: &str, tool: Tool) -> i64 {

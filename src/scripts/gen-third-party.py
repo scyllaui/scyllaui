@@ -117,6 +117,10 @@ def packages():
                         dir=EXTRA, files=["sparkle.txt"],
                         note="Sparkle.framework is embedded for checking, downloading and installing updates; "
                              "the license text includes the notices of the components Sparkle bundles."),
+        "jetbrains-mono": dict(name="JetBrains Mono (interface font)", source="https://github.com/JetBrains/JetBrainsMono (v2.304)",
+                               spdx="OFL-1.1", dir=EXTRA, files=["jetbrains-mono-ofl.txt"],
+                               note="JetBrainsMono-Regular.ttf and JetBrainsMono-SemiBold.ttf are shipped unmodified for the sidebar, "
+                                    "prompt history and title bar."),
         "fusion-pixel-font": dict(name="Fusion Pixel Font (splash lettering)", source="https://github.com/TakWolf/fusion-pixel-font (release 2026.10.25, 12px proportional zh_hans)",
                                   spdx="OFL-1.1", dir=EXTRA, files=["fusion-pixel-font-ofl.txt"],
                                   note="The pixel glyphs of the splash subtitle, button and footer (Resources/pixel-text.json) are taken from this font; "
@@ -320,7 +324,7 @@ def generate():
         if member in linked or member in vt_members:
             raise Fail(why)
     pk = packages()
-    for key in ZIG_ALWAYS + ["ghostty", "themes", "bash-preexec", "lobe-icons", "fusion-pixel-font", "sparkle"]:
+    for key in ZIG_ALWAYS + ["ghostty", "themes", "bash-preexec", "lobe-icons", "fusion-pixel-font", "jetbrains-mono", "sparkle"]:
         used.setdefault(key, set())
     skipped = [f"{p.name}: {why}" for p in sorted(ZPKG.iterdir()) for pre, why in ZIG_SKIP.items() if p.name.startswith(pre)]
 

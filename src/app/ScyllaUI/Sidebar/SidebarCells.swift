@@ -613,14 +613,18 @@ final class TaskCell: HoverCellView, SidebarCell, NSTextFieldDelegate {
                 : String(localized: "后台进不了这个终端的启动目录，Shell 已在其他目录启动，没有代输启动命令。可在「系统设置 › 隐私与安全性 › 文件与文件夹」中允许 ScyllaUI 访问，再新开终端。")
         }
         // 「未同步」与「下次失效」共用一个徽标：前者是这个会话此刻没在同步，后者是它还在同步、退出后就不同步了。
-        let syncText = r.unsynced ? String(localized: "未同步") : String(localized: "下次失效")
-        if unsynced.text != syncText {
+        // 额度桥被改掉（2026-11-22）也用「未同步」，悬停写明只是额度读不到；状态没在同步的优先说。
+        let syncText = r.unsynced || r.quotaLost ? String(localized: "未同步") : String(localized: "下次失效")
+        let syncTip = r.unsynced
+            ? String(localized: "这个 Agent 的状态没在同步，侧栏看不到它在做什么。点按查看怎么处理。")
+            : r.quotaLost
+            ? String(localized: "Claude 的状态在同步，但额度桥（statusline）被别的工具改掉了，标题栏读不到 5h、7d 额度。点按查看并修复。")
+            : String(localized: "这款 Agent 的状态同步配置已失效。这个会话还在同步，退出后就不再同步。点按查看并修复。")
+        if unsynced.text != syncText || unsynced.toolTip != syncTip {
             unsynced.set(syncText, fg: ScyllaUIStyle.waiting, bg: ScyllaUIStyle.waitingBg)
-            unsynced.toolTip = r.unsynced
-                ? String(localized: "这个 Agent 的状态没在同步，侧栏看不到它在做什么。点按查看怎么处理。")
-                : String(localized: "这款 Agent 的状态同步配置已失效。这个会话还在同步，退出后就不再同步。点按查看并修复。")
+            unsynced.toolTip = syncTip
         }
-        unsynced.isHidden = !(r.unsynced || r.syncNext)
+        unsynced.isHidden = !(r.unsynced || r.syncNext || r.quotaLost)
         time.stringValue = r.time
         // 目录单行、截掉开头（保留末段）；其余最多两行、末尾截断。只在变化时设置：重设会让这一行重新排版，
         // 一批对话同时结束时侧栏会明显变慢（2026-10-25 块 11 并行回归实测）。

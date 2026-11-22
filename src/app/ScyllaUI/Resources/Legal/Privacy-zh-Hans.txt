@@ -1,6 +1,6 @@
 ScyllaUI 隐私与数据说明
 
-版本：2026-11-08
+版本：2026-11-22
 
 一句话：ScyllaUI 只在检查更新时联网，不收集、不上传任何使用数据。您的数据只在您自己的 Mac 上；只有您主动报告问题时，您发来的内容才会到我们手里（见第六、七节）。
 
@@ -35,7 +35,7 @@ ScyllaUI 隐私与数据说明
 只有两处：
 
 - 状态同步（Hook）：在各款 CLI 的配置里加一条 ScyllaUI 自己的条目，例如 ~/.claude/settings.json、~/.codex/hooks.json。ScyllaUI 先在 App 里列出改动给您看，您确认后才写。可以在「设置 › Agent」里逐款撤销。
-- Claude Code 的 statusline 桥：用于显示 Claude 的额度，只在您自己运行 scyllaui statusline-bridge install 时写入；运行安装命令即表示您同意。想先看改动，可以先运行 scyllaui statusline-bridge diff。用 scyllaui statusline-bridge uninstall 撤销。
+- Claude Code 的 statusline 桥：用于显示 Claude 的额度，在 ~/.claude/settings.json 的 statusLine 里写入 ScyllaUI 的命令（原有的状态栏照旧显示）。安装状态同步时它默认随 Claude 一起勾选，您可以取消；同样先列出改动，您确认后才写。可以在「设置 › Agent」里单独接入或撤销；也可以用 scyllaui statusline-bridge install / uninstall。
 
 两处写入前都会先备份原文件；撤销只删除 ScyllaUI 写入的条目，不动您自己的设置。
 
@@ -79,7 +79,7 @@ ScyllaUI 隐私与数据说明
 
 八、彻底删除
 
-1. 在「设置 › Agent」里逐款撤销状态同步；装过 statusline 桥的，再运行 scyllaui statusline-bridge uninstall。
+1. 在「设置 › Agent」里逐款撤销状态同步；撤销 Claude 时 statusline 桥会一起撤销。
 2. 退出 ScyllaUI，再在程序坞右键选「Stop Running in Background」结束后台进程，然后删除 App。
 3. 删除上面列出的数据目录、日志目录与诊断包目录，以及 ~/Library/Caches/dev.scyllaui.app、~/Library/Caches/dev.scyllaui.app.sparkle（检查和下载更新时留下的缓存）和 ~/Library/HTTPStorages/dev.scyllaui.app，再在终端运行 defaults delete dev.scyllaui.app 清除偏好设置。
 

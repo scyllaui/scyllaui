@@ -1,6 +1,6 @@
 ScyllaUI Notice
 
-Version: 2026-11-15
+Version: 2026-11-22
 Copyright holder: Siyuan Zhang (张思远)
 Contact: support@thinkfarlabs.com
 
@@ -42,7 +42,7 @@ ScyllaUI is not part of any Third-Party CLI and is not affiliated with or endors
 
 5. Changes to your system
 
-To sync Agent status and show usage, ScyllaUI writes its own entries into the configuration files of Third-Party CLIs: status sync (hooks) lists the changes in the app and is written only after you confirm; the Claude Code statusline bridge is written only when you run its install command yourself (you can run the command that shows the changes first). The original files are always backed up before writing, and you can undo the changes at any time. Apart from this, ScyllaUI does not modify the configuration of Third-Party CLIs.
+To sync Agent status and show usage, ScyllaUI writes its own entries into the configuration files of Third-Party CLIs: status sync (hooks) lists the changes in the app and is written only after you confirm; the Claude Code statusline bridge (used to show Claude's quota) is checked by default when you install status sync, you can uncheck it, and it too is written only after you confirm. The original files are always backed up before writing, and you can undo the changes at any time. Apart from this, ScyllaUI does not modify the configuration of Third-Party CLIs.
 
 
 6. Privacy

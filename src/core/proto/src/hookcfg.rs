@@ -3,7 +3,7 @@
 //! 备份命名都相同。分析与生成改动是纯函数（文本进、文本出）；读写文件的部分在本文件末尾，scyllaui 与 scyllauid 共用。
 //! 依据：S0 第 3 项、`docs/s0-hook-compat.md`「防失效取证」（Codex 信任哈希与 `enabled`、Grok `disabled-hooks`）。
 
-use crate::Tool;
+use crate::{statusline, Tool};
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -206,13 +206,36 @@ pub struct Status {
     pub path: String,
     pub problems: Vec<String>,
     pub fixable: bool,
+    /// Claude 的 statusline 桥（额度来源，2026-11-22）：`on` 已装，`off` 没装或是用户自己的 statusline，`broken` 带标记但被改过；
+    /// 其他各款为 None。只影响额度，不参与 `state`（会话是否在同步按 `state` 判定）。「要过桥却不在了」由后台按记录另报 `replaced`。
+    pub bridge: Option<&'static str>,
 }
 
 impl Status {
     pub fn to_json(&self) -> Value {
-        json!({"tool": self.tool.as_str(), "state": self.state.as_str(), "path": self.path,
-               "problems": self.problems, "fixable": self.fixable})
+        let mut v = json!({"tool": self.tool.as_str(), "state": self.state.as_str(), "path": self.path,
+                           "problems": self.problems, "fixable": self.fixable});
+        if let Some(b) = self.bridge {
+            v["bridge"] = json!(b);
+        }
+        v
     }
+}
+
+/// Claude 设置文本里桥的状态（`Status::bridge`）；读不了或不是 JSON 对象时为 None（`state` 已报 unreadable）。
+fn bridge_of(tool: Tool, main: Option<&str>) -> Option<&'static str> {
+    if tool != Tool::Claude {
+        return None;
+    }
+    let data = match main {
+        None => json!({}),
+        Some(t) => serde_json::from_str::<Value>(t).ok().filter(Value::is_object)?,
+    };
+    Some(match statusline::state_of(&data) {
+        Ok(statusline::State::Installed { .. }) => "on",
+        Ok(_) => "off",
+        Err(_) => "broken",
+    })
 }
 
 /// 分析中间结果：本项目每个事件的条目在哪（组序号、条目序号）、有哪些问题。
@@ -237,8 +260,9 @@ pub fn analyze(s: &Snapshot) -> Status {
         Ok(t) => t.clone(),
     };
     if !s.dir_exists && main_text.is_none() && f.unreadable.is_empty() {
-        return Status { tool: s.tool, state: State::Absent, path, problems: vec![], fixable: false };
+        return Status { tool: s.tool, state: State::Absent, path, problems: vec![], fixable: false, bridge: None };
     }
+    let bridge = bridge_of(s.tool, main_text.as_deref());
     for (p, text) in &s.policy {
         if let Ok(Some(t)) = text {
             if policy_locks(s.tool, t) {
@@ -288,6 +312,7 @@ pub fn analyze(s: &Snapshot) -> Status {
         path,
         problems,
         fixable: matches!(state, State::Missing | State::Disabled),
+        bridge,
     }
 }
 
@@ -957,6 +982,12 @@ pub enum Action {
 
 /// 生成改动；没有要改的为 `Ok(None)`。策略锁定、读不了或格式不认识时为 `Err`（不碰文件）。
 pub fn plan(s: &Snapshot, action: Action) -> Result<Option<Plan>, String> {
+    plan_with(s, action, None)
+}
+
+/// 同 `plan`，`bridge` 另外装（`Some(true)`）或撤（`Some(false)`）Claude 的 statusline 桥，None 不动（2026-11-22）。
+/// 桥与 Hook 在同一个 `settings.json` 里，改在同一份数据上、合成一个文件改动，免得两份改动互相冲突。
+pub fn plan_with(s: &Snapshot, action: Action, bridge: Option<bool>) -> Result<Option<Plan>, String> {
     let status = analyze(s);
     match status.state {
         State::Policy if action == Action::Repair => return Err(status.problems.join("; ")),
@@ -1138,6 +1169,11 @@ pub fn plan(s: &Snapshot, action: Action) -> Result<Option<Plan>, String> {
                         data = uninstall_json(data);
                         act(&mut p, format!("删除本项目的 {} 条", found.len()), json!({"kind": "uninstall", "count": found.len()}));
                     }
+                }
+            }
+            if let (Tool::Claude, Some(install)) = (s.tool, bridge) {
+                if let Some(text) = statusline::apply(&mut data, install)? {
+                    act(&mut p, text.to_owned(), json!({"kind": if install { "statusline_install" } else { "statusline_uninstall" }}));
                 }
             }
             if data != before {
@@ -1611,6 +1647,54 @@ mod tests {
             aux: lay.aux.as_deref().map(|a| pick(a, &s.aux)).unwrap_or(Ok(None)),
             policy: s.policy.clone(),
         }
+    }
+
+    /// Claude 的 statusline 桥并进「安装状态同步」（2026-11-22）：桥的状态不改变 `state`；装撤与 Hook 合成同一份文件改动，
+    /// 原有 statusline 包进去、撤销时原样还原；`bridge` 为 None 时不碰 statusLine。
+    #[test]
+    fn claude_statusline_bridge_in_plan() {
+        let ok = installed(Tool::Claude);
+        let s = snap(Tool::Claude, Some(&ok), None);
+        assert_eq!(analyze(&s).bridge, Some("off"));
+        assert_eq!(analyze(&s).state, State::Ok);
+        assert_eq!(analyze(&snap(Tool::Codex, Some("{}"), None)).bridge, None, "只有 Claude 有桥");
+        assert!(plan_with(&s, Action::Repair, None).unwrap().is_none(), "Hook 正常、不要求桥时不改");
+        // Hook 正常、只补桥：一个文件改动，Hook 不变。
+        let p = plan_with(&s, Action::Repair, Some(true)).unwrap().unwrap();
+        assert_eq!(p.files.len(), 1);
+        assert_eq!(p.steps, vec![json!({"kind": "statusline_install"})]);
+        let s2 = after(&s, &p);
+        let st = analyze(&s2);
+        assert_eq!((st.state, st.bridge), (State::Ok, Some("on")));
+        assert!(plan_with(&s2, Action::Repair, Some(true)).unwrap().is_none(), "装过不再改");
+        // 全新：Hook 与桥一起写进同一个文件。
+        let empty = snap(Tool::Claude, None, None);
+        let p = plan_with(&empty, Action::Repair, Some(true)).unwrap().unwrap();
+        assert_eq!(p.files.len(), 1);
+        assert_eq!(p.steps.last(), Some(&json!({"kind": "statusline_install"})));
+        let both = after(&empty, &p);
+        assert_eq!((analyze(&both).state, analyze(&both).bridge), (State::Ok, Some("on")));
+        // 撤销：Hook 与桥一起撤，装之前没有 statusLine 就删掉。
+        let p = plan_with(&both, Action::Uninstall, Some(false)).unwrap().unwrap();
+        let gone = after(&both, &p);
+        let data: Value = serde_json::from_str(gone.main.as_ref().unwrap().as_deref().unwrap()).unwrap();
+        assert!(data.get("statusLine").is_none());
+        assert_eq!(analyze(&gone).bridge, Some("off"));
+        // 用户原有的 statusline：包进去，撤桥后原样还原；不动桥的修复不碰它。
+        let mut v: Value = serde_json::from_str(&ok).unwrap();
+        v["statusLine"] = json!({"type": "command", "command": "~/bin/mine.sh", "padding": 0});
+        let mine = snap(Tool::Claude, Some(&(py_json(&v) + "\n")), None);
+        assert!(plan_with(&mine, Action::Repair, None).unwrap().is_none());
+        let wrapped = after(&mine, &plan_with(&mine, Action::Repair, Some(true)).unwrap().unwrap());
+        assert_eq!(analyze(&wrapped).bridge, Some("on"));
+        let back = after(&wrapped, &plan_with(&wrapped, Action::Repair, Some(false)).unwrap().unwrap());
+        assert_eq!(back.main, mine.main, "撤桥后与装之前逐字节相同");
+        // 带标记但被改过：报 broken，撤桥时不自动处理。
+        let mut t: Value = serde_json::from_str(wrapped.main.as_ref().unwrap().as_deref().unwrap()).unwrap();
+        t["statusLine"]["command"] = json!(t["statusLine"]["command"].as_str().unwrap().replacen("mine.sh", "x.sh", 1));
+        let tampered = snap(Tool::Claude, Some(&py_json(&t)), None);
+        assert_eq!(analyze(&tampered).bridge, Some("broken"));
+        assert!(plan_with(&tampered, Action::Repair, Some(false)).is_err());
     }
 
     /// Codex 配置：给 hooks.json 中本项目每个条目写上当前位置的信任记录。

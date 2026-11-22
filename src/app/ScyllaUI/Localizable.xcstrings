@@ -493,16 +493,6 @@
         }
       }
     },
-    "关掉的段不再显示。CPU 与内存都关掉时不再统计，分支与改动关掉时不再读取改动数。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turned-off items are hidden. With both CPU and memory off, usage is no longer sampled; with branch and changes off, change counts are no longer read."
-          }
-        }
-      }
-    },
     "关闭": {
       "localizations": {
         "en": {
@@ -617,16 +607,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Branch"
-          }
-        }
-      }
-    },
-    "分支与改动": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Branch and changes"
           }
         }
       }
@@ -1133,16 +1113,6 @@
         }
       }
     },
-    "推理强度": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reasoning effort"
-          }
-        }
-      }
-    },
     "搜索": {
       "localizations": {
         "en": {
@@ -1359,36 +1329,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Review Changes and Install…"
-          }
-        }
-      }
-    },
-    "标题栏右侧：": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Right of title bar:"
-          }
-        }
-      }
-    },
-    "标题栏左侧：": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Left of title bar:"
-          }
-        }
-      }
-    },
-    "模型": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Model"
           }
         }
       }
@@ -2623,16 +2563,6 @@
         }
       }
     },
-    "项目名": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Project name"
-          }
-        }
-      }
-    },
     "预览：": {
       "localizations": {
         "en": {
@@ -3317,16 +3247,6 @@
         }
       }
     },
-    "模型：ScyllaUI 暂不读取 %@ 的模型": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Model: ScyllaUI doesn't read %@'s model yet"
-          }
-        }
-      }
-    },
     "Total：ScyllaUI 暂不读取 %@ 的用量": {
       "localizations": {
         "en": {
@@ -3407,12 +3327,12 @@
         }
       }
     },
-    "额度：Claude 的 5 小时与 7 天额度只在官方 statusline 里，未接入（scyllaui statusline-bridge install）；非 Pro / Max 订阅没有此项": {
+    "额度：Claude 的 5 小时与 7 天额度只在官方 statusline 里，未接入（在「设置 › Agent」里接入额度）；非 Pro / Max 订阅没有此项": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Quota: Claude only reports its 5-hour and 7-day quotas to its official statusline, which isn't connected (scyllaui statusline-bridge install). Not available without a Pro / Max plan."
+            "value": "Quota: Claude only reports its 5-hour and 7-day quotas to its official statusline, which isn't connected (connect it in Settings › Agent). Not available without a Pro / Max plan."
           }
         }
       }
@@ -3525,16 +3445,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pay-as-you-go: no 5-hour, 7-day, or monthly quota"
-          }
-        }
-      }
-    },
-    "推理强度：ScyllaUI 暂不读取 %@ 的推理强度": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reasoning effort: ScyllaUI doesn't read %@'s reasoning effort yet"
           }
         }
       }
@@ -4111,12 +4021,12 @@
         }
       }
     },
-    "ScyllaUI 是开源软件，按 GPL-3.0-or-later 发布。使用前请了解以下几点。": {
+    "使用前请了解以下几点。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "ScyllaUI is open-source software released under GPL-3.0-or-later. Here are a few things to know before you use it."
+            "value": "Here are a few things to know before you use it."
           }
         }
       }
@@ -4367,6 +4277,226 @@
           "stringUnit": {
             "state": "translated",
             "value": "Quit %@ and open it again to sync."
+          }
+        }
+      }
+    },
+    "标题栏：": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title bar:"
+          }
+        }
+      }
+    },
+    "Claude 只把 5 小时与 7 天额度交给它自己的 statusline。接入后，ScyllaUI 终端里的 Claude 会把这些数据转给标题栏；Claude 底部不多显示任何内容，在别的终端里什么都不做。新开的 Claude 会话才生效。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude only reports its 5-hour and 7-day quotas to its own statusline. Once connected, Claude in ScyllaUI's terminals passes them on to the title bar; nothing extra appears at the bottom of Claude, and it does nothing in other terminals. Takes effect in new Claude sessions."
+          }
+        }
+      }
+    },
+    "Claude 的状态在同步，但额度桥（statusline）被别的工具改掉了，标题栏读不到 5h、7d 额度。点按查看并修复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude's status is syncing, but another tool replaced the quota bridge (statusline), so the title bar can't read the 5h and 7d quotas. Click to review and fix."
+          }
+        }
+      }
+    },
+    "Claude 的额度读不到": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude's quota can't be read"
+          }
+        }
+      }
+    },
+    "statusLine 还原为接入前的样子，标题栏不再显示 Claude 的 5 小时与 7 天额度。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "statusLine is restored to how it was before, and the title bar no longer shows Claude's 5-hour and 7-day quotas."
+          }
+        }
+      }
+    },
+    "修复额度…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fix Quota…"
+          }
+        }
+      }
+    },
+    "关掉的段不再显示。CPU 与内存都关掉时不再统计。Claude 的 5h、7d 额度要先在「设置 › Agent」里接入额度。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turned-off items are hidden. With both CPU and memory off, usage is no longer sampled. Claude's 5h and 7d quotas need the quota connection in Settings › Agent."
+          }
+        }
+      }
+    },
+    "同时接入 Claude 的 5h、7d 额度（不在 Claude 底部显示任何内容）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also connect Claude's 5h and 7d quotas (shows nothing at the bottom of Claude)"
+          }
+        }
+      }
+    },
+    "接入": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect"
+          }
+        }
+      }
+    },
+    "接入 Claude 的额度？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Claude's quota?"
+          }
+        }
+      }
+    },
+    "接入额度…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Quota…"
+          }
+        }
+      }
+    },
+    "接入额度：在 statusLine 写入 ScyllaUI 的桥（原有的状态栏照旧显示；原来没有的，Claude 底部不显示任何内容）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect quota: write ScyllaUI's bridge into statusLine (an existing status line keeps showing as before; if there was none, nothing appears at the bottom of Claude)"
+          }
+        }
+      }
+    },
+    "撤销 Claude 的额度接入？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Claude's quota connection?"
+          }
+        }
+      }
+    },
+    "撤销额度…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Quota…"
+          }
+        }
+      }
+    },
+    "撤销额度接入：statusLine 还原为接入前的样子": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove quota connection: restore statusLine to how it was before"
+          }
+        }
+      }
+    },
+    "没有要改的": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to change"
+          }
+        }
+      }
+    },
+    "额度桥（statusline）的命令被改过，ScyllaUI 不自动处理；请检查 ~/.claude/settings.json 的 statusLine": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The quota bridge (statusline) command was edited, so ScyllaUI won't change it automatically; check statusLine in ~/.claude/settings.json"
+          }
+        }
+      }
+    },
+    "额度桥（statusline）被别的工具改掉了，标题栏读不到 Claude 的 5h、7d 额度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another tool replaced the quota bridge (statusline), so the title bar can't read Claude's 5h and 7d quotas"
+          }
+        }
+      }
+    },
+    "额度：已接入，标题栏显示 Claude 的 5h、7d 额度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota: connected, the title bar shows Claude's 5h and 7d quotas"
+          }
+        }
+      }
+    },
+    "额度：未接入，标题栏不显示 Claude 的 5h、7d 额度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota: not connected, the title bar doesn't show Claude's 5h and 7d quotas"
+          }
+        }
+      }
+    },
+    "额度：额度桥的命令被改过，未自动处理": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota: the bridge command was edited, left unchanged"
+          }
+        }
+      }
+    },
+    "额度：额度桥被别的工具改掉了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota: another tool replaced the bridge"
           }
         }
       }

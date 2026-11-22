@@ -12,39 +12,24 @@ struct SBProject: Equatable {
     var sortOrder: Int64
     /// 当前 Git 分支（不是仓库为 nil）。
     var branch: String?
-    /// 工作区改动数（M2 第 2 块）：只有标题栏显示的项目带，读不到或还没算出为 nil。
-    var git: SBGit? = nil
     /// 置顶（维护期 0.3.5）：「当前任务」里排在最前；旧后台没有该字段，按 false。
     var pinned = false
 }
 
-/// 工作区改动数（docs/protocol.md 第 5 节项目的 `git`）。
-struct SBGit: Equatable {
-    var dirty: Bool
-    var added: Int64
-    var deleted: Int64
-    var untracked: Int64
-}
-
-/// 对话的用量（docs/protocol.md 第 5 节「用量」）：模型与会话累计 token（M2 第 3 块）、推理强度（维护期 0.3.5）、计费方式
-/// （2026-11-01，`api` 为按量计费，看不出时为 nil）。
+/// 对话的用量（docs/protocol.md 第 5 节「用量」）：会话累计 token（M2 第 3 块）、计费方式（2026-11-01，`api` 为按量计费，
+/// 看不出时为 nil）。模型与推理强度 2026-11-21 随状态行去掉，不再读取。
 struct SBUsage: Equatable {
-    var model: String?
     var total: Int64?
-    var effort: String? = nil
     var billing: String? = nil
     /// 输入（不含缓存）、缓存读、缓存写、输出。
     var input: Int64 = 0, cacheRead: Int64 = 0, cacheWrite: Int64 = 0, output: Int64 = 0
 
-    init(model: String? = nil, total: Int64? = nil) {
-        self.model = model
+    init(total: Int64? = nil) {
         self.total = total
     }
 
     init(json d: [String: Any]) {
-        model = str(d, "model")
         total = int(d, "total_tokens")
-        effort = str(d, "effort")
         billing = str(d, "billing")
         if let t = d["tokens"] as? [String: Any] {
             input = int(t, "input") ?? 0
@@ -81,26 +66,16 @@ struct SBQuota: Equatable {
     }
 }
 
-/// 状态行的段（M4a，docs/design.md 10.4 节决策 3）：设置「状态栏」里每段一个开关，默认全开。推理强度只跟在模型后面，
-/// 模型关闭时一并不显示。`quota5h` 为 5 小时额度（2026-10-31 加），`quota` 为 7 天周额度，`quotaMonth` 为月额度、`api` 为
-/// 按量计费的标记（2026-11-01 加）。
+/// 状态行的段（M4a，docs/design.md 10.4 节决策 3）：设置「状态栏」里每段一个开关，默认全开。`quota5h` 为 5 小时额度
+/// （2026-10-31 加），`quota` 为 7 天周额度，`quotaMonth` 为月额度、`api` 为按量计费的标记（2026-11-01 加）。项目、分支与改动、
+/// 模型与推理强度 2026-11-21 按用户要求从状态行去掉（与侧栏、Agent 自己的底栏重复），开关一并去掉。
 enum StatusSegment: String, CaseIterable {
-    case project, git, total, quota5h, quota, quotaMonth, api, model, effort, cpu, mem
+    case total, quota5h, quota, quotaMonth, api, cpu, mem
 }
 
-/// 标题栏状态行（M2 第 2 块，docs/design.md 第 5 节「实现（M2 第 2 块）」）里一个终端的项目、分支、改动数与模型；
-/// CPU / 内存由工作区按 `proc.stats` 另行填入，0.3.5 起显示在标题栏右侧（`statsSpans`）。
+/// 标题栏状态行（M2 第 2 块，docs/design.md 第 5 节「实现（M2 第 2 块）」）里一个终端的用量与额度；CPU / 内存由工作区按
+/// `proc.stats` 另行传入，2026-11-21 起跟在额度后面、同一行显示。
 struct StatusInfo: Equatable {
-    var projectID: Int64
-    var project: String
-    /// 项目目录：悬停项目名时显示完整路径（2026-11-01）。
-    var projectDir = ""
-    var branch: String?
-    var git: SBGit?
-    /// 只有这一栏显示的是 AI、且绑定的对话就是这款 AI 时才有。
-    var model: String?
-    /// 推理强度（维护期 0.3.5），条件同 `model`；只在有模型时显示。
-    var effort: String? = nil
     /// 以下同上（M2 第 3 块）：这一栏显示的 AI、它的会话累计 token、它账号的 7 天、5 小时与月额度（5 小时 2026-10-31 加，
     /// 月 2026-11-01 加）。
     var tool: String? = nil
@@ -122,66 +97,45 @@ struct StatusInfo: Equatable {
     var fgEntriesAtStart: Bool? = nil
     /// 这款 AI 能否读出 token 用量（快照的 `tools`）：不能时悬停提示写明「暂不支持」（docs/ui-methodology.md 1.7 节）。
     var usageSupported = true
-    /// 同上，能否读出模型（2026-10-30 起快照的 `tools` 带 `model`）。
-    var modelSupported = true
-    /// 同上，能否读出推理强度（2026-11-01 起快照的 `tools` 带 `effort`）。
-    var effortSupported = true
 
     /// 状态行一小段文字的用途，界面按它取色（docs/design.md 第 5 节「实现（M2 第 2 块）」位置与样式，2026-10-18 改版）。
-    enum Role: Equatable { case project, muted, separator, added, deleted, value, accent, quotaLow, quotaMid, quotaHigh }
+    enum Role: Equatable { case muted, separator, value, quotaLow, quotaMid, quotaHigh }
     typealias Span = (text: String, role: Role)
 
-    /// 左侧的一段（2026-11-01 标准化）：用途、文字片段与这一段自己的悬停文字（没有为 nil，docs/ui-methodology.md 1.8 节：
+    /// 一段（2026-11-01 标准化）：用途、文字片段与这一段自己的悬停文字（没有为 nil，docs/ui-methodology.md 1.8 节：
     /// 悬停挂在那段文字上，不挂整行）。组间、组内的分隔也是一段（`gap`）。
     struct Segment {
-        enum Kind: Equatable { case project, branch, total, quota5h, quota7d, quotaMonth, api, model, gap }
+        enum Kind: Equatable { case total, quota5h, quota7d, quotaMonth, api, cpu, mem, gap }
         var kind: Kind
         var spans: [Span]
         var tooltip: String? = nil
     }
 
-    /// 放不下时的收缩（`fitted` 依次加码）：项目名、分支最多显示几个字符（nil 为不限），以及还保留哪些部分。
+    /// 当前终端的 CPU 与内存（`proc.stats`）及其悬停文字；还没采样时各为 nil。
+    struct Stats: Equatable {
+        var cpu: Double?
+        var mem: Int64?
+        var processes = 0
+    }
+
+    /// 放不下时的收缩（`fitted` 依次加码）：还保留哪些部分。
     struct Trim: Equatable {
-        var project: Int? = nil
-        var branch: Int? = nil
         var countdown = true
-        var effort = true
-        var changes = true
         var total = true
-        var model = true
     }
 
     /// 组间与组内的分隔。
     static let groupGap = "   "
     static let itemSeparator = " • "
-    /// 收缩时项目名与分支至少保留的字符数（含省略号）。
-    static let projectMin = 12
-    static let branchMin = 8
 
     static func nowMs() -> Int64 { Int64(Date().timeIntervalSince1970 * 1000) }
 
-    /// 标题栏左侧分三组：`[项目] (分支* +N -M ?K)`｜`Total: 1.2M • 5h: 5% (1h17m) • 7d: 34% (2d5h)`｜`Model: … (xhigh)`；
-    /// CPU / Mem 在右侧（`statsSpans`，维护期 0.3.5）。额度按统一规则（2026-11-01）：数据里有的
-    /// 窗口才显示，不限制的、已过重置时间的不显示；这个会话按量计费时额度位置只显示 `API`。读不到的段整段省略、整组都没有时
-    /// 整组省略，为 0 的改动项不显示，推理强度只跟在模型后面。`hidden` 为设置里关掉的段（M4a），`trim` 为放不下时的收缩。
-    func segments(now: Int64 = nowMs(), hidden: Set<StatusSegment> = [], trim: Trim = Trim()) -> [Segment] {
+    /// 标题栏左侧分两组：`Total: 1.2M • 5h: 5% (1h17m) • 7d: 34% (2d5h)`｜`CPU: 12% • Mem: 840 MB`（2026-11-21 CPU / Mem
+    /// 从右侧移来，数值与 Total 同用绿色）。额度按统一规则（2026-11-01）：数据里有的窗口才显示，不限制的、已过重置时间的不显示；
+    /// 这个会话按量计费时额度位置只显示 `API`。读不到的段整段省略、整组都没有时整组省略。`hidden` 为设置里关掉的段（M4a），
+    /// `trim` 为放不下时的收缩。
+    func segments(now: Int64 = nowMs(), hidden: Set<StatusSegment> = [], stats: Stats = Stats(), trim: Trim = Trim()) -> [Segment] {
         let name = tool.map(SidebarModel.toolName)
-        var head: [Segment] = []
-        if !hidden.contains(.project) {
-            let tip = projectDir.isEmpty ? nil : (projectDir as NSString).abbreviatingWithTildeInPath
-            head.append(Segment(kind: .project, spans: [("[\(StatusInfo.middle(project, trim.project))]", .project)], tooltip: tip))
-        }
-        if let branch, !hidden.contains(.git) {
-            let shown = StatusInfo.middle(branch, trim.branch)
-            var spans: [Span] = [((head.isEmpty ? "(" : " (") + shown + (git?.dirty == true ? "*" : ""), .muted)]
-            if let g = git, trim.changes {
-                if g.added > 0 { spans.append((" +\(g.added)", .added)) }
-                if g.deleted > 0 { spans.append((" -\(g.deleted)", .deleted)) }
-                if g.untracked > 0 { spans.append((" ?\(g.untracked)", .muted)) }
-            }
-            spans.append((")", .muted))
-            head.append(Segment(kind: .branch, spans: spans, tooltip: shown == branch ? nil : branch))
-        }
         var usageItems: [Segment] = []
         if !hidden.contains(.total), trim.total {
             if let total = usage?.total {
@@ -210,88 +164,43 @@ struct StatusInfo: Equatable {
                 usageItems.append(Segment(kind: kind, spans: spans, tooltip: quotaTip(q)))
             }
         }
-        var runItems: [Segment] = []
-        if !hidden.contains(.model), trim.model {
-            if let model {
-                var spans: [Span] = [("Model: ", .muted), (model, .accent)]
-                var tip: String?
-                if !hidden.contains(.effort) {
-                    if let effort, trim.effort { spans.append((" (\(effort))", .muted)) }
-                    if effort == nil, !effortSupported, let name { tip = String(localized: "推理强度：ScyllaUI 暂不读取 \(name) 的推理强度") }
-                }
-                runItems.append(Segment(kind: .model, spans: spans, tooltip: tip))
-            } else if !modelSupported, let name {
-                runItems.append(Segment(kind: .model, spans: [("Model: ", .muted), ("-", .muted)],
-                                        tooltip: String(localized: "模型：ScyllaUI 暂不读取 \(name) 的模型")))
-            }
-        }
-        var out = head
-        for items in [usageItems, runItems] where !items.isEmpty {
+        let statsItems = StatusInfo.statsSegments(stats, hidden: hidden)
+        var out: [Segment] = []
+        for items in [usageItems, statsItems] where !items.isEmpty {
             if !out.isEmpty { out.append(Segment(kind: .gap, spans: [(StatusInfo.groupGap, .separator)])) }
             for (i, item) in items.enumerated() {
                 if i > 0 { out.append(Segment(kind: .gap, spans: [(StatusInfo.itemSeparator, .separator)])) }
                 out.append(item)
             }
         }
-        // 额度一段也没有时，原因挂在 Total 上，没有 Total 挂在模型上，再没有挂在项目名上。
-        if !quotaShown, let note = quotaMissingNote(),
-           let i = out.firstIndex(where: { $0.kind == .total }) ?? out.firstIndex(where: { $0.kind == .model })
-               ?? out.firstIndex(where: { $0.kind == .project }) {
+        // 额度一段也没有时，原因挂在 Total 上。
+        if !quotaShown, let note = quotaMissingNote(), let i = out.firstIndex(where: { $0.kind == .total }) {
             out[i].tooltip = [out[i].tooltip, note].compactMap { $0 }.joined(separator: "\n")
         }
         return out
     }
 
-    /// 按可用宽度排版（2026-11-01 标准化，docs/design.md 第 5 节）：放得下原样；放不下先把项目名截到最少 12 个字符、再把分支
-    /// 截到最少 8 个（都截在中间，悬停看全），还放不下依次去掉重置倒计时、推理强度、改动数、Total、模型；之后有余量再把分支、
-    /// 项目名放回能放下的最长。项目名与额度百分比留到最后，仍放不下的由文字框从尾部截断。`measure` 给出一串片段显示出来的宽度。
-    func fitted(width available: CGFloat, now: Int64 = nowMs(), hidden: Set<StatusSegment> = [],
+    /// 按可用宽度排版（2026-11-01 标准化，2026-11-21 随去掉项目与模型简化）：放得下原样；放不下依次去掉重置倒计时、Total，
+    /// 仍放不下的由文字框从尾部截断。`measure` 给出一串片段显示出来的宽度。
+    func fitted(width available: CGFloat, now: Int64 = nowMs(), hidden: Set<StatusSegment> = [], stats: Stats = Stats(),
                 measure: ([Span]) -> CGFloat) -> [Segment] {
-        func build(_ t: Trim) -> [Segment] { segments(now: now, hidden: hidden, trim: t) }
-        func fits(_ t: Trim) -> Bool { measure(build(t).flatMap(\.spans)) <= available }
+        func build(_ t: Trim) -> [Segment] { segments(now: now, hidden: hidden, stats: stats, trim: t) }
         var trim = Trim()
-        if fits(trim) { return build(trim) }
-        let elastic: [(WritableKeyPath<Trim, Int?>, Int, Int)] = [
-            (\.project, StatusInfo.projectMin, project.count), (\.branch, StatusInfo.branchMin, branch?.count ?? 0),
-        ]
-        for (path, minimum, full) in elastic where full > minimum {
-            trim[keyPath: path] = minimum
-        }
-        if !fits(trim) {
-            for drop: WritableKeyPath<Trim, Bool> in [\.countdown, \.effort, \.changes, \.total, \.model] {
-                trim[keyPath: drop] = false
-                if fits(trim) { break }
-            }
-        }
-        // 有余量时放回能放下的最长：先分支、再项目名，所以放不下时还是项目名先让（2026-11-02 正式版验收发现：让出 Total、
-        // 模型后项目名仍停在最短，后面空着一段）。
-        for (path, minimum, full) in elastic.reversed() where full > minimum && fits(trim) {
-            var (lo, hi) = (minimum, full)
-            while lo < hi {
-                var t = trim
-                t[keyPath: path] = (lo + hi + 1) / 2
-                if fits(t) { lo = (lo + hi + 1) / 2 } else { hi = (lo + hi + 1) / 2 - 1 }
-            }
-            trim[keyPath: path] = lo == full ? nil : lo
+        for drop: WritableKeyPath<Trim, Bool>? in [nil, \.countdown, \.total] {
+            if let drop { trim[keyPath: drop] = false }
+            if measure(build(trim).flatMap(\.spans)) <= available { break }
         }
         return build(trim)
     }
 
     /// 全部片段（单测与无障碍用）。
-    func spans(now: Int64 = nowMs(), hidden: Set<StatusSegment> = []) -> [Span] {
-        segments(now: now, hidden: hidden).flatMap(\.spans)
+    func spans(now: Int64 = nowMs(), hidden: Set<StatusSegment> = [], stats: Stats = Stats()) -> [Span] {
+        segments(now: now, hidden: hidden, stats: stats).flatMap(\.spans)
     }
 
     /// 纯文字（单测与无障碍用）。
-    func text(now: Int64 = nowMs()) -> String {
-        spans(now: now).map(\.text).joined()
-    }
-
-    /// 截在中间、总共 `n` 个字符（含省略号）；nil 或放得下时原样。
-    static func middle(_ s: String, _ n: Int?) -> String {
-        guard let n, n >= 2, s.count > n else { return s }
-        let head = n / 2
-        return String(s.prefix(head)) + "…" + String(s.suffix(n - 1 - head))
+    func text(now: Int64 = nowMs(), stats: Stats = Stats()) -> String {
+        spans(now: now, stats: stats).map(\.text).joined()
     }
 
     /// 额度一段的悬停：行上只有距重置多久，这里写重置的具体时间；Grok 的额度按当前登录的账号查，与会话无关时也会显示，写明。
@@ -314,22 +223,23 @@ struct StatusInfo: Equatable {
     private func quotaMissingNote() -> String? {
         guard let tool else { return nil }
         switch (tool, quotaNote) {
-        case ("claude", _): return String(localized: "额度：Claude 的 5 小时与 7 天额度只在官方 statusline 里，未接入（scyllaui statusline-bridge install）；非 Pro / Max 订阅没有此项")
+        case ("claude", _): return String(localized: "额度：Claude 的 5 小时与 7 天额度只在官方 statusline 里，未接入（在「设置 › Agent」里接入额度）；非 Pro / Max 订阅没有此项")
         case ("opencode", _): return String(localized: "额度：ScyllaUI 暂不读取 OpenCode 的额度")
         case ("grok", "login_required"): return String(localized: "额度：查 Grok 的额度要先登录 grok.com（在终端运行 grok login）")
         default: return String(localized: "额度：还没读到。Agent 启动或一轮结束后读取；用第三方 API 时没有额度")
         }
     }
 
-    /// 标题栏右侧（维护期 0.3.5）：`CPU: 12% • Mem: 840 MB`，口径为当前终端的 Shell 及其所有子进程；都没有时为空。
-    static func statsSpans(cpu: Double?, mem: Int64?, hidden: Set<StatusSegment> = []) -> [Span] {
-        var items: [[Span]] = []
-        if let cpu, !hidden.contains(.cpu) { items.append([("CPU: ", .muted), (String(format: "%.0f%%", cpu), .accent)]) }
-        if let mem, !hidden.contains(.mem) { items.append([("Mem: ", .muted), (bytes(mem), .accent)]) }
-        var out: [Span] = []
-        for (i, item) in items.enumerated() {
-            if i > 0 { out.append((itemSeparator, .separator)) }
-            out += item
+    /// `CPU: 12% • Mem: 840 MB`，口径为当前终端的 Shell 及其所有子进程；数值与 Total 同用绿色（2026-11-21 用户要求统一样式），
+    /// 悬停写口径。都没有时为空。
+    static func statsSegments(_ s: Stats, hidden: Set<StatusSegment> = []) -> [Segment] {
+        let tip = statsTooltip(cpu: s.cpu, mem: s.mem, processes: s.processes)
+        var out: [Segment] = []
+        if let cpu = s.cpu, !hidden.contains(.cpu) {
+            out.append(Segment(kind: .cpu, spans: [("CPU: ", .muted), (String(format: "%.0f%%", cpu), .value)], tooltip: tip))
+        }
+        if let mem = s.mem, !hidden.contains(.mem) {
+            out.append(Segment(kind: .mem, spans: [("Mem: ", .muted), (bytes(mem), .value)], tooltip: tip))
         }
         return out
     }
@@ -411,9 +321,24 @@ struct SBHookStatus: Equatable {
     /// 这款何时读取 Hook（`live`、`session`、`process`）与引导里要写的命令（docs/design.md 4.7 节「会话是否真的在同步」）。
     var load: String? = nil
     var commands = SyncGuide.Commands()
+    /// Claude 的额度桥（statusline，2026-11-22，docs/protocol.md 第 5 节「Hook 状态」）：`on`、`off`、`replaced`（要过桥却被别的
+    /// 工具改掉了）、`broken`（带标记但被改过）；其他各款为 nil。只影响额度，不算状态同步未生效。
+    var bridge: String? = nil
 
     /// 「状态同步未生效」：除了正常与没装，都要提示。
     var broken: Bool { state != "ok" && state != "absent" }
+
+    /// 额度桥不在了：Claude 终端行显示「未同步」，点按修复。
+    var bridgeLost: Bool { bridge == "replaced" || bridge == "broken" }
+
+    /// 额度桥的说明（「未同步」悬停、设置 › Agent）。
+    var bridgeReason: String? {
+        switch bridge {
+        case "replaced": return String(localized: "额度桥（statusline）被别的工具改掉了，标题栏读不到 Claude 的 5h、7d 额度")
+        case "broken": return String(localized: "额度桥（statusline）的命令被改过，ScyllaUI 不自动处理；请检查 ~/.claude/settings.json 的 statusLine")
+        default: return nil
+        }
+    }
 
     /// 条目都在、只是要更新（重复、旧写法、自建文件不是当前版本）：后台仍归在 `missing`，界面上单独说（2026-11-16）。
     var outdatedOnly: Bool {
@@ -517,10 +442,7 @@ extension SBProject {
     init?(json d: [String: Any]) {
         guard let id = int(d, "project_id") else { return nil }
         self.init(id: id, dir: str(d, "dir") ?? "", name: str(d, "name") ?? "", sortOrder: int(d, "sort_order") ?? 0,
-                  branch: str(d, "branch"), git: (d["git"] as? [String: Any]).map {
-                      SBGit(dirty: $0["dirty"] as? Bool ?? false, added: int($0, "added") ?? 0,
-                            deleted: int($0, "deleted") ?? 0, untracked: int($0, "untracked") ?? 0)
-                  }, pinned: d["pinned"] as? Bool ?? false)
+                  branch: str(d, "branch"), pinned: d["pinned"] as? Bool ?? false)
     }
 }
 
@@ -548,7 +470,8 @@ extension SBHookStatus {
         self.init(tool: tool, state: state, problems: d["problems"] as? [String] ?? [], fixable: d["fixable"] as? Bool ?? false,
                   verifiedLatest: str(d, "verified_latest"), load: str(d, "load"),
                   commands: SyncGuide.Commands(command: str(d, "command"), newSession: str(d, "new_session"), quit: str(d, "quit"),
-                                               resumeLast: str(d, "resume_last")))
+                                               resumeLast: str(d, "resume_last")),
+                  bridge: str(d, "bridge"))
     }
 }
 
@@ -621,6 +544,8 @@ struct TaskRow: Equatable {
     var unsynced = false
     /// 终端行：配置已失效、但这个进程还在用启动时读到的条目同步（`old`），用户也没撤销过：显示可点的「下次失效」。
     var syncNext = false
+    /// 终端行：前台是 Claude、状态在同步，但额度桥被别的工具改掉了（2026-11-22）：也显示可点的「未同步」，点按重装桥。
+    var quotaLost = false
 }
 
 enum SidebarRow: Equatable {
@@ -806,7 +731,7 @@ final class SidebarModel {
         }
         unsupported = [:]
         for t in list("tools") {
-            if let tool = str(t, "tool") { unsupported[tool] = Set(["reply", "usage", "prompts", "model", "effort"].filter { t[$0] as? Bool == false }) }
+            if let tool = str(t, "tool") { unsupported[tool] = Set(["reply", "usage", "prompts"].filter { t[$0] as? Bool == false }) }
         }
         quotas = [:]
         for q in list("quotas") {
@@ -1039,7 +964,6 @@ final class SidebarModel {
     func statusInfos(_ tree: SidebarTree) -> [String: StatusInfo] {
         var out: [String: StatusInfo] = [:]
         for t in terminals.values {
-            let p = projects[t.projectID]
             var tool: String?
             var usage: SBUsage?
             if let row = tree.terminalRows[t.id], let key = row.toolKey,
@@ -1048,19 +972,14 @@ final class SidebarModel {
                 usage = usages[cid]
             }
             out[t.id] = StatusInfo(
-                projectID: t.projectID,
-                project: p.map { $0.name.isEmpty ? ($0.dir as NSString).lastPathComponent : $0.name } ?? String(localized: "项目 \(Int(t.projectID))"),
-                projectDir: p?.dir ?? "",
-                branch: p?.branch, git: p?.git, model: usage?.model, effort: usage?.effort, tool: tool, usage: usage,
+                tool: tool, usage: usage,
                 quota: tool.flatMap { quotas[$0]?["7d"] }, quota5h: tool.flatMap { quotas[$0]?["5h"] },
                 quotaMonth: tool.flatMap { quotas[$0]?["month"] }, quotaNote: tool.flatMap { quotaNotes[$0] },
                 fgAgent: t.fgKind == "agent" ? t.fgTool : nil,
                 fgStartedAt: t.fgKind == "agent" ? t.fgStartedAt : nil,
                 fgSync: t.fgKind == "agent" ? t.fgSync : nil,
                 fgEntriesAtStart: t.fgKind == "agent" ? t.fgEntriesAtStart : nil,
-                usageSupported: !(tool.flatMap { unsupported[$0]?.contains("usage") } ?? false),
-                modelSupported: !(tool.flatMap { unsupported[$0]?.contains("model") } ?? false),
-                effortSupported: !(tool.flatMap { unsupported[$0]?.contains("effort") } ?? false))
+                usageSupported: !(tool.flatMap { unsupported[$0]?.contains("usage") } ?? false))
         }
         return out
     }
@@ -1152,6 +1071,7 @@ final class SidebarModel {
             case "old": row.syncNext = !hooksRemoved.contains(tool)
             default: break
             }
+            row.quotaLost = hooks.contains { $0.tool == tool && $0.bridgeLost }
         }
         return row
     }

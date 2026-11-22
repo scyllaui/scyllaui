@@ -11,6 +11,7 @@ macro_rules! log {
 }
 
 mod approval;
+mod bridgepref;
 mod cliquota;
 mod conn;
 mod core;
@@ -156,7 +157,8 @@ fn main() {
         .approvals(approval::ApprovalWatch::new(tx.clone()).unwrap_or_else(|e| fail(&format!("创建 kqueue 失败：{e}"))))
         .prompts(prompts::PromptWorker::new(tx.clone()))
         .workspace(workspace::WorkspaceDirs::load(data_dir.join("workspace.json")))
-        .hook_times(hooktime::Timeline::load(data_dir.join("hook-timeline.json")));
+        .hook_times(hooktime::Timeline::load(data_dir.join("hook-timeline.json")))
+        .bridge_pref(bridgepref::BridgePref::load(data_dir.join("statusline-bridge.json")));
     if let Some(adopted) = adopted {
         log!("换版本接管：接到 {} 个保活终端", adopted.len());
         core.adopt(adopted);

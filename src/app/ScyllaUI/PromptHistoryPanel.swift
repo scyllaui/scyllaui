@@ -19,7 +19,8 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
         case separator(String)
     }
 
-    static let defaultWidth: CGFloat = 360
+    /// 默认宽度取最小宽度（2026-11-21 用户要求，原为 360）。
+    static let defaultWidth: CGFloat = minWidth
     static let minWidth: CGFloat = 280
     static let maxWidth: CGFloat = 520
 
@@ -76,7 +77,7 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
         subjectLabel.font = ScyllaUIStyle.detailFont
         subjectLabel.textColor = .secondaryLabelColor
         subjectLabel.setContentHuggingPriority(.required, for: .horizontal)
-        sessionLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        sessionLabel.font = ScyllaUIStyle.mono(11)
         sessionLabel.textColor = .tertiaryLabelColor
         sessionLabel.lineBreakMode = .byTruncatingMiddle
         sessionLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -89,6 +90,7 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
         close.target = self
         close.action = #selector(closeClicked(_:))
         filter.placeholderString = String(localized: "筛选")
+        filter.font = ScyllaUIStyle.detailFont
         filter.sendsSearchStringImmediately = true
         filter.target = self
         filter.action = #selector(filterChanged(_:))
@@ -416,7 +418,7 @@ private final class PromptCell: PromptRowCell {
         body.lineBreakMode = .byWordWrapping
         body.cell?.truncatesLastVisibleLine = true
         body.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        time.font = .systemFont(ofSize: 11)
+        time.font = ScyllaUIStyle.mono(11)
         time.textColor = .tertiaryLabelColor
         time.setContentCompressionResistancePriority(.required, for: .horizontal)
         time.setContentHuggingPriority(.required, for: .horizontal)
@@ -514,7 +516,7 @@ private final class PromptSeparatorCell: PromptRowCell {
     override init(frame: NSRect) {
         super.init(frame: frame)
         identifier = Self.id
-        text.font = .systemFont(ofSize: 11)
+        text.font = ScyllaUIStyle.mono(11)
         text.textColor = .tertiaryLabelColor
         text.lineBreakMode = .byTruncatingMiddle
         text.translatesAutoresizingMaskIntoConstraints = false

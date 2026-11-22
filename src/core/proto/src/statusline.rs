@@ -46,6 +46,46 @@ pub enum State {
     None,
 }
 
+/// 一份 Claude 设置（`settings.json` 的顶层对象）里桥的状态。
+pub fn state_of(data: &Value) -> Result<State, String> {
+    let Some(sl) = data.get("statusLine") else { return Ok(State::None) };
+    let command = match (sl["type"].as_str(), sl["command"].as_str()) {
+        (Some("command"), Some(c)) => c,
+        _ => return Err("statusLine 不是 {\"type\": \"command\", \"command\": …} 写法，不处理".into()),
+    };
+    Ok(match unwrap(command)? {
+        Some(orig) => State::Installed { orig },
+        None => State::Plain { command: command.to_owned() },
+    })
+}
+
+/// 在一份 Claude 设置上装桥（`install = true`）或撤桥，返回给用户看的改动说明；不需要改为 `Ok(None)`。
+/// 命令行 `scyllaui statusline-bridge` 与「安装状态同步」（`hookcfg::plan_with`）共用（2026-11-22）。
+pub fn apply(data: &mut Value, install: bool) -> Result<Option<&'static str>, String> {
+    let state = state_of(data)?;
+    Ok(Some(match (install, &state) {
+        (true, State::Installed { .. }) | (false, State::Plain { .. }) | (false, State::None) => return Ok(None),
+        (true, State::Plain { command }) => {
+            data["statusLine"]["command"] = json!(wrap(command));
+            "把 statusLine.command 包进 ScyllaUI 的 statusline 桥（原命令不变，输出照旧）"
+        }
+        (true, State::None) => {
+            data["statusLine"] = json!({"type": "command", "command": wrap(NONE)});
+            "新增 statusLine（原来没有，桥的原命令为 `:`，状态栏不显示内容）"
+        }
+        (false, State::Installed { orig }) => {
+            let only_ours = data["statusLine"].as_object().is_some_and(|o| o.keys().all(|k| k == "type" || k == "command"));
+            if orig == NONE && only_ours {
+                data.as_object_mut().map(|o| o.shift_remove("statusLine"));
+                "删除 statusLine（安装前没有）"
+            } else {
+                data["statusLine"]["command"] = json!(orig);
+                "statusLine.command 还原为原命令"
+            }
+        }
+    }))
+}
+
 pub struct Bridge {
     pub path: PathBuf,
     pub text: Option<String>,
@@ -74,50 +114,21 @@ impl Bridge {
     }
 
     pub fn state(&self) -> Result<State, String> {
-        let data = self.data()?;
-        let Some(sl) = data.get("statusLine") else { return Ok(State::None) };
-        let command = match (sl["type"].as_str(), sl["command"].as_str()) {
-            (Some("command"), Some(c)) => c,
-            _ => return Err("statusLine 不是 {\"type\": \"command\", \"command\": …} 写法，不处理".into()),
-        };
-        Ok(match unwrap(command)? {
-            Some(orig) => State::Installed { orig },
-            None => State::Plain { command: command.to_owned() },
-        })
+        state_of(&self.data()?)
     }
 
     /// 安装（`install = true`）或撤销的改动；不需要改为 `Ok(None)`。`statusLine` 的其他字段不动。
     pub fn plan(&self, install: bool) -> Result<Option<Plan>, String> {
         let mut data = self.data()?;
-        let state = self.state()?;
-        let action = match (install, &state) {
-            (true, State::Installed { .. }) | (false, State::Plain { .. }) | (false, State::None) => return Ok(None),
-            (true, State::Plain { command }) => {
-                data["statusLine"]["command"] = json!(wrap(command));
-                "把 statusLine.command 包进 ScyllaUI 的 statusline 桥（原命令不变，输出照旧）"
-            }
-            (true, State::None) => {
-                data["statusLine"] = json!({"type": "command", "command": wrap(NONE)});
-                "新增 statusLine（原来没有，桥的原命令为 `:`，状态栏不显示内容）"
-            }
-            (false, State::Installed { orig }) => {
-                let only_ours = data["statusLine"].as_object().is_some_and(|o| o.keys().all(|k| k == "type" || k == "command"));
-                if orig == NONE && only_ours {
-                    data.as_object_mut().map(|o| o.shift_remove("statusLine"));
-                    "删除 statusLine（安装前没有）"
-                } else {
-                    data["statusLine"]["command"] = json!(orig);
-                    "statusLine.command 还原为原命令"
-                }
-            }
-        };
+        let Some(action) = apply(&mut data, install)? else { return Ok(None) };
         let eol = if self.text.as_deref().is_some_and(|t| !t.ends_with('\n')) { "" } else { "\n" };
         let new = serde_json::to_string_pretty(&data).map_err(|e| e.to_string())? + eol;
         Ok(Some(Plan {
             tool: Tool::Claude,
             files: vec![FileChange { path: self.path.clone(), old: self.text.clone(), new: Some(new), backup: true, remove_empty_parent: false }],
             actions: vec![action.to_owned()],
-            steps: vec![],
+            // App 按界面语言写说明（与「安装状态同步」里桥的那一条同一种，2026-11-22）。
+            steps: vec![json!({"kind": if install { "statusline_install" } else { "statusline_uninstall" }})],
             other_hooks_enabled: 0,
             trust_needed: 0,
         }))

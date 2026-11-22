@@ -15,24 +15,17 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
     /// 标题栏状态行（M2 第 2 块，docs/design.md 第 5 节「实现（M2 第 2 块）」）。
     private let statusField = NSTextField(labelWithString: "")
     private let statusHolder = TitlebarAlignedView(frame: NSRect(x: 0, y: 0, width: 10, height: 22))
-    /// 标题栏右侧的 CPU / Mem（维护期 0.3.5，docs/design.md 第 5 节「实现（维护期 0.3.5）」）。
-    private let statsField = NSTextField(labelWithString: "")
     /// 状态行各段的悬停区域与文字（2026-11-01）：区域没变就只改文字，不重挂（2026-11-02，见 `TooltipText`）。
     private var statusTips: [(rect: NSRect, owner: TooltipText)] = []
-    /// 右侧 CPU / Mem 的悬停文字：区域挂上后只改文字（2026-11-02）。
-    private let statsTip = TooltipText("")
-    /// 右侧 CPU / Mem 上次挂悬停时在窗口坐标里的位置（2026-11-15）。右侧附件靠右对齐，文字变宽变窄时整组左右移动，
-    /// 文字框自身的 frame 却没变；系统记下的悬停区域停在旧位置，悬停不出提示，直到窗口改尺寸才重算（测试版实测复现）。
-    /// 所以位置一变就重挂；位置不变不重挂，正在显示的提示不闪。
-    private var statsTipRect: NSRect?
-    private let statsHolder = TitlebarAlignedView(frame: NSRect(x: 0, y: 0, width: 1, height: 22))
+    /// 标题栏右侧的功能按钮组（2026-11-21 用户要求）：以后的功能都往这一排加，现在只有历史提示词。
+    private let toolsHolder = TitlebarAlignedView(frame: NSRect(x: 0, y: 0, width: 1, height: 22))
+    private lazy var historyButton = Self.titlebarButton(symbol: "clock.arrow.circlepath", name: String(localized: "历史提示词"),
+                                                         shortcut: "⌘Y", target: self, action: #selector(togglePromptHistory(_:)))
     private var statusInfos: [String: StatusInfo] = [:]
     /// 当前终端最近一次 `proc.stats` 的结果。
     private var stats: (terminal: String, cpu: Double?, mem: Int64?, processes: Int)?
     /// 只在窗口可见且右侧有终端时运行的 2 秒计时器（docs/design.md 4.5 节的唯一例外）。
     private var statusTimer: Timer?
-    /// 已报给后台的 `status.watch`（nil 表示还没报过，重连后清空重报）。
-    private var reportedWatch: Int64??
     private let sidebar: SidebarController
     private let feed: SidebarFeed
     /// 终端区（右侧窄标题栏之下）：只放当前终端或空态。
@@ -127,11 +120,6 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
             case "notify.withdraw": return notifier.withdraw(msg["ids"] as? [String] ?? [])
             case "snapshot":
                 notifier.clearAll()
-                // 后台可能是重启后的新进程：重报标题栏显示的项目。
-                DispatchQueue.main.async {
-                    self?.reportedWatch = nil
-                    self?.updateStatusSampling()
-                }
             default: break
             }
             // 设置的 Agent 页随 Hook 状态刷新（M4a，docs/design.md 10.4 节决策 6）。
@@ -201,6 +189,9 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
                 self.guideReopen(terminal: id, tool: tool, sync: sync)
             } else if tool == "codex", self.hookStatuses.first(where: { $0.tool == tool })?.state == "untrusted" {
                 self.openCodexHooks(preferred: id, afterRepair: false)
+            } else if sync == nil, let h = self.hookStatuses.first(where: { $0.tool == tool }), h.state == "ok", h.bridgeLost {
+                // 状态在同步、只是额度桥被改掉了（2026-11-22）：只重装桥；被改过的（broken）只说明，不自动处理。
+                if h.bridge == "replaced" { HookRepairFlow.runBridge(install: true, core: self.core) } else { self.explainBridge(h) }
             } else {
                 HookRepairFlow.run(.repair, tools: [tool], core: self.core, stillSynced: sync == "old")
             }
@@ -678,11 +669,9 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
 
     // MARK: 铺满屏幕时的三栏比例（2026-11-06 用户要求）
 
-    /// 照 Claude 桌面版铺满时的三栏（2026-11-06 用户在 1512 pt 与 1280 pt 两种屏幕上对照截图）：左栏基本固定在 300 左右，
-    /// 右栏占「窗口宽度减去左栏」的约 34.2%（1512 宽时约 414，1280 宽时约 335）。侧栏取 300，历史提示词栏按这个比例，
-    /// 仍限在各自的最小、最大宽度之间。
+    /// 照 Claude 桌面版铺满时的三栏（2026-11-06 用户在 1512 pt 与 1280 pt 两种屏幕上对照截图）：左栏基本固定在 300 左右。
+    /// 历史提示词栏原按「窗口宽度减去左栏」的 34.2% 放宽，2026-11-21 用户嫌占比大，改为铺满时也取默认宽度（即最小宽度）。
     static let filledSidebarWidth: CGFloat = 300
-    static let filledPromptShare: CGFloat = 0.342
 
     /// 上一次缩放时窗口是否铺满；nil 为还没记过（启动时恢复的窗口大小不算用户的操作，只记下状态）。
     private var wasFilled: Bool?
@@ -715,9 +704,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             let side = self.sidebarCollapsed ? 0 : min(max(Self.filledSidebarWidth, ScyllaUIStyle.sidebarMinWidth), ScyllaUIStyle.sidebarMaxWidth)
-            let rest = width - side - (self.sidebarCollapsed ? 0 : self.split.dividerThickness)
-            let prompt = min(max((rest * Self.filledPromptShare).rounded(), PromptHistoryPanel.minWidth), PromptHistoryPanel.maxWidth)
-            self.resizePromptPanel(prompt, done: true)
+            self.resizePromptPanel(PromptHistoryPanel.defaultWidth, done: true)
             if !self.sidebarCollapsed { self.setSidebarWidth(side, save: true) }
             scyllauiLog.notice("filled layout width=\(Int(width)) sidebar=\(Int(self.sideView.frame.width)) prompt=\(self.promptWidth.constant)")
         }
@@ -761,8 +748,8 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
 
     // MARK: 标题栏状态行（M2 第 2 块；2026-10-18 改版，docs/design.md 第 5 节「实现（M2 第 2 块）」位置与样式）
 
-    private static let statusFont = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
-    private static let statusProjectFont = NSFont.monospacedSystemFont(ofSize: 13, weight: .semibold)
+    /// 与侧栏、终端同一字体（2026-11-21）。
+    private static let statusFont = ScyllaUIStyle.mono(13)
     /// 红黄绿三个按钮加侧栏开关约占的宽度，以及右侧留白：状态行最多用窗口宽度减去这两项。
     private static let statusReservedWidth: CGFloat = 140
     /// 文字框里文字左边的留白（标签的单元格自带），各段悬停区域从这里起算。
@@ -771,22 +758,45 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
     /// 紧跟侧栏开关、靠左的状态行，与靠右的 CPU / Mem（0.3.5）；居中的窗口标题隐藏（标题照常写入，供「窗口」菜单与调度中心使用）。
     private func addStatusLine() {
         window.titleVisibility = .hidden
-        for (field, holder, side) in [(statusField, statusHolder, NSLayoutConstraint.Attribute.leading),
-                                      (statsField, statsHolder, .trailing)] {
-            field.font = Self.statusFont
-            field.lineBreakMode = .byTruncatingTail
-            field.cell?.usesSingleLineMode = true
-            field.alignment = side == .leading ? .left : .right
-            field.frame = NSRect(x: 8, y: 0, width: 10, height: ceil(field.fittingSize.height))
-            holder.addSubview(field)
+        statusField.font = Self.statusFont
+        statusField.lineBreakMode = .byTruncatingTail
+        statusField.cell?.usesSingleLineMode = true
+        statusField.frame = NSRect(x: 8, y: 0, width: 10, height: ceil(statusField.fittingSize.height))
+        statusHolder.addSubview(statusField)
+        // 右侧按钮组：按钮从右往左排，右边留 8 点。
+        var x: CGFloat = 0
+        for b in [historyButton] {
+            b.frame.origin.x = x
+            toolsHolder.addSubview(b)
+            x += b.frame.width + 4
+        }
+        toolsHolder.frame.size.width = x - 4 + 8
+        for (holder, side) in [(statusHolder, NSLayoutConstraint.Attribute.leading), (toolsHolder, .trailing)] {
             let accessory = NSTitlebarAccessoryViewController()
             accessory.view = holder
             accessory.layoutAttribute = side
             window.addTitlebarAccessoryViewController(accessory)
         }
+        toolsHolder.align()
         NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification, object: window, queue: .main) { [weak self] _ in
             self?.refreshStatusLine()
         }
+    }
+
+    /// 标题栏右侧的一个功能按钮（2026-11-21）：只有图标，鼠标移上去才显示底框；打开对应功能时保持按下（系统的灰底白图标，
+    /// 这种按钮样式不吃 contentTintColor，不另画蓝色）。
+    /// 悬停写功能名与快捷键（图标上看不到名字，docs/ui-methodology.md 1.8 节）。
+    private static func titlebarButton(symbol: String, name: String, shortcut: String, target: AnyObject, action: Selector) -> NSButton {
+        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: name)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .regular))
+        let b = NSButton(image: image ?? NSImage(), target: target, action: action)
+        b.bezelStyle = .accessoryBarAction
+        b.setButtonType(.pushOnPushOff)
+        b.showsBorderOnlyWhileMouseInside = true
+        b.toolTip = "\(name)  \(shortcut)"
+        b.setAccessibilityLabel(name)
+        b.frame = NSRect(x: 0, y: 0, width: 28, height: 24)
+        return b
     }
 
     /// 按段的用途取色：颜色都是随深浅主题变化的动态色，切换主题时不必重建。
@@ -799,28 +809,17 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
             switch span.role {
             case .muted: color = .secondaryLabelColor
             case .separator: color = .tertiaryLabelColor
-            // 项目名与 Total 的值和侧栏项目名同用 Ready 绿（2026-11-05 用户要求），不新增颜色。
-            case .project, .value, .added, .quotaLow: color = ScyllaUIStyle.ready
+            // Total、CPU 与内存的值和侧栏项目名同用 Ready 绿（2026-11-05、2026-11-21 用户要求），不新增颜色。
+            case .value, .quotaLow: color = ScyllaUIStyle.ready
             case .quotaMid: color = ScyllaUIStyle.waiting
-            case .deleted, .quotaHigh: color = ScyllaUIStyle.error
-            case .accent: color = ScyllaUIStyle.accent
+            case .quotaHigh: color = ScyllaUIStyle.error
             }
             out.append(NSAttributedString(string: span.text, attributes: [
-                .font: span.role == .project ? statusProjectFont : statusFont,
+                .font: statusFont,
                 .foregroundColor: color, .paragraphStyle: paragraph,
             ]))
         }
         return out
-    }
-
-    /// 右侧 CPU / Mem 的悬停区域跟着它在窗口里的实际位置重挂（见 `statsTipRect`）。
-    private func syncStatsTip() {
-        guard statsField.window != nil else { return }
-        let rect = statsField.convert(statsField.bounds, to: nil)
-        guard rect != statsTipRect else { return }
-        statsTipRect = rect
-        statsField.removeAllToolTips()
-        if !statsField.bounds.isEmpty { statsField.addToolTip(statsField.bounds, owner: statsTip, userData: nil) }
     }
 
     private var windowVisible: Bool { window.occlusionState.contains(.visible) && !window.isMiniaturized }
@@ -832,19 +831,11 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         let info = currentID.flatMap { statusInfos[$0] }
         let s = stats.flatMap { $0.terminal == currentID ? $0 : nil }
         let hidden = Prefs.statusHidden
-        let right = StatusInfo.statsSpans(cpu: s?.cpu, mem: s?.mem, hidden: hidden)
-        statsField.attributedStringValue = Self.statusText(right)
-        statsTip.text = StatusInfo.statsTooltip(cpu: s?.cpu, mem: s?.mem, processes: s?.processes ?? 0) ?? ""
-        let rightWidth = right.isEmpty ? 0 : ceil(statsField.fittingSize.width) + 16
-        statsHolder.frame.size.width = max(1, rightWidth)
-        statsField.frame.size.width = max(0, rightWidth - 16)
-        statsHolder.align()
-        // 标题栏附件的位置在这一轮布局之后才定下来，下一轮再核对悬停区域。
-        DispatchQueue.main.async { [weak self] in self?.syncStatsTip() }
-        let available = max(120, window.frame.width - Self.statusReservedWidth - rightWidth)
-        let segments = info?.fitted(width: available - 16 - Self.statusTextInset * 2, hidden: hidden) {
+        let st = StatusInfo.Stats(cpu: s?.cpu, mem: s?.mem, processes: s?.processes ?? 0)
+        let available = max(120, window.frame.width - Self.statusReservedWidth - toolsHolder.frame.width)
+        let segments = (info ?? StatusInfo()).fitted(width: available - 16 - Self.statusTextInset * 2, hidden: hidden, stats: st) {
             Self.statusText($0).size().width
-        } ?? []
+        }
         statusField.attributedStringValue = Self.statusText(segments.flatMap(\.spans))
         let width = min(ceil(statusField.fittingSize.width) + 16, available)
         statusHolder.frame.size.width = segments.isEmpty ? 1 : width
@@ -867,21 +858,14 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         }
     }
 
-    /// 窗口可见且右侧有终端时：向后台报标题栏显示的项目、运行 2 秒计时器；否则报 null 并停掉计时器（后台没有定时器）。
-    /// 设置里关掉的段不采样（M4a）：分支与改动关掉时报 null（不读改动数）；CPU 与内存都关掉时计时器只刷新额度的倒计时，
-    /// 不发 `proc.stats`；5 小时、7 天与月额度也都关掉时不开计时器。
+    /// 窗口可见且右侧有终端时运行 2 秒计时器，否则停掉（后台没有定时器）。设置里关掉的段不采样（M4a）：CPU 与内存都关掉时
+    /// 计时器只刷新额度的倒计时，不发 `proc.stats`；5 小时、7 天与月额度也都关掉时不开计时器。2026-11-21 状态行去掉分支与改动后
+    /// 不再向后台报 `status.watch`。
     private func updateStatusSampling(sampleNow: Bool = false) {
         let hidden = Prefs.statusHidden
         let ticking = !hidden.contains(.cpu) || !hidden.contains(.mem) || !hidden.contains(.quota) || !hidden.contains(.quota5h)
             || !hidden.contains(.quotaMonth)
         let active = windowVisible && currentID != nil
-        let watch = active && !hidden.contains(.git) ? currentID.flatMap { statusInfos[$0]?.projectID } : nil
-        // 切换终端时即使仍是同一个项目也重报一次：后台据此重算改动数（ScyllaUI 之外的改动靠这个时机补上）。
-        if reportedWatch != .some(watch) || (sampleNow && watch != nil) {
-            reportedWatch = .some(watch)
-            core.request(["type": "status.watch", "project_id": watch.map { $0 as Any } ?? NSNull()]) { _ in }
-            scyllauiLog.notice("status_watch project=\(watch.map(String.init) ?? "null", privacy: .public)")
-        }
         if active && ticking {
             if statusTimer == nil {
                 let t = Timer(timeInterval: 2, repeats: true) { [weak self] _ in self?.sampleStats() }
@@ -1527,12 +1511,21 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         }
     }
 
+    /// 额度桥的命令被改过、不能自动处理时的说明（2026-11-22）。
+    private func explainBridge(_ h: SBHookStatus) {
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Claude 的额度读不到")
+        alert.informativeText = h.bridgeReason ?? ""
+        alert.beginSheetModal(for: window)
+    }
+
     // MARK: 历史提示词（M4a 追加块 9，docs/design.md 10.5 节决策 10）
 
     /// 开关历史提示词。打开时窗口不够宽先加宽，终端区保持至少 40 列。
     @objc func togglePromptHistory(_ sender: Any?) {
         promptPanelShown.toggle()
         promptPanel.isHidden = !promptPanelShown
+        historyButton.state = promptPanelShown ? .on : .off
         containerToEdge?.isActive = !promptPanelShown
         containerToPanel?.isActive = promptPanelShown
         updateMinSize()
