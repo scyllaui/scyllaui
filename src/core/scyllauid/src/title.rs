@@ -13,7 +13,8 @@ use scyllaui_proto::adapters::title::{
 use scyllaui_proto::adapters::reply::{last_reply, opencode_reply, opencode_v2_reply, ReplySource};
 use scyllaui_proto::adapters::usage::{
     antigravity_quotas, antigravity_usage_line, claude_usage_line, codex_api, codex_last_usage, copilot_byok, copilot_quota_line, copilot_usage_line,
-    ANTIGRAVITY_USAGE_ARGS, grok_summary_effort, grok_summary_model, grok_usage, kimi_api, kimi_usage_line, last_effort, last_model,
+    ANTIGRAVITY_USAGE_ARGS, codex_last_context, grok_context, kimi_model_limit, kimi_wire_context, opencode_message_context,
+    opencode_model_limits, Context, grok_summary_effort, grok_summary_model, grok_usage, kimi_api, kimi_usage_line, last_effort, last_model,
     opencode_step_tokens, EffortSource, ModelSource, Quota, Tokens, UsageSource,
 };
 use scyllaui_proto::adapters::{adapter, valid_session_id, TitleSource};
@@ -23,7 +24,7 @@ use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 
 /// 一次读标题与最后一条回复的请求。
 pub struct TitleJob {
@@ -54,6 +55,9 @@ pub struct Found {
     pub effort: Option<String>,
     /// 是否按量计费（2026-11-01 标题栏额度统一规则）：Codex、Kimi、Copilot、OpenCode 的记录里看得出时为 Some。
     pub api: Option<bool>,
+    /// 上下文占用（右侧栏「状态」，2026-11-23）：Codex 读 rollout 末尾最后一条 `token_count`，Grok 读 `usage.json` 与 `signals.json`；
+    /// Claude 的来自 statusline 桥（核心直接处理），其余各款不读。
+    pub context: Option<Context>,
 }
 
 /// 读最后一条回复时只看会话记录末尾这么多字节（记录只追加，最新一轮在末尾）。
@@ -125,7 +129,8 @@ impl TitleWorker {
                         .chain(got.effort.map(|effort| Cmd::EffortRead { conversation_id: id, effort }))
                         .chain(got.tokens.map(|tokens| Cmd::TokensRead { conversation_id: id, tokens }))
                         .chain((!got.quotas.is_empty()).then(|| Cmd::QuotaSnapshot { tool, quotas: got.quotas, source: "log" }))
-                        .chain(got.api.map(|api| Cmd::BillingRead { conversation_id: id, api }));
+                        .chain(got.api.map(|api| Cmd::BillingRead { conversation_id: id, api }))
+                        .chain(got.context.map(|context| Cmd::ContextRead { conversation_id: id, context }));
                     for cmd in cmds {
                         if core.send(cmd).is_err() {
                             return;
@@ -177,6 +182,8 @@ pub struct Reader {
     quota_at: HashMap<Tool, Instant>,
     /// 已记过日志的认不出的 Codex 窗口时长（分钟），同一个值只记一次。
     odd_windows: HashSet<i64>,
+    /// OpenCode 模型资料里各模型的上下文上限（「服务商/模型」）与读时文件的修改时间：文件约 6 MB，变了才重读。
+    opencode_limits: Option<(SystemTime, HashMap<String, u64>)>,
 }
 
 /// 另起命令查的额度每款最多这么久查一次：每次另起 CLI 进程、由它联网，额度变化慢。
@@ -194,6 +201,7 @@ impl Reader {
             quota_tx: None,
             quota_at: HashMap::new(),
             odd_windows: HashSet::new(),
+            opencode_limits: None,
         }
     }
 
@@ -202,7 +210,38 @@ impl Reader {
         let model = self.model(job);
         // Kimi 是否按量计费看会话的模型别名（服务商/模型）。
         let api = api.or_else(|| model.as_deref().filter(|_| job.usage == UsageSource::KimiWire).map(kimi_api));
-        Found { title: self.title(job), reply: self.reply(job), model, tokens, quotas, effort: self.effort(job), api }
+        Found { title: self.title(job), reply: self.reply(job), model, tokens, quotas, effort: self.effort(job), api, context: self.context(job) }
+    }
+
+    fn context(&mut self, job: &TitleJob) -> Option<Context> {
+        match job.usage {
+            UsageSource::CodexRollout => codex_last_context(&tail(Path::new(job.transcript_path.as_deref()?), REPLY_TAIL)?),
+            UsageSource::GrokUsageJson => {
+                grok_context(&self.grok_file(&job.native_id, "signals.json")?, self.grok_file(&job.native_id, "usage.json").as_ref())
+            }
+            UsageSource::KimiWire => {
+                let (used, alias) = kimi_wire_context(&tail(&self.kimi_wire(&job.native_id)?, REPLY_TAIL)?)?;
+                let config = fs::read_to_string(self.home.join(".kimi-code/config.toml")).ok()?;
+                Context::new(used, kimi_model_limit(&config, &alias)?)
+            }
+            UsageSource::OpenCodeDb => {
+                let (used, provider, model) = self.opencode(&job.native_id, "上下文", opencode_last_context)?;
+                Context::new(used, self.opencode_limit(&provider, &model)?)
+            }
+            _ => None,
+        }
+    }
+
+    /// OpenCode 模型资料（`~/.cache/opencode/models.json`，OpenCode 自己从 models.dev 拉下来的）里这个模型的上下文上限；文件不在、
+    /// 认不出或没有这个模型为 None（只在 OpenCode 配置里自定义的模型读不到上限，不显示）。
+    fn opencode_limit(&mut self, provider: &str, model: &str) -> Option<u64> {
+        let path = self.home.join(".cache/opencode/models.json");
+        let mtime = fs::metadata(&path).and_then(|m| m.modified()).ok()?;
+        if self.opencode_limits.as_ref().map(|(t, _)| *t) != Some(mtime) {
+            let v = serde_json::from_slice::<serde_json::Value>(&fs::read(&path).ok()?).ok()?;
+            self.opencode_limits = Some((mtime, opencode_model_limits(&v)));
+        }
+        self.opencode_limits.as_ref()?.1.get(&format!("{provider}/{model}")).copied()
     }
 
     /// 推理强度（维护期 0.3.5）：Claude、Codex、Kimi 读会话记录末尾一段，Grok 读 `summary.json`。
@@ -535,6 +574,30 @@ fn first_line(path: &Path) -> Option<serde_json::Value> {
     serde_json::from_str(&line).ok()
 }
 
+/// OpenCode 这个会话的上下文已用与模型（同 OpenCode 自己的算法，见 `opencode_message_context`）：OpenCode 2 从最新往回找，
+/// 遇到已完成的压缩就停（压缩后还没有回答时不显示）；OpenCode 1 取最近一条带 `tokens` 的助手消息。
+fn opencode_last_context(conn: &rusqlite::Connection, session: &str) -> rusqlite::Result<Option<(u64, String, String)>> {
+    let v2 = crate::prompts::opencode_v2(conn, session)?;
+    let sql = if v2 {
+        "SELECT type, data FROM session_message WHERE session_id = ?1 AND type IN ('assistant', 'compaction') ORDER BY seq DESC LIMIT 50"
+    } else {
+        "SELECT 'assistant', data FROM message WHERE session_id = ?1 AND json_extract(data, '$.role') = 'assistant' ORDER BY time_created DESC, id DESC LIMIT 50"
+    };
+    let mut q = conn.prepare(sql)?;
+    for row in q.query_map([session], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))? {
+        let (kind, data) = row?;
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(&data) else { continue };
+        if kind == "compaction" {
+            if v["status"] == "completed" {
+                return Ok(None);
+            }
+        } else if v["tokens"].is_object() {
+            return Ok(opencode_message_context(&v));
+        }
+    }
+    Ok(None)
+}
+
 /// OpenCode 这个会话的当前模型：OpenCode 2 为 `session_v2.model`（`{"id", "providerID"}`）的 `id`；OpenCode 1 为最近一条
 /// 助手消息的 `modelID`。
 fn opencode_model(conn: &rusqlite::Connection, session: &str) -> rusqlite::Result<Option<String>> {
@@ -776,6 +839,16 @@ mod tests {
         m.model = ModelSource::KimiWire;
         m.native_id = "session_k".into();
         assert_eq!(r.model(&m).as_deref(), Some("kimi-code/kimi-for-coding"));
+        // 上下文（右侧栏，2026-11-23）：Kimi 的已用读 wire，上限读它的 config.toml；没测过或没有这个模型不给。
+        let mut k = job(TitleSource::HookField, "session_k", None);
+        k.usage = UsageSource::KimiWire;
+        let mut rw = Reader::new(home.clone(), home.join(".codex"));
+        assert_eq!(rw.context(&k), None, "还没测过");
+        fs::write(d.join("agents/main/wire.jsonl"),
+                  "{\"type\":\"usage.record\",\"model\":\"kimi-code/kimi-for-coding\"}\n{\"type\":\"token_counting.measured\",\"tokens\":23506}\n").unwrap();
+        assert_eq!(rw.context(&k), None, "没有 config.toml");
+        fs::write(home.join(".kimi-code/config.toml"), "[models.\"kimi-code/kimi-for-coding\"]\nmax_context_size = 1048576\n").unwrap();
+        assert_eq!(rw.context(&k), Some(Context { used: 23_506, limit: 1_048_576 }));
         let g = home.join(".grok/sessions/%2Fw/g1");
         fs::create_dir_all(&g).unwrap();
         fs::write(g.join("summary.json"), r#"{"current_model_id":"grok-4.7"}"#).unwrap();
@@ -1104,7 +1177,7 @@ for line in sys.stdin:
              INSERT INTO session_message VALUES
                 ('m1','ses_2','user',4,100,100,'{"text":"用 bash 执行 pwd"}'),
                 ('m2','ses_2','assistant',7,200,200,'{"content":[{"type":"text","text":"当前目录是 /w"}]}'),
-                ('m3','ses_2','assistant',14,300,300,'{"content":[{"type":"tool","name":"shell"}]}'),
+                ('m3','ses_2','assistant',14,300,300,'{"content":[{"type":"tool","name":"shell"}],"model":{"id":"deepseek-v4.1-flash-free","providerID":"opencode"},"tokens":{"input":100,"output":20,"reasoning":5,"cache":{"read":800,"write":75}}}'),
                 ('m4','ses_2','idle',19,400,400,'{"outcome":"succeeded"}');
              INSERT INTO message VALUES ('o1','ses_1',100,100,'{"role":"assistant","modelID":"old-model"}');
              INSERT INTO part VALUES ('p1','o1','ses_1',100,100,'{"type":"text","text":"旧版回复"}');"#,
@@ -1120,6 +1193,16 @@ for line in sys.stdin:
         assert_eq!(got.tokens, Some(Tokens { input: 13300, cache_read: 26880, cache_write: 0, output: 137, total: 40317 }));
         let old = r.read(&job("ses_1"));
         assert_eq!((old.reply.as_deref(), old.model.as_deref()), (Some("旧版回复"), Some("old-model")), "不在新表里：查旧表");
+        // 上下文（右侧栏，2026-11-23）：最后一条带 tokens 的助手消息，上限取模型资料；资料里没有这个模型不给，压缩完成后不给。
+        assert_eq!(got.context, None, "还没有模型资料");
+        fs::create_dir_all(home.join(".cache/opencode")).unwrap();
+        fs::write(home.join(".cache/opencode/models.json"),
+                  r#"{"opencode":{"models":{"deepseek-v4.1-flash-free":{"limit":{"context":200000,"output":32000}}}}}"#).unwrap();
+        assert_eq!(r.read(&job("ses_2")).context, Some(Context { used: 1_000, limit: 200_000 }));
+        let c = rusqlite::Connection::open(&db).unwrap();
+        c.execute_batch(r#"INSERT INTO session_message VALUES ('m5','ses_2','compaction',20,500,500,'{"status":"completed"}');"#).unwrap();
+        drop(c);
+        assert_eq!(r.read(&job("ses_2")).context, None, "压缩后还没有回答");
         let _ = fs::remove_dir_all(&home);
     }
 }

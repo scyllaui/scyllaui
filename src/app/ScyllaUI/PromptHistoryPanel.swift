@@ -2,7 +2,8 @@
 // 里用户发过的提示词。内容由后台按需从 CLI 自己的会话记录读出（`prompts.list`），不落库，显示前已脱敏。
 // 2026-10-25 按用户意见改版：栏头为绿色「历史」符号与标题，第 2 行为工具全名 · 当前会话或已结束 · 完整会话 ID；
 // 最新在上，编号 1、2、3…（最早为 1），左侧细连线同侧栏；每条默认收起（最多 2 行），点箭头展开全文；右侧拷贝常显与缩略时间，
-// 「填入当前终端」在悬停或选中时出现；双击填入、Cmd+C 拷贝；经「最近任务」恢复过的按会话分段。左边缘可拖动调宽（同侧栏策略）。
+// 「填入当前终端」在悬停或选中时出现；双击填入、Cmd+C 拷贝；经「最近任务」恢复过的按会话分段。2026-11-23 起是右侧栏的一栏，
+// 底色、分隔线与左边缘拖宽由 RightPanelHost 负责（docs/design.md 5.12 节）。
 
 import AppKit
 
@@ -19,21 +20,9 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
         case separator(String)
     }
 
-    /// 默认宽度取最小宽度（2026-11-21 用户要求，原为 360）。
-    static let defaultWidth: CGFloat = minWidth
-    static let minWidth: CGFloat = 280
-    static let maxWidth: CGFloat = 520
-
-    /// 底色同侧栏（工作区按主题设置），左侧画一条分隔线。
-    var color: NSColor = .windowBackgroundColor {
-        didSet { needsDisplay = true }
-    }
     var onClose: (() -> Void)?
     var onCopy: ((String) -> Void)?
     var onInsert: ((String) -> Void)?
-    /// 拖动左边缘：新宽度与是否松手；双击左边缘：回到默认宽度。宽度的取值范围由控制器决定。
-    var onResize: ((CGFloat, Bool) -> Void)?
-    var onResetWidth: (() -> Void)?
     /// 栏头第 2 行：工具键（`claude` 等）与是否已结束；没有对话时 `tool` 为 nil。会话 ID 取自应答。
     var subjectTool: String? {
         didSet { updateSubject() }
@@ -52,9 +41,6 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
     private let note = NSTextField(wrappingLabelWithString: "")
     private let table = NSTableView()
     private let scroll = NSScrollView()
-    private let edge = EdgeHandle()
-    /// 左边缘悬停或拖动时的蓝线（2026-11-06，DividerHighlight）。
-    private let edgeHighlight = DividerHighlight()
     private var items: [Item] = []
     private var segments: [Int64] = []
     private var sessionIDs: [Int64: String] = [:]
@@ -117,14 +103,7 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
-        edge.onDrag = { [weak self] dx, done in
-            guard let self else { return }
-            self.onResize?(self.bounds.width - dx, done)
-        }
-        edge.onDoubleClick = { [weak self] in self?.onResetWidth?() }
-        edge.onHover = { [weak self] on in self?.edgeHighlight.setHovering(on) }
-        edge.onDragging = { [weak self] on in self?.edgeHighlight.setDragging(on) }
-        for v in [icon, title, count, close, subjectLabel, sessionLabel, filter, note, scroll, edge, edgeHighlight] as [NSView] {
+        for v in [icon, title, count, close, subjectLabel, sessionLabel, filter, note, scroll] as [NSView] {
             v.translatesAutoresizingMaskIntoConstraints = false
             addSubview(v)
         }
@@ -154,26 +133,10 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
             note.topAnchor.constraint(equalTo: filter.bottomAnchor, constant: 24),
             note.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             note.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            edge.leadingAnchor.constraint(equalTo: leadingAnchor),
-            edge.topAnchor.constraint(equalTo: topAnchor),
-            edge.bottomAnchor.constraint(equalTo: bottomAnchor),
-            edge.widthAnchor.constraint(equalToConstant: 5),
-            edgeHighlight.leadingAnchor.constraint(equalTo: leadingAnchor),
-            edgeHighlight.topAnchor.constraint(equalTo: topAnchor),
-            edgeHighlight.bottomAnchor.constraint(equalTo: bottomAnchor),
-            edgeHighlight.widthAnchor.constraint(equalToConstant: DividerHighlight.width),
         ])
     }
 
     required init?(coder: NSCoder) { fatalError() }
-
-    override func draw(_ dirtyRect: NSRect) {
-        color.setFill()
-        dirtyRect.intersection(bounds).fill()
-        let scale = window?.backingScaleFactor ?? 2
-        NSColor.separatorColor.setFill()
-        NSRect(x: 0, y: 0, width: 1 / scale, height: bounds.height).fill(using: .sourceOver)
-    }
 
     /// 宽度变了：正文折行宽度随之变化，重算行高。
     override func setFrameSize(_ newSize: NSSize) {
@@ -537,55 +500,3 @@ private final class PlainRowView: NSTableRowView {
     override func drawSelection(in dirtyRect: NSRect) {}
 }
 
-/// 历史提示词栏的左边缘：左右调整光标，拖动改宽度，双击回到默认宽度（同侧栏分隔线）；悬停与拖动报给蓝线（2026-11-06）。
-private final class EdgeHandle: NSView {
-    var onDrag: ((CGFloat, Bool) -> Void)?
-    var onDoubleClick: (() -> Void)?
-    var onHover: ((Bool) -> Void)?
-    var onDragging: ((Bool) -> Void)?
-    private var startX: CGFloat?
-    private var hoverArea: NSTrackingArea?
-
-    override func resetCursorRects() {
-        addCursorRect(bounds, cursor: .resizeLeftRight)
-    }
-
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        if let a = hoverArea { removeTrackingArea(a) }
-        let a = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self)
-        addTrackingArea(a)
-        hoverArea = a
-    }
-
-    /// 只认鼠标真的在边缘上（同侧栏分隔线：窗口切到前台时会按过时的位置补发进入事件）。
-    override func mouseEntered(with event: NSEvent) {
-        guard let w = window else { return }
-        onHover?(bounds.contains(convert(w.mouseLocationOutsideOfEventStream, from: nil)))
-    }
-
-    override func mouseExited(with event: NSEvent) { onHover?(false) }
-
-    override func mouseDown(with event: NSEvent) {
-        if event.clickCount == 2 {
-            startX = nil
-            onDoubleClick?()
-            return
-        }
-        startX = event.locationInWindow.x
-        onDragging?(true)
-    }
-
-    override func mouseDragged(with event: NSEvent) {
-        guard let s = startX else { return }
-        onDrag?(event.locationInWindow.x - s, false)
-        startX = event.locationInWindow.x
-    }
-
-    override func mouseUp(with event: NSEvent) {
-        onDragging?(false)
-        guard startX != nil else { return }
-        startX = nil
-        onDrag?(0, true)
-    }
-}

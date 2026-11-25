@@ -4500,6 +4500,1061 @@
           }
         }
       }
+    },
+    "状态": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        }
+      }
+    },
+    "文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files"
+          }
+        }
+      }
+    },
+    "更改": {
+      "comment": "右侧栏「更改」栏的名字（标题栏按钮、「终端」菜单、栏头）；英文界面仍叫 Diff",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diff"
+          }
+        }
+      }
+    },
+    "关闭状态": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Status Panel"
+          }
+        }
+      }
+    },
+    "关闭文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close File"
+          }
+        }
+      }
+    },
+    "关闭这个文件的更改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close File Diff"
+          }
+        }
+      }
+    },
+    "关闭更改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Diff Panel"
+          }
+        }
+      }
+    },
+    "ScyllaUI 暂不读取 %@ 的上下文用量": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ScyllaUI doesn't read %@'s context usage yet"
+          }
+        }
+      }
+    },
+    "上下文": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Context"
+          }
+        }
+      }
+    },
+    "不在 Git 仓库里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not in a Git repository"
+          }
+        }
+      }
+    },
+    "在访达中显示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in Finder"
+          }
+        }
+      }
+    },
+    "拷贝路径": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Path"
+          }
+        }
+      }
+    },
+    "当前是 Shell，在这个终端启动 Agent 后显示上下文用量。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a shell. Context usage appears once you start an agent in this terminal."
+          }
+        }
+      }
+    },
+    "没有终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No terminal"
+          }
+        }
+      }
+    },
+    "环境": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Environment"
+          }
+        }
+      }
+    },
+    "二进制文件，不显示内容": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Binary file; contents aren't shown"
+          }
+        }
+      }
+    },
+    "全部折叠": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapse All"
+          }
+        }
+      }
+    },
+    "只列出了一部分，输入更多字缩小范围": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only some matches are listed. Type more to narrow it down."
+          }
+        }
+      }
+    },
+    "只显示前 1 MB · 共 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Showing the first 1 MB of %@"
+          }
+        }
+      }
+    },
+    "折行": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wrap Lines"
+          }
+        }
+      }
+    },
+    "拷贝相对路径": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Relative Path"
+          }
+        }
+      }
+    },
+    "插入到终端": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insert into Terminal"
+          }
+        }
+      }
+    },
+    "放大": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximize"
+          }
+        }
+      }
+    },
+    "文件夹已不存在": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This folder no longer exists"
+          }
+        }
+      }
+    },
+    "文件已被删除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file has been deleted"
+          }
+        }
+      }
+    },
+    "显示文件树": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show File Tree"
+          }
+        }
+      }
+    },
+    "暂时搜不了，稍后再试": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't search right now. Try again later."
+          }
+        }
+      }
+    },
+    "暂时读不到这个文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't read this file right now"
+          }
+        }
+      }
+    },
+    "暂时读不到这个文件夹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't read this folder right now"
+          }
+        }
+      }
+    },
+    "没有名称符合的文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No files match this name"
+          }
+        }
+      }
+    },
+    "没有权限读取这个文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No permission to read this file"
+          }
+        }
+      }
+    },
+    "没有权限读取这个文件夹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No permission to read this folder"
+          }
+        }
+      }
+    },
+    "终端所在目录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminal's current folder"
+          }
+        }
+      }
+    },
+    "缩回": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore"
+          }
+        }
+      }
+    },
+    "这是文件夹，在文件树里展开查看": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a folder. Expand it in the file tree."
+          }
+        }
+      }
+    },
+    "隐藏文件树": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide File Tree"
+          }
+        }
+      }
+    },
+    "还有 %lld 项未列出 · 用筛选查找": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more item not listed · Use the filter to find it"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more items not listed · Use the filter to find them"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%@ → 工作树": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ → Working Tree"
+          }
+        }
+      }
+    },
+    "二进制": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Binary"
+          }
+        }
+      }
+    },
+    "二进制文件，不显示更改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Binary file; changes aren't shown"
+          }
+        }
+      }
+    },
+    "只列出了一部分（每个文件最多 50 条，总共最多 1000 条）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only some matches are listed (up to 50 per file, 1,000 in total)"
+          }
+        }
+      }
+    },
+    "在 ? 后输入要搜的内容": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type what to search for after ?"
+          }
+        }
+      }
+    },
+    "在「文件」里打开": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in Files"
+          }
+        }
+      }
+    },
+    "工作树与 HEAD 一致，没有更改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The working tree matches HEAD. No changes."
+          }
+        }
+      }
+    },
+    "已修改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modified"
+          }
+        }
+      }
+    },
+    "按路径筛选": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter by Path"
+          }
+        }
+      }
+    },
+    "搜内容需要 Xcode 命令行工具": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searching contents requires the Xcode Command Line Tools"
+          }
+        }
+      }
+    },
+    "更改太大，只显示前 2 MB": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change too large; showing the first 2 MB"
+          }
+        }
+      }
+    },
+    "文件已删除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File deleted"
+          }
+        }
+      }
+    },
+    "新增": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added"
+          }
+        }
+      }
+    },
+    "新文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New file"
+          }
+        }
+      }
+    },
+    "显示更改列表": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Change List"
+          }
+        }
+      }
+    },
+    "暂时读不到更改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't read changes right now"
+          }
+        }
+      }
+    },
+    "未跟踪的新文件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untracked new file"
+          }
+        }
+      }
+    },
+    "正在读取更改…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading changes…"
+          }
+        }
+      }
+    },
+    "没有内容上的更改（可能只改了权限）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No content changes (perhaps only permissions changed)"
+          }
+        }
+      }
+    },
+    "没有文件包含这段内容": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No files contain this text"
+          }
+        }
+      }
+    },
+    "看更改需要 Xcode 命令行工具": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viewing changes requires the Xcode Command Line Tools"
+          }
+        }
+      }
+    },
+    "筛选，或输入 ? 搜索内容": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter, or type ? to search contents"
+          }
+        }
+      }
+    },
+    "读更改超时（超过 3 秒），文件再有变化时重试": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading changes timed out (over 3 seconds). It'll retry when files change again."
+          }
+        }
+      }
+    },
+    "这个仓库配置了 ScyllaUI 不执行的过滤器，不搜内容": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This repository configures a filter ScyllaUI won't run, so contents aren't searched"
+          }
+        }
+      }
+    },
+    "这个仓库配置了 ScyllaUI 不执行的过滤器，不读更改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This repository configures a filter ScyllaUI won't run, so changes aren't read"
+          }
+        }
+      }
+    },
+    "这个目录不在 Git 仓库里，没有可对比的更改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This folder isn't in a Git repository, so there are no changes to compare"
+          }
+        }
+      }
+    },
+    "里面有更改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contains changes"
+          }
+        }
+      }
+    },
+    "隐藏更改列表": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Change List"
+          }
+        }
+      }
+    },
+    "上下文已用 %lld%%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Context %lld%% used"
+          }
+        }
+      }
+    },
+    "已用 %@ / %@ tokens": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of %@ tokens used"
+          }
+        }
+      }
+    },
+    "还没读到 %@ 的上下文用量，Agent 回复一轮后显示。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@'s context usage hasn't been read yet. It appears after the agent replies once."
+          }
+        }
+      }
+    },
+    "%@ 的上下文用量经额度桥（statusline）读，额度桥被改掉了，现在读不到。在「设置 › Agent」里查看并修复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@'s context usage comes through the quota bridge (statusline), which has been changed, so it can't be read right now. Check and repair it in Settings › Agent."
+          }
+        }
+      }
+    },
+    "%@ 的上下文用量和额度一起经它的 statusline 交给 ScyllaUI，现在未接入。在「设置 › Agent」里点「接入额度…」，新开的 %@ 会话生效。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ passes its context usage to ScyllaUI through its statusline, together with its quota, and that isn't connected yet. Click “Connect Quota…” in Settings › Agent; it takes effect in new %2$@ sessions."
+          }
+        }
+      }
+    },
+    "空文件夹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty folder"
+          }
+        }
+      }
+    },
+    "关闭文件栏": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Files Panel"
+          }
+        }
+      }
+    },
+    "更多": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        }
+      }
+    },
+    "打开方式": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open With"
+          }
+        }
+      }
+    },
+    "没有能打开它的 App": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No app can open this file"
+          }
+        }
+      }
+    },
+    "%@（默认）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (Default)"
+          }
+        }
+      }
+    },
+    "其他…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other…"
+          }
+        }
+      }
+    },
+    "选择用来打开「%@」的 App": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an app to open “%@”"
+          }
+        }
+      }
+    },
+    "显示源码": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Source"
+          }
+        }
+      }
+    },
+    "显示渲染": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Preview"
+          }
+        }
+      }
+    },
+    "图片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image"
+          }
+        }
+      }
+    },
+    "暂不支持打开这类链接：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening this kind of link isn’t supported yet: %@"
+          }
+        }
+      }
+    },
+    "网络图片不加载": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "remote images aren’t loaded"
+          }
+        }
+      }
+    },
+    "找不到这张图片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "image not found"
+          }
+        }
+      }
+    },
+    "图片超过 %@，不显示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "larger than %@, not shown"
+          }
+        }
+      }
+    },
+    "不是能显示的图片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "not a displayable image"
+          }
+        }
+      }
+    },
+    "图片超过 5000 万像素，不显示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "over 50 megapixels, not shown"
+          }
+        }
+      }
+    },
+    "「%@」（%@）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%1$@” (%2$@)"
+          }
+        }
+      }
+    },
+    "显示文件内容": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show File Content"
+          }
+        }
+      }
+    },
+    "显示更改内容": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show File Diff"
+          }
+        }
+      }
+    },
+    "上一处更改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous Change"
+          }
+        }
+      }
+    },
+    "下一处更改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next Change"
+          }
+        }
+      }
+    },
+    "PDF 超过 %@，不预览": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF is larger than %@ and isn't previewed"
+          }
+        }
+      }
+    },
+    "图片超过 %@，不预览": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image is larger than %@ and isn't previewed"
+          }
+        }
+      }
+    },
+    "图片超过 5000 万像素，不预览": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image is over 50 megapixels and isn't previewed"
+          }
+        }
+      }
+    },
+    "取消折行": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unwrap Lines"
+          }
+        }
+      }
+    },
+    "没有更改": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No changes"
+          }
+        }
+      }
+    },
+    "还有 %lld 项未列出": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld more not listed"
+          }
+        }
+      }
+    },
+    "在「更改」里查看": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View in Diff"
+          }
+        }
+      }
+    },
+    "%lld 个文件": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld file"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld files"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "超过 1 MB，不渲染 · 只显示前 1 MB · 共 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over 1 MB, not rendered · showing the first 1 MB · %@ total"
+          }
+        }
+      }
+    },
+    "有无法解码的字符": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undecodable characters"
+          }
+        }
+      }
+    },
+    "有无法解码的字符：文件不是 UTF-8 编码，解不了的地方在正文里用颜色标出。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some characters can't be decoded because this file is not UTF-8. They are highlighted in the text."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

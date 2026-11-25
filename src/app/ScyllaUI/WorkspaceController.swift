@@ -17,8 +17,14 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
     private let statusHolder = TitlebarAlignedView(frame: NSRect(x: 0, y: 0, width: 10, height: 22))
     /// 状态行各段的悬停区域与文字（2026-11-01）：区域没变就只改文字，不重挂（2026-11-02，见 `TooltipText`）。
     private var statusTips: [(rect: NSRect, owner: TooltipText)] = []
-    /// 标题栏右侧的功能按钮组（2026-11-21 用户要求）：以后的功能都往这一排加，现在只有历史提示词。
+    /// 标题栏右侧的功能按钮组（2026-11-21 用户要求）：以后的功能都往这一排加；2026-11-23 起为右侧栏的四个开关（5.12 节）。
     private let toolsHolder = TitlebarAlignedView(frame: NSRect(x: 0, y: 0, width: 1, height: 22))
+    private lazy var statusButton = Self.titlebarButton(symbol: "info.circle", name: String(localized: "状态"),
+                                                        shortcut: "⇧⌘I", target: self, action: #selector(toggleStatusPanel(_:)))
+    private lazy var filesButton = Self.titlebarButton(symbol: "folder", name: String(localized: "文件"),
+                                                       shortcut: "⇧⌘E", target: self, action: #selector(toggleFilesPanel(_:)))
+    private lazy var diffButton = Self.titlebarButton(symbol: "plus.forwardslash.minus", name: String(localized: "更改"),
+                                                      shortcut: "⇧⌘D", target: self, action: #selector(toggleDiffPanel(_:)))
     private lazy var historyButton = Self.titlebarButton(symbol: "clock.arrow.circlepath", name: String(localized: "历史提示词"),
                                                          shortcut: "⌘Y", target: self, action: #selector(togglePromptHistory(_:)))
     private var statusInfos: [String: StatusInfo] = [:]
@@ -31,9 +37,31 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
     /// 终端区（右侧窄标题栏之下）：只放当前终端或空态。
     private let container = NSView()
     private let emptyState = NSStackView()
-    /// 历史提示词（M4a 追加块 9）：终端区右侧固定宽度的一栏，菜单「终端 › 历史提示词」开关。
+    /// 右侧栏（docs/design.md 5.12 节）：终端区右边的一栏，状态、文件、Diff、历史提示词四选一，共用一个宿主。
+    private let rightHost = RightPanelHost()
+    /// 右侧栏占的位置：贴右边，宽度即右侧栏的当前宽度；终端贴它的左边，宿主平时也贴它的左边。
+    private let slot = NSLayoutGuide()
+    private var rightPanel: RightPanel?
+    /// 历史提示词（M4a 追加块 9）：右侧栏之一，菜单「终端 › 历史提示词」开关。
     private let promptPanel = PromptHistoryPanel()
-    private var promptPanelShown = false
+    private let statusPanel = StatusPanel()
+    private let filesPanel = FilesPanel()
+    /// 右侧栏开着「文件」「更改」，或开着状态栏且在 Git 仓库里时，对项目根的 FSEvents 流（docs/design.md 5.12 节「自动刷新」）。
+    private var folderWatch: FolderWatch?
+    /// 列表宽（四栏共用）与查看宽（打开文件时），docs/design.md 5.12 节「宽度」。
+    private var listWidth = WorkspaceController.savedPromptWidth
+    private var viewerWidth = WorkspaceController.savedViewerWidth
+    /// 查看器放大：宿主盖住终端区，终端尺寸不变。
+    private var zoomed = false
+    private var hostToSlot: NSLayoutConstraint?
+    private var hostToRight: NSLayoutConstraint?
+    /// 正在按模式重设右侧栏宽度（自动隐藏文件树会再触发一次，不重入）。
+    private var applyingRightWidth = false
+    private let diffPanel = DiffPanel()
+    /// 改动列表（Diff 栏与文件树的 M、A 标记共用，docs/design.md 5.12 节「Diff」）。
+    private let changes = ChangesStore()
+    /// 当前终端这一行（右侧栏按它取路径、分支与工具）。
+    private var currentRow: TaskRow?
     /// 后台崩溃后已在原终端接回的对话与时间（防止恢复即崩溃时反复重来）。
     private var respawnResumed: [Int64: Date] = [:]
     /// 四款 CLI 此刻的状态同步（快照与 `hooks.upsert`）：重建时说明没能接回的原因、「未同步」的去向据此判断（M4b 块 5）。
@@ -43,8 +71,8 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
     private var lostAgentReport: DispatchWorkItem?
     private var containerToEdge: NSLayoutConstraint?
     private var containerToPanel: NSLayoutConstraint?
-    /// 历史提示词栏宽度（可拖动，docs/design.md 10.5 节决策 20）。
-    private lazy var promptWidth = promptPanel.widthAnchor.constraint(equalToConstant: Self.savedPromptWidth)
+    /// 右侧栏宽度（可拖动，四栏共用，docs/design.md 10.5 节决策 20、5.12 节）。
+    private lazy var promptWidth = slot.widthAnchor.constraint(equalToConstant: Self.savedPromptWidth)
     /// 历史提示词读的对话：侧栏选中的对话优先，否则当前终端绑定的；`promptKey` 变了才重读（副标题即最新提示词）。
     private var selectedConversation: Int64?
     private var currentRowConversation: Int64?
@@ -127,6 +155,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
             if type == "hooks.upsert" || type == "snapshot", let hooks = msg["hooks"] as? [[String: Any]] {
                 DispatchQueue.main.async {
                     self?.hookStatuses = hooks.compactMap(SBHookStatus.init(json:))
+                    self?.refreshStatusPanel()
                     self?.hookJSON = hooks
                     let ok = Set(hooks.filter { $0["state"] as? String == "ok" }.compactMap { $0["tool"] as? String })
                     if !Prefs.hooksRemoved.isDisjoint(with: ok) { Prefs.hooksRemoved.subtract(ok) }
@@ -167,6 +196,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         sidebar.onStatus = { [weak self] infos in
             guard let self else { return }
             self.statusInfos = infos
+            self.refreshStatusPanel()
             self.updateStatusSampling()
             self.refreshStatusLine()
         }
@@ -202,6 +232,10 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         // 窗口标题跟随当前终端这一行：有用户命名时为名称，否则即任务标题，与侧栏副标题一致（docs/design.md 第 5 节）。
         sidebar.onCurrentRow = { [weak self] row in
             self?.window.title = row?.name ?? row?.subtitle ?? "ScyllaUI"
+            self?.currentRow = row
+            self?.refreshStatusPanel()
+            self?.refreshFilesPanel()
+            self?.refreshDiffPanel()
             self?.currentRowConversation = row?.conversationID
             self?.currentRowForeground = (row?.toolKey, row?.unsynced ?? false, row?.fgCommand)
             // 没有对话时按前台的场景重排说明；有对话时最新提示词变了才重读。
@@ -214,19 +248,75 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
             self?.selectedConversation = id
             self?.refreshPromptHistory(key: nil)
         }
-        promptPanel.onClose = { [weak self] in self?.togglePromptHistory(nil) }
-        promptPanel.onResize = { [weak self] w, done in self?.resizePromptPanel(w, done: done) }
-        promptPanel.onResetWidth = { [weak self] in self?.resizePromptPanel(PromptHistoryPanel.defaultWidth, done: true) }
+        promptPanel.onClose = { [weak self] in self?.show(nil) }
+        statusPanel.onClose = { [weak self] in self?.show(nil) }
+        statusPanel.onOpenChanges = { [weak self] in self?.show(.diff) }
+        filesPanel.onClose = { [weak self] in self?.show(nil) }
+        filesPanel.request = { [weak self] req, done in
+            guard let self else { return done(nil) }
+            self.core.ask(req) { reply in DispatchQueue.main.async { done(reply) } }
+        }
+        filesPanel.treeWidth = Self.savedTreeWidth
+        // 文件树宽与 Diff 的改动列表宽是同一个值（D2）：在哪一栏拖都两边一起改，来回切换时分隔线不跳。
+        filesPanel.onTreeWidth = { [weak self] w in
+            Prefs.filesTreeWidth = Double(w)
+            self?.diffPanel.listWidth = w
+        }
+        filesPanel.onLayoutChange = { [weak self] in
+            guard let self else { return }
+            if !self.filesPanel.contentShown { self.setZoom(false) }
+            self.applyRightWidth(grow: true)
+        }
+        filesPanel.onZoom = { [weak self] in self.map { $0.setZoom(!$0.zoomed) } }
+        filesPanel.onEscape = { [weak self] in
+            guard let self, self.zoomed else { return false }
+            self.setZoom(false)
+            return true
+        }
+        filesPanel.onInsert = { [weak self] path in self?.insertIntoCurrent(GhosttyInput.shellEscape(path)) }
+        diffPanel.onClose = { [weak self] in self?.show(nil) }
+        let ask: ([String: Any], @escaping ([String: Any]?) -> Void) -> Void = { [weak self] req, done in
+            guard let self else { return done(nil) }
+            self.core.ask(req) { reply in DispatchQueue.main.async { done(reply) } }
+        }
+        diffPanel.request = ask
+        changes.request = ask
+        diffPanel.listWidth = Self.savedTreeWidth
+        diffPanel.onListWidth = { [weak self] w in
+            Prefs.filesTreeWidth = Double(w)
+            self?.filesPanel.treeWidth = w
+        }
+        diffPanel.onLayoutChange = { [weak self] in
+            guard let self else { return }
+            if !self.diffPanel.contentShown { self.setZoom(false) }
+            self.applyRightWidth(grow: true)
+        }
+        diffPanel.onZoom = { [weak self] in self.map { $0.setZoom(!$0.zoomed) } }
+        diffPanel.onEscape = { [weak self] in
+            guard let self, self.zoomed else { return false }
+            self.setZoom(false)
+            return true
+        }
+        diffPanel.onOpenInFiles = { [weak self] path in
+            guard let self else { return }
+            self.show(.files)
+            self.filesPanel.openAndReveal(path)
+        }
+        changes.onUpdate = { [weak self] root in
+            guard let self else { return }
+            if self.diffPanel.root == root { self.diffPanel.update(self.changes.snapshot(root)) }
+            if self.rightPanel == .status, self.currentProjectRoot == root { self.refreshStatusPanel() }
+            if self.filesPanel.tree?.root.path == root {
+                self.filesPanel.setMarks(self.changes.marks(root), dirty: self.changes.dirtyDirs(root))
+            }
+        }
+        rightHost.onResize = { [weak self] w, done in self?.resizePromptPanel(w, done: done) }
+        rightHost.onResetWidth = { [weak self] in self?.resetRightWidth() }
         promptPanel.onCopy = { text in
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(text, forType: .string)
         }
-        promptPanel.onInsert = { [weak self] text in
-            guard let self, let view = self.currentID.flatMap({ self.sessions[$0]?.view }) else { return NSSound.beep() }
-            // 与粘贴相同（libghostty 的 surface text 走粘贴，支持 bracketed paste 的程序不会把换行当回车），不追加回车。
-            view.sendText(text)
-            self.window.makeFirstResponder(view)
-        }
+        promptPanel.onInsert = { [weak self] text in self?.insertIntoCurrent(text) }
         // 第一个终端等第一份快照到了再定：接回后台仍持有的，或新开 Home Shell（route → restore）。
         window.makeKeyAndOrderFront(nil)
         // 首次运行引导与开屏页（M4a 块 4）：出现时通知授权请求推迟到它关闭之后，避免系统弹窗压在开屏上。
@@ -296,22 +386,29 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         let right = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
         right.addSubview(container)
-        // 历史提示词在终端区右侧，默认隐藏（M4a 追加块 9）。
-        promptPanel.translatesAutoresizingMaskIntoConstraints = false
-        promptPanel.isHidden = true
-        right.addSubview(promptPanel)
+        // 右侧栏在终端区右边，默认隐藏（M4a 追加块 9；2026-11-23 起四栏共用宿主，5.12 节）。宿主排在终端之后（上层）。
+        rightHost.translatesAutoresizingMaskIntoConstraints = false
+        rightHost.isHidden = true
+        right.addSubview(rightHost)
+        right.addLayoutGuide(slot)
         containerToEdge = container.trailingAnchor.constraint(equalTo: right.trailingAnchor)
-        containerToPanel = container.trailingAnchor.constraint(equalTo: promptPanel.leadingAnchor)
+        containerToPanel = container.trailingAnchor.constraint(equalTo: slot.leadingAnchor)
         NSLayoutConstraint.activate([
             container.topAnchor.constraint(equalTo: right.topAnchor),
             container.leadingAnchor.constraint(equalTo: right.leadingAnchor),
             containerToEdge!,
             container.bottomAnchor.constraint(equalTo: right.bottomAnchor),
-            promptPanel.topAnchor.constraint(equalTo: right.topAnchor),
-            promptPanel.bottomAnchor.constraint(equalTo: right.bottomAnchor),
-            promptPanel.trailingAnchor.constraint(equalTo: right.trailingAnchor),
+            slot.topAnchor.constraint(equalTo: right.topAnchor),
+            slot.bottomAnchor.constraint(equalTo: right.bottomAnchor),
+            slot.trailingAnchor.constraint(equalTo: right.trailingAnchor),
             promptWidth,
+            rightHost.topAnchor.constraint(equalTo: right.topAnchor),
+            rightHost.bottomAnchor.constraint(equalTo: right.bottomAnchor),
+            rightHost.trailingAnchor.constraint(equalTo: right.trailingAnchor),
         ])
+        hostToSlot = rightHost.leadingAnchor.constraint(equalTo: slot.leadingAnchor)
+        hostToRight = rightHost.leadingAnchor.constraint(equalTo: right.leadingAnchor)
+        hostToSlot?.isActive = true
         // 分隔视图首次布局前子视图宽度为 0，侧栏内部的边距约束（搜索框、列表等）会在启动时报冲突；先给侧栏它该有的宽度。
         side.frame.size.width = savedSidebarWidth
         split.addArrangedSubview(side)
@@ -425,7 +522,10 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         if currentID != id, let old = currentID.flatMap({ sessions[$0] }) {
             old.view.removeFromSuperview()
         }
-        if currentID != id { stats = nil }
+        if currentID != id {
+            stats = nil
+            setZoom(false)
+        }
         currentID = id
         Prefs.lastTerminal = id
         emptyState.isHidden = true
@@ -640,26 +740,161 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         return CGSize(width: (cell.width * 40).rounded(.up) + 8, height: (cell.height * 10).rounded(.up) + 8)
     }
 
-    /// 历史提示词占用的宽度；关着时为 0。
-    private var promptPanelExtent: CGFloat { promptPanelShown ? promptWidth.constant : 0 }
+    /// 右侧栏占用的宽度；关着时为 0。
+    private var promptPanelExtent: CGFloat { rightPanel == nil ? 0 : promptWidth.constant }
 
     private static var savedPromptWidth: CGFloat {
         let w = CGFloat(Prefs.promptPanelWidth)
-        return w == 0 ? PromptHistoryPanel.defaultWidth : min(max(w, PromptHistoryPanel.minWidth), PromptHistoryPanel.maxWidth)
+        return w == 0 ? RightPanelHost.defaultWidth : min(max(w, RightPanelHost.minWidth), RightPanelHost.maxWidth)
     }
 
-    /// 拖动历史提示词栏左边缘（同侧栏策略）：限在 280—520，且终端区不小于最小尺寸（拖动时不加宽窗口）；松手时记住。
+    /// 查看宽（docs/design.md 5.12 节「宽度」）：默认 680，不小于 320（隐藏了文件树或改动列表的查看器最窄 320；
+    /// 显示列表时查看器最窄 160，见 `ListSplit.viewerMinWidth`）。
+    static let defaultViewerWidth: CGFloat = 680
+    static let viewerMinWidth: CGFloat = 320
+    private static var savedViewerWidth: CGFloat {
+        let w = CGFloat(Prefs.rightViewerWidth)
+        return w == 0 ? defaultViewerWidth : max(w, viewerMinWidth)
+    }
+
+    /// 右侧栏此刻在显示查看器（打开了文件，或选中了 Diff 的文件），用查看宽。
+    private var viewerMode: Bool {
+        (rightPanel == .files && filesPanel.contentShown) || (rightPanel == .diff && diffPanel.contentShown)
+    }
+    /// 查看器旁的文件树或改动列表是否隐藏。
+    private var sideListHidden: Bool {
+        get { rightPanel == .diff ? diffPanel.listHidden : filesPanel.treeHidden }
+        set { if rightPanel == .diff { diffPanel.listHidden = newValue } else { filesPanel.treeHidden = newValue } }
+    }
+    /// 查看宽的下限：显示文件树或改动列表时为「树宽 + 160」（两栏同一个宽，D2 起 Diff 与文件栏一致），隐藏时为 320。
+    private var viewerLowerBound: CGFloat {
+        if sideListHidden { return Self.viewerMinWidth }
+        return splitListWidth + ListSplit.viewerMinWidth
+    }
+    /// 有分栏的两栏（文件、Diff，`ListSplit`）：打开着内容（不论收起）、列表宽、查看器是否收起。
+    private var splitOpen: Bool {
+        (rightPanel == .files && filesPanel.viewerOpen) || (rightPanel == .diff && diffPanel.viewerOpen)
+    }
+    private var splitListWidth: CGFloat { rightPanel == .diff ? diffPanel.listWidth : filesPanel.treeWidth }
+    private var splitCollapsed: Bool {
+        get { (rightPanel == .files && filesPanel.contentCollapsed) || (rightPanel == .diff && diffPanel.contentCollapsed) }
+        set { if rightPanel == .diff { diffPanel.contentCollapsed = newValue } else { filesPanel.contentCollapsed = newValue } }
+    }
+    /// 打开着内容但查看器收起（只剩列表）：右侧栏用拖到的宽度（只在内存里），没拖过时用列表宽。
+    private var collapsedWidth: CGFloat?
+
+    /// 树宽（F3）：单独记，默认 280，不小于 160。
+    private static var savedTreeWidth: CGFloat {
+        let w = CGFloat(Prefs.filesTreeWidth)
+        return w == 0 ? FilesPanel.defaultTreeWidth : max(w, FilesPanel.treeHideWidth)
+    }
+    /// 按当前窗口，右侧栏最多能占的宽度（终端保留 40 列）。
+    private var rightRoom: CGFloat { (rightHost.superview?.bounds.width ?? 0) - terminalMinSize.width }
+
+    /// 拖动右侧栏左边缘（同侧栏策略）：列表限在 280—520、查看器限在下限到可用宽度，且终端区不小于最小尺寸（拖动时不加宽窗口）；
+    /// 松手时记住（列表宽、查看宽各记各的）。
     private func resizePromptPanel(_ width: CGFloat, done: Bool) {
-        let room = (promptPanel.superview?.bounds.width ?? 0) - terminalMinSize.width
-        let w = min(max(width, PromptHistoryPanel.minWidth), max(PromptHistoryPanel.minWidth, min(PromptHistoryPanel.maxWidth, room)))
+        let room = rightRoom
+        // F3、D2：「文件」显示树、Diff 显示改动列表时，查看器窄到 160 以下收起，列表滑过来盖住它，栏宽仍跟着鼠标；
+        // 拖回到「列表宽 + 176」以上再展开。
+        if splitOpen, !sideListHidden {
+            let r = ListSplit.edgeDrag(width: width, listWidth: splitListWidth, collapsed: splitCollapsed, room: room)
+            // 先定好宽度再切换：切换会按新状态重算右侧栏宽度。收起时查看宽回到记住的值（拖到收起前那一下很窄，
+            // 之后点「显示文件内容」不该回到它）。
+            if r.collapsed {
+                collapsedWidth = r.width
+                if !splitCollapsed { viewerWidth = Self.savedViewerWidth }
+            } else {
+                viewerWidth = r.width
+            }
+            if r.collapsed != splitCollapsed {
+                splitCollapsed = r.collapsed
+                scyllauiLog.notice("\(self.rightPanel == .diff ? "diff" : "files", privacy: .public) content collapsed=\(r.collapsed) by drag width=\(Int(width))")
+            }
+            if r.collapsed {
+                if abs(r.width - promptWidth.constant) > 0.5 {
+                    promptWidth.constant = r.width
+                    updateMinSize()
+                }
+                return
+            }
+        }
+        let w: CGFloat
+        if viewerMode {
+            w = min(max(width, viewerLowerBound), max(viewerLowerBound, room))
+            viewerWidth = w
+        } else {
+            w = min(max(width, RightPanelHost.minWidth), max(RightPanelHost.minWidth, min(RightPanelHost.maxWidth, room)))
+            listWidth = w
+        }
         if abs(w - promptWidth.constant) > 0.5 {
             promptWidth.constant = w
             updateMinSize()
         }
         if done {
-            Prefs.promptPanelWidth = Double(promptWidth.constant)
-            scyllauiLog.notice("prompt panel width=\(Int(self.promptWidth.constant))")
+            if viewerMode { Prefs.rightViewerWidth = Double(w) } else { Prefs.promptPanelWidth = Double(w) }
+            scyllauiLog.notice("right panel width=\(Int(w)) viewer=\(self.viewerMode)")
         }
+    }
+
+    /// 双击左边缘：列表回到 280，查看器回到 680。
+    private func resetRightWidth() {
+        if splitCollapsed { return splitCollapsed = false }
+        resizePromptPanel(viewerMode ? Self.defaultViewerWidth : RightPanelHost.defaultWidth, done: true)
+    }
+
+    /// 按当前模式定右侧栏宽度。`grow`：打开文件等主动操作时窗口放不下就先加宽（不超过屏幕可见宽度），仍放不下就隐藏文件树。
+    private func applyRightWidth(grow: Bool) {
+        guard rightPanel != nil, !applyingRightWidth else { return }
+        applyingRightWidth = true
+        defer { applyingRightWidth = false }
+        var target = viewerMode ? max(viewerWidth, viewerLowerBound) : splitCollapsed ? collapsedWidth ?? splitListWidth : listWidth
+        if grow, target > rightRoom, let screen = window.screen?.visibleFrame {
+            var f = window.frame
+            f.size.width = min(f.width + target - rightRoom, screen.width)
+            if f.maxX > screen.maxX { f.origin.x = max(screen.minX, screen.maxX - f.width) }
+            window.setFrame(f, display: true, animate: false)
+            rightHost.superview?.superview?.layoutSubtreeIfNeeded()
+        }
+        if grow, viewerMode, !sideListHidden, rightRoom < viewerLowerBound {
+            sideListHidden = true
+            scyllauiLog.notice("right panel tree auto-hidden room=\(Int(self.rightRoom))")
+        }
+        if viewerMode { target = min(max(viewerWidth, viewerLowerBound), max(rightRoom, Self.viewerMinWidth)) }
+        promptWidth.constant = target
+        updateMinSize()
+        let min = window.frameRect(forContentRect: NSRect(origin: .zero, size: window.contentMinSize)).width
+        if window.frame.width < min {
+            var f = window.frame
+            f.size.width = min
+            window.setFrame(f, display: true, animate: false)
+        }
+    }
+
+    /// 放大查看器：宿主改贴右侧区域的左边，盖住终端区；终端仍贴 `slot`，尺寸不变。放大时键盘给查看器，缩回时还给终端。
+    private func setZoom(_ on: Bool) {
+        let on = on && viewerMode
+        guard on != zoomed else { return }
+        zoomed = on
+        hostToSlot?.isActive = !on
+        hostToRight?.isActive = on
+        filesPanel.zoomed = on && rightPanel == .files
+        diffPanel.zoomed = on && rightPanel == .diff
+        let viewerHasFocus = filesPanel.viewer.holdsFocus(window.firstResponder) || diffPanel.viewer.holdsFocus(window.firstResponder)
+        if on {
+            rightPanel == .diff ? diffPanel.viewer.takeFocus() : filesPanel.viewer.takeFocus()
+        } else if let view = currentID.flatMap({ sessions[$0]?.view }), viewerHasFocus {
+            window.makeFirstResponder(view)
+        }
+        scyllauiLog.notice("right panel zoom=\(on)")
+    }
+
+    /// 往当前终端的输入行放一段文字：与粘贴相同（libghostty 的 surface text 走粘贴，支持 bracketed paste 的程序不会把换行当回车），
+    /// 不追加回车；键盘随之交给终端。历史提示词的「填入」与查看器的「插入到终端」共用。
+    private func insertIntoCurrent(_ text: String) {
+        guard let view = currentID.flatMap({ sessions[$0]?.view }) else { return NSSound.beep() }
+        view.sendText(text)
+        window.makeFirstResponder(view)
     }
 
     /// 侧栏占用的宽度（含分隔线）；收起时为 0。
@@ -704,7 +939,15 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             let side = self.sidebarCollapsed ? 0 : min(max(Self.filledSidebarWidth, ScyllaUIStyle.sidebarMinWidth), ScyllaUIStyle.sidebarMaxWidth)
-            self.resizePromptPanel(PromptHistoryPanel.defaultWidth, done: true)
+            // 列表宽与查看宽都回到默认（docs/design.md 5.12 节「宽度」）。
+            self.listWidth = RightPanelHost.defaultWidth
+            self.filesPanel.treeWidth = FilesPanel.defaultTreeWidth
+            Prefs.filesTreeWidth = 0
+            self.diffPanel.listWidth = FilesPanel.defaultTreeWidth
+            self.viewerWidth = Self.defaultViewerWidth
+            Prefs.promptPanelWidth = Double(self.listWidth)
+            Prefs.rightViewerWidth = 0
+            self.applyRightWidth(grow: false)
             if !self.sidebarCollapsed { self.setSidebarWidth(side, save: true) }
             scyllauiLog.notice("filled layout width=\(Int(width)) sidebar=\(Int(self.sideView.frame.width)) prompt=\(self.promptWidth.constant)")
         }
@@ -765,7 +1008,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         statusHolder.addSubview(statusField)
         // 右侧按钮组：按钮从右往左排，右边留 8 点。
         var x: CGFloat = 0
-        for b in [historyButton] {
+        for b in [statusButton, filesButton, diffButton, historyButton] {
             b.frame.origin.x = x
             toolsHolder.addSubview(b)
             x += b.frame.width + 4
@@ -916,8 +1159,10 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
             let light = GhosttyRuntime.isLight(bg)
             sideView.color = bg.blended(withFraction: light ? 0.035 : 0.18, of: .black) ?? bg
             sideView.appearance = NSAppearance(named: light ? .aqua : .darkAqua)
-            promptPanel.color = sideView.color
-            promptPanel.appearance = sideView.appearance
+            rightHost.color = sideView.color
+            filesPanel.fillColor = sideView.color
+            diffPanel.fillColor = sideView.color
+            rightHost.appearance = sideView.appearance
         }
         // 窗口深浅与 Ghostty.app 一致（默认按终端背景色），侧栏不再单独跟随系统而与终端不协调。
         window.appearance = runtime.windowAppearance
@@ -1059,6 +1304,13 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
 
     /// Cmd+F：键盘交给侧栏的搜索框；侧栏收起时先展开（M2 第 4 块）。
     @objc func focusSearch(_ sender: Any?) {
+        // 键盘焦点在查看器里时是查看器自己的查找条（docs/design.md 5.12 节「查看器」）。
+        if rightPanel == .files, filesPanel.viewerOpen, filesPanel.viewer.holdsFocus(window.firstResponder) {
+            return filesPanel.viewer.showFindBar()
+        }
+        if rightPanel == .diff, diffPanel.contentShown, diffPanel.viewer.holdsFocus(window.firstResponder) {
+            return diffPanel.viewer.showFindBar()
+        }
         if sidebarCollapsed { toggleSidebarPane(nil) }
         sidebar.focusSearch()
     }
@@ -1521,28 +1773,138 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
 
     // MARK: 历史提示词（M4a 追加块 9，docs/design.md 10.5 节决策 10）
 
-    /// 开关历史提示词。打开时窗口不够宽先加宽，终端区保持至少 40 列。
-    @objc func togglePromptHistory(_ sender: Any?) {
-        promptPanelShown.toggle()
-        promptPanel.isHidden = !promptPanelShown
-        historyButton.state = promptPanelShown ? .on : .off
-        containerToEdge?.isActive = !promptPanelShown
-        containerToPanel?.isActive = promptPanelShown
-        updateMinSize()
-        let min = window.frameRect(forContentRect: NSRect(origin: .zero, size: window.contentMinSize)).width
-        if window.frame.width < min {
-            var f = window.frame
-            f.size.width = min
-            window.setFrame(f, display: true, animate: false)
+    /// 右侧栏的四个开关（docs/design.md 5.12 节）：再按一次同一个为关，按别的直接换过去。
+    @objc func toggleStatusPanel(_ sender: Any?) { show(RightPanel.toggled(rightPanel, .status)) }
+    @objc func toggleFilesPanel(_ sender: Any?) { show(RightPanel.toggled(rightPanel, .files)) }
+    @objc func toggleDiffPanel(_ sender: Any?) { show(RightPanel.toggled(rightPanel, .diff)) }
+    @objc func togglePromptHistory(_ sender: Any?) { show(RightPanel.toggled(rightPanel, .history)) }
+
+    /// 打开某一栏或收起（nil）。打开时窗口不够宽先加宽，终端区保持至少 40 列。
+    private func show(_ panel: RightPanel?) {
+        guard panel != rightPanel else { return }
+        let wasOpen = rightPanel != nil
+        setZoom(false)
+        rightPanel = panel
+        for (b, p) in [(statusButton, RightPanel.status), (filesButton, .files), (diffButton, .diff), (historyButton, .history)] {
+            b.state = panel == p ? .on : .off
         }
-        scyllauiLog.notice("prompt history shown=\(self.promptPanelShown)")
-        promptKey = nil
-        refreshPromptHistory(key: nil)
+        rightHost.setContent(panel.map { p -> NSView in
+            switch p {
+            case .status: return statusPanel
+            case .files: return filesPanel
+            case .diff: return diffPanel
+            case .history: return promptPanel
+            }
+        })
+        rightHost.isHidden = panel == nil
+        if wasOpen != (panel != nil) {
+            containerToEdge?.isActive = panel == nil
+            containerToPanel?.isActive = panel != nil
+        }
+        if panel == .files { refreshFilesPanel() }
+        if panel == .diff { refreshDiffPanel() }
+        // 状态栏的「更改」一段与「更改」栏同一份数据，状态栏打开时由 `refreshStatusPanel` 取（第 6 版 R3）。
+        if panel == .files || panel == .diff, let root = currentProjectRoot, currentRow?.branch != nil { changes.refresh(root: root) }
+        updateFolderWatch()
+        applyRightWidth(grow: true)
+        if panel == nil { updateMinSize() }
+        scyllauiLog.notice("right panel=\(String(describing: panel), privacy: .public)")
+        switch panel {
+        case .history:
+            promptKey = nil
+            refreshPromptHistory(key: nil)
+        case .status:
+            refreshStatusPanel()
+        default:
+            break
+        }
+    }
+
+    /// 当前终端所在项目的根：项目目录（Git 工作区根；不在仓库里为终端目录归属的项目目录），没有时为终端目录。
+    private var currentProjectRoot: String? {
+        currentRow.map { $0.projectDir ?? $0.currentDir ?? "" }.flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    /// 文件栏跟着当前终端所在的项目（开着时才换），在仓库里才判忽略。
+    private func refreshFilesPanel() {
+        guard rightPanel == .files else { return }
+        let root = currentProjectRoot
+        let changed = root != filesPanel.tree?.root.path
+        filesPanel.setRoot(root, gitRoot: currentRow?.branch != nil ? root : nil, currentDir: currentRow?.currentDir)
+        if changed, let root {
+            filesPanel.setMarks(changes.marks(root), dirty: changes.dirtyDirs(root))
+            if currentRow?.branch != nil { changes.refresh(root: root) }
+        }
+        updateFolderWatch()
+    }
+
+    /// Diff 栏跟着当前终端所在的项目（开着时才换）；换根时先用存着的结果，再重取。
+    private func refreshDiffPanel() {
+        guard rightPanel == .diff else { return }
+        let root = currentProjectRoot
+        let inRepo = currentRow?.branch != nil
+        let changed = root != diffPanel.root
+        diffPanel.setRoot(root, inRepo: inRepo, branch: currentRow?.branch, currentDir: currentRow?.currentDir)
+        if changed, let root, inRepo {
+            if let snap = changes.snapshot(root) { diffPanel.update(snap) }
+            changes.refresh(root: root)
+        }
+        updateFolderWatch()
+    }
+
+    /// FSEvents 流只在开着「文件」「更改」或（在仓库里时）状态栏时对当前根开，换根就换（docs/design.md 5.12 节「自动刷新」）：
+    /// 文件树重读变了的目录，在仓库里时重取更改列表。
+    private func updateFolderWatch() {
+        let root: String?
+        switch rightPanel {
+        case .files: root = filesPanel.tree?.root.path
+        case .diff: root = diffPanel.root
+        case .status: root = currentRow?.branch != nil ? currentProjectRoot : nil
+        default: root = nil
+        }
+        guard root != folderWatch?.root else { return }
+        folderWatch?.stop()
+        folderWatch = root.flatMap { r in
+            FolderWatch(root: r) { [weak self] dirs in
+                guard let self else { return }
+                if self.rightPanel == .files { self.filesPanel.refresh(dirs: dirs) }
+                if self.rightPanel != nil, self.rightPanel != .history, self.currentRow?.branch != nil { self.changes.refresh(root: r) }
+            }
+        }
+    }
+
+    /// 状态栏上一次取「更改」的根：换了（切终端、终端换目录到别的项目）才重取并换 FSEvents 流。
+    private var statusChangesRoot: String?
+
+    /// 状态栏跟着当前终端这一行（开着时才排）。
+    private func refreshStatusPanel() {
+        guard rightPanel == .status else {
+            statusChangesRoot = nil
+            return
+        }
+        let info = currentID.flatMap { statusInfos[$0] }
+        let changesRoot = currentRow?.branch != nil ? currentProjectRoot : nil
+        if changesRoot != statusChangesRoot {
+            statusChangesRoot = changesRoot
+            if let changesRoot { changes.refresh(root: changesRoot) }
+            updateFolderWatch()
+        }
+        statusPanel.subject = currentRow.map { row in
+            // 上下文只取绑定的对话就是这款工具时的用量（与标题栏同一份，`statusInfos`）。
+            let usage = info?.tool == row.toolKey ? info?.usage : nil
+            // 经额度桥读上下文的工具，桥没接上时写明原因（docs/design.md 5.12 节「上下文」）。
+            let bridge = hookStatuses.first { $0.tool == row.toolKey }?.bridge
+            return StatusPanel.Subject(tool: row.toolKey, path: row.currentDir ?? "", branch: row.branch,
+                                       contextUsed: usage?.contextUsed, contextLimit: usage?.contextLimit,
+                                       contextSupported: info?.contextSupported ?? false,
+                                       contextNote: usage?.contextLimit == nil ? row.toolKey.flatMap { StatusPanel.bridgeNote(bridge: bridge, tool: $0) } : nil,
+                                       changes: changesRoot.map { StatusPanel.Changes(changes.snapshot($0)) })
+        }
     }
 
     /// 重读历史提示词：`key` 为当前终端这一行的（对话、最新提示词），没变就不读；nil 表示目标可能变了，总是读。
     private func refreshPromptHistory(key: String?) {
-        guard promptPanelShown else { return }
+        guard rightPanel == .history else { return }
         let target = selectedConversation ?? currentRowConversation
         // 栏头写明读的是哪段对话：工具与当前会话或已结束（会话 ID 由面板从应答里取）。
         let row = target.flatMap { sidebar.row(forConversation: $0) }
@@ -1560,7 +1922,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         // 内容没变时面板不重排。期间目标或提示词又变了就不补。
         if key != nil {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-                guard let self, self.promptPanelShown, self.promptKey == full else { return }
+                guard let self, self.rightPanel == .history, self.promptKey == full else { return }
                 self.loadPrompts(target)
             }
         }
@@ -1573,7 +1935,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         let ended = promptRowRunning.running && promptRowRunning.conversation == row?.conversationID
             && (row?.state == "Ready" || row?.state == "Error")
         if row?.state != "Waiting" { promptRowRunning = (row?.conversationID, running) }
-        guard ended, promptPanelShown, selectedConversation == nil, let target = row?.conversationID else { return }
+        guard ended, rightPanel == .history, selectedConversation == nil, let target = row?.conversationID else { return }
         scyllauiLog.notice("prompt history reload at turn end conversation=\(target)")
         loadPrompts(target)
     }
@@ -1581,7 +1943,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
     private func loadPrompts(_ target: Int64) {
         core.prompts(conversationID: target) { [weak self] reply in
             DispatchQueue.main.async {
-                guard let self, self.promptPanelShown, (self.selectedConversation ?? self.currentRowConversation) == target else { return }
+                guard let self, self.rightPanel == .history, (self.selectedConversation ?? self.currentRowConversation) == target else { return }
                 if let reply, reply["ok"] as? Bool == true {
                     self.promptPanel.show(reply: reply)
                 } else {

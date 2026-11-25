@@ -1,0 +1,13 @@
+{
+  "_note": "按 Claude Code 2.1.330 包内 statusline 代码构造的 context_window 形状（字段名与算法照抄自包内代码），不是实录；其余字段从略。",
+  "session_id": "00000000-0000-4000-8000-000000000000",
+  "model": {"id": "claude-opus-5-5", "display_name": "Opus"},
+  "context_window": {
+    "total_input_tokens": 40000,
+    "total_output_tokens": 1200,
+    "context_window_size": 200000,
+    "current_usage": {"input_tokens": 8000, "output_tokens": 1200, "cache_creation_input_tokens": 2000, "cache_read_input_tokens": 30000},
+    "used_percentage": 20,
+    "remaining_percentage": 80
+  }
+}

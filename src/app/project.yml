@@ -57,7 +57,7 @@ targets:
         # 版权声明（2026-10-30 用户定稿，写全）：「关于」面板与开屏页脚共用这一句。
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 Siyuan Zhang. All rights reserved."
         # 版本号规则见 docs/design.md 10.1 节「版本号」；构建号由 build-app.sh 按 git 提交数覆盖，这里的 1 只在直接用 Xcode 构建时生效。
-        MARKETING_VERSION: "0.4.57"
+        MARKETING_VERSION: "0.4.58"
         CURRENT_PROJECT_VERSION: "1"
         # 签名（M4b 块 1，docs/design.md 10.6 节「块 1 实现」）：正式版与测试版都用 Developer ID 并开硬化运行时；
         # 测试版也签，系统按签名认出同一个 App，换构建不再重问「文稿」等授权。Rust 程序在「Copy ScyllaUI core」里用同一身份签。
@@ -183,9 +183,19 @@ targets:
       - path: ScyllaUI/Sidebar/SidebarCells.swift
       - path: ScyllaUI/Sidebar/ScyllaUIStyle.swift
       - path: ScyllaUI/PromptHistoryPanel.swift
-      # PromptHistoryPanel 的边缘悬停蓝线（fa16c7f 起引用，测试目标漏了这个文件导致 test-app.sh 编译失败）
+      # 右侧栏的宿主（边缘拖宽用 DividerHighlight）与各栏（docs/design.md 5.12 节）。
+      - path: ScyllaUI/RightPanelHost.swift
+      - path: ScyllaUI/StatusPanel.swift
+      - path: ScyllaUI/FilesPanel.swift
+      - path: ScyllaUI/FileViewer.swift
+      - path: ScyllaUI/MarkdownRender.swift
+      - path: ScyllaUI/Latest.swift
+      - path: ScyllaUI/ChangesStore.swift
+      - path: ScyllaUI/DiffPanel.swift
       - path: ScyllaUI/DividerHighlight.swift
       - path: ScyllaUI/AppLog.swift
+      # 与后台连接上按行读（大应答只在新读进来的部分里找换行，2026-11-25 Diff 改版 D4）。
+      - path: ScyllaUI/LineReader.swift
       # 设置的纯逻辑（M4a）：主题清单、外观覆盖文件。
       - path: ScyllaUI/Settings/ThemeCatalog.swift
       # 开屏的时间线、字标数据与欢迎窗口的显示策略（M4a 块 4）。

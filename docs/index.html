@@ -67,6 +67,7 @@
     <p class="lead">为并行运行多个 AI 编程助手打造的原生 macOS 终端。</p>
     <p>在几个项目里同时开着多个不同品牌的 AI Agent，最费神的不是写提示词，而是记住哪个在等您。ScyllaUI 把它们和普通 Shell 收进同一个窗口，按 Git 仓库自动归组，实时显示每个 Agent 正在运行、等您批准、已经做完还是出错。不用自己写 Hook，也不靠猜：没有可靠信号时，它会直接标为「未知」。</p>
     <p>终端由后台进程常驻托管：退出、更新 App，甚至重启电脑，正在进行的对话都会接回原处。</p>
+    <p>终端旁边可以直接看项目文件和 Agent 的更改：文件树与只读查看器（Markdown 会渲染）、相对上一次提交的逐行更改，以及这段对话已占用多少上下文。</p>
     <p>目前支持 Claude Code、Codex、Kimi Code、Grok Build、OpenCode、GitHub Copilot CLI 和 Antigravity CLI，后续会陆续接入更多 AI Agent。</p>
     <div class="download">
       <a class="btn js-dl" href="https://github.com/scyllaui/scyllaui/releases/latest">下载 ScyllaUI</a>
@@ -77,7 +78,7 @@
       <a href="https://github.com/scyllaui/scyllaui#中文">使用说明</a>
       <a href="https://github.com/scyllaui/scyllaui">源代码</a>
     </p>
-    <img src="images/overview-zh.png" alt="ScyllaUI 主窗口：按项目分组的终端与实时状态，顶部是状态栏，右侧是终端">
+    <img src="images/overview-zh.png" alt="ScyllaUI 主窗口：按项目分组的终端与实时状态，顶部是标题栏和四个功能按钮，右侧是终端">
     <h2>安装</h2>
     <ol>
       <li>打开下载的 DMG，把 ScyllaUI 拖进「应用程序」。</li>
@@ -91,6 +92,7 @@
     <p class="lead">A native macOS terminal built for running many AI coding agents in parallel.</p>
     <p>With different AI agents running across your projects, the hard part isn't writing prompts; it's remembering which one is waiting on you. ScyllaUI brings them and your plain shells into one window, grouped by Git repository, and shows live whether each agent is running, waiting for approval, done or failed. There are no hooks to write by hand and no guessing: without a reliable signal, it says "Unknown".</p>
     <p>A background process keeps every terminal alive: quit or update the app, even restart your Mac, and your conversations resume where they left off.</p>
+    <p>Next to the terminal you can read the project's files and see what an agent changed: a file tree with a read-only viewer (Markdown is rendered), a line-by-line diff against the last commit, and how much of its context window the conversation has used.</p>
     <p>Currently supported: Claude Code, Codex, Kimi Code, Grok Build, OpenCode, GitHub Copilot CLI and Antigravity CLI, with more agents on the way.</p>
     <div class="download">
       <a class="btn js-dl" href="https://github.com/scyllaui/scyllaui/releases/latest">Download ScyllaUI</a>
@@ -101,7 +103,7 @@
       <a href="https://github.com/scyllaui/scyllaui#english">User guide</a>
       <a href="https://github.com/scyllaui/scyllaui">Source code</a>
     </p>
-    <img src="images/overview-en.png" alt="ScyllaUI main window: terminals grouped by project with live agent status, the status bar on top, and a terminal on the right">
+    <img src="images/overview-en.png" alt="ScyllaUI main window: terminals grouped by project with live agent status, the title bar with the four panel buttons on top, and a terminal on the right">
     <h2>Install</h2>
     <ol>
       <li>Open the downloaded DMG and drag ScyllaUI into Applications.</li>

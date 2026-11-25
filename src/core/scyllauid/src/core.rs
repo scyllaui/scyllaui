@@ -11,6 +11,7 @@ use crate::version::{VersionJob, VersionWorker};
 use crate::waitwatch::WaitWatch;
 use crate::procinfo::{self, ExitWatch, Foreground, TreeSample};
 use crate::prompts::{PromptJob, PromptWorker, Segment};
+use crate::files::FsWorker;
 use crate::pty::{self, spawn::SpawnSpec, Host};
 use crate::route::{Probe, RouteJob, RouteWorker};
 use crate::retention::Retention;
@@ -96,6 +97,16 @@ pub enum Cmd {
     },
     /// PromptWorker 读完一次 `prompts.list`（prompts.rs）：整条应答发给请求方连接（docs/design.md 10.5 节决策 10）。
     PromptsListed {
+        conn: u64,
+        reply: Value,
+    },
+    /// 读到对话的上下文占用（title.rs 或 statusline 桥，docs/design.md 5.12 节「状态」）。
+    ContextRead {
+        conversation_id: i64,
+        context: scyllaui_proto::adapters::usage::Context,
+    },
+    /// 右侧栏的一次请求做完（fs.rs，docs/design.md 5.12 节）：整条应答发给请求方连接。
+    FsDone {
         conn: u64,
         reply: Value,
     },
@@ -385,6 +396,8 @@ pub struct Core {
     titles: TitleWorker,
     /// 历史提示词的读取线程（M4a 追加块 9）；测试里多数不设。
     prompts: Option<PromptWorker>,
+    /// 右侧栏的文件与 Git 请求（docs/design.md 5.12 节）；测试里多数不设。
+    fs: Option<FsWorker>,
     /// 存活终端此刻所在的目录（workspace.json，M4a 追加块 10）：重启后恢复终端时开回原目录。
     workspace: WorkspaceDirs,
     routes: RouteWorker,
@@ -511,6 +524,7 @@ impl Core {
             git_fds: HashMap::new(),
             titles,
             prompts: None,
+            fs: None,
             workspace: WorkspaceDirs::default(),
             routes,
             probe: Probe::system(),
@@ -616,7 +630,7 @@ impl Core {
                 }
             }
             Cmd::BranchRead { git_dir, branch } => self.branch_read(&git_dir, branch),
-            Cmd::PromptsListed { conn, reply } => self.send_to(conn, &reply),
+            Cmd::PromptsListed { conn, reply } | Cmd::FsDone { conn, reply } => self.send_to(conn, &reply),
             Cmd::TitleRead { conversation_id, title } => {
                 let r = self.store.set_native_title(conversation_id, &title).map_err(Fail::from);
                 if let Err(Fail(_, e)) = r.and_then(|changed| match changed {
@@ -666,6 +680,11 @@ impl Core {
             Cmd::TokensRead { conversation_id, tokens } => {
                 if self.conversation_active(conversation_id) {
                     self.set_tokens(conversation_id, tokens);
+                }
+            }
+            Cmd::ContextRead { conversation_id, context } => {
+                if self.conversation_active(conversation_id) {
+                    self.set_context(conversation_id, context);
                 }
             }
             Cmd::QuotaSnapshot { tool, quotas, source } => self.set_quotas(tool, quotas, source),
@@ -798,6 +817,9 @@ impl Core {
         }
         if !ready {
             return;
+        }
+        if kind.starts_with("fs.") || kind == "git.changes" || kind == "git.diff" {
+            return self.fs_request(id, req_id, kind, msg, is_app);
         }
         let result = match kind {
             "sync"
@@ -1118,6 +1140,11 @@ impl Core {
 
     pub fn prompts(mut self, worker: PromptWorker) -> Core {
         self.prompts = Some(worker);
+        self
+    }
+
+    pub fn fs(mut self, worker: FsWorker) -> Core {
+        self.fs = Some(worker);
         self
     }
 
@@ -3204,6 +3231,16 @@ impl Core {
         self.push_usage(cid);
     }
 
+    /// 记下对话的上下文占用（右侧栏「状态」，2026-11-23），有变化即推送 `usage.upsert`。
+    fn set_context(&mut self, cid: i64, context: scyllaui_proto::adapters::usage::Context) {
+        let u = self.usage.entry(cid).or_default();
+        if u.context == Some(context) {
+            return;
+        }
+        u.context = Some(context);
+        self.push_usage(cid);
+    }
+
     /// 记下对话是否按量计费（2026-11-01），有变化即推送 `usage.upsert`。
     fn set_billing(&mut self, cid: i64, api: bool) {
         let u = self.usage.entry(cid).or_default();
@@ -3292,14 +3329,17 @@ impl Core {
         }
         let p = &frame["payload"];
         self.merge_statusline_quotas(claude_statusline_quotas(p, now_ms()));
-        let (Some(sid), Some(model)) = (p["session_id"].as_str(), p["model"]["id"].as_str().filter(|m| !m.is_empty())) else {
-            return;
-        };
+        let Some(sid) = p["session_id"].as_str() else { return };
         let cid = self.panes.values().find_map(|pane| {
             (pane.state.tool == Some(Tool::Claude) && pane.state.session_id.as_deref() == Some(sid)).then_some(pane.conversation)?
         });
-        if let Some(cid) = cid.filter(|c| self.conversation_active(*c)) {
+        let Some(cid) = cid.filter(|c| self.conversation_active(*c)) else { return };
+        if let Some(model) = p["model"]["id"].as_str().filter(|m| !m.is_empty()) {
             self.set_model(cid, model.to_owned(), "statusline");
+        }
+        // 上下文占用（右侧栏「状态」，2026-11-23）：statusline 桥转来的 `context_window`。
+        if let Some(c) = scyllaui_proto::adapters::usage::claude_statusline_context(p) {
+            self.set_context(cid, c);
         }
     }
 
@@ -3417,6 +3457,51 @@ impl Core {
             _ if chain.is_empty() => self.send_to(id, &fail("not_found", "对话不存在")),
             None => self.send_to(id, &fail("unavailable", "历史提示词未启用")),
             Some(worker) => worker.request(PromptJob { conn: id, req_id, home: PathBuf::from(&self.cli_home), segments: chain }),
+        }
+    }
+
+    /// 右侧栏的请求（docs/protocol.md 第 4 节 `fs.*`、`git.changes`、`git.diff`）：只有 app 角色可用；每个请求起一个线程，做完才应答，在途已满回 `busy`。
+    fn fs_request(&mut self, id: u64, req_id: Value, kind: &str, msg: &Value, is_app: bool) {
+        let fail = |code: &str, message: &str| json!({"type": "reply", "id": req_id, "ok": false, "error": {"code": code, "message": message}});
+        let abs = |key: &str| msg[key].as_str().filter(|p| p.starts_with('/')).map(PathBuf::from);
+        let job: Box<dyn FnOnce() -> Result<Value, crate::files::Fail> + Send> = match kind {
+            _ if !is_app => return self.send_to(id, &fail("bad_request", "只有 app 角色可用")),
+            "fs.list" => match abs("dir") {
+                Some(dir) => {
+                    let root = abs("git_root");
+                    Box::new(move || crate::files::list(&dir, root.as_deref()))
+                }
+                None => return self.send_to(id, &fail("bad_request", "dir 须为绝对路径")),
+            },
+            "fs.read" => match abs("path") {
+                Some(path) => Box::new(move || crate::files::read(&path)),
+                None => return self.send_to(id, &fail("bad_request", "path 须为绝对路径")),
+            },
+            "fs.find" => match (abs("root"), msg["query"].as_str().map(str::to_owned)) {
+                (Some(root), Some(q)) => Box::new(move || crate::files::find(&root, &q)),
+                _ => return self.send_to(id, &fail("bad_request", "root 须为绝对路径，并带 query")),
+            },
+            "fs.grep" => match (abs("root"), msg["query"].as_str().map(str::to_owned)) {
+                (Some(root), Some(q)) => Box::new(move || crate::gitview::grep(&root, &q)),
+                _ => return self.send_to(id, &fail("bad_request", "root 须为绝对路径，并带 query")),
+            },
+            "git.changes" => match abs("root") {
+                Some(root) => Box::new(move || crate::gitview::changes(&root)),
+                None => return self.send_to(id, &fail("bad_request", "root 须为绝对路径")),
+            },
+            "git.diff" => match (abs("root"), msg["path"].as_str().filter(|p| !p.is_empty()).map(str::to_owned)) {
+                (Some(root), Some(path)) => {
+                    let untracked = msg["untracked"].as_bool().unwrap_or(false);
+                    Box::new(move || crate::gitview::file_diff(&root, &path, untracked))
+                }
+                _ => return self.send_to(id, &fail("bad_request", "root 须为绝对路径，并带 path")),
+            },
+            _ => return self.send_to(id, &fail("unknown_type", kind)),
+        };
+        match self.fs.as_ref().map(|w| w.spawn(id, req_id.clone(), "右侧栏请求", job)) {
+            None => self.send_to(id, &fail("unavailable", "右侧栏请求未启用")),
+            Some(false) => self.send_to(id, &fail("busy", "同时在途的请求太多")),
+            Some(true) => {}
         }
     }
 
@@ -3614,6 +3699,8 @@ struct Usage {
     tokens: Option<Tokens>,
     effort: Option<String>,
     api: bool,
+    /// 上下文占用（右侧栏「状态」，2026-11-23）。
+    context: Option<scyllaui_proto::adapters::usage::Context>,
 }
 
 /// 用量对象（docs/protocol.md 第 5 节）：没读到 token、推理强度时不带对应字段。
@@ -3626,6 +3713,7 @@ fn tools_json() -> Value {
             let a = adapter(*t);
             json!({"tool": t.as_str(), "reply": a.reply_source.has_reply(), "prompts": a.reply_source.has_prompts(),
                    "usage": a.usage_source != scyllaui_proto::adapters::usage::UsageSource::None, "model": a.has_model(),
+                   "context": a.usage_source.has_context(),
                    "effort": a.effort_source != scyllaui_proto::adapters::usage::EffortSource::None})
         })
         .collect::<Vec<_>>())
@@ -3642,6 +3730,9 @@ fn usage_json(u: &Usage) -> Value {
     if let Some(t) = u.tokens {
         v["total_tokens"] = json!(t.total);
         v["tokens"] = t.to_json();
+    }
+    if let Some(c) = u.context {
+        v["context"] = json!({"used": c.used, "limit": c.limit});
     }
     v
 }
@@ -5503,6 +5594,30 @@ mod tests {
         assert_eq!(r["error"]["code"], "not_found");
     }
 
+    /// 右侧栏的文件请求（docs/design.md 5.12 节）：在单独的线程里做、做完才回；只有 app 角色可用；未启用、参数不对立即回错误。
+    #[test]
+    fn fs_requests_reply_from_worker_thread() {
+        let mut b = bench("fs");
+        let (ftx, frx) = mpsc::channel();
+        b.core.fs = Some(FsWorker::new(ftx));
+        let (app, rx, _) = b.app(&["t1"]);
+        fs::write(b.dir.join("a.txt"), "内容").unwrap();
+        drain(&rx);
+        b.core.handle(Cmd::Request { conn: app, msg: json!({"type": "fs.read", "id": 3, "path": b.dir.join("a.txt")}) });
+        assert!(drain(&rx).iter().all(|m| m["type"] != "reply"), "读完才回");
+        let cmd = frx.recv_timeout(Duration::from_secs(5)).expect("线程应送回结果");
+        b.core.handle(cmd);
+        let reply = drain(&rx).into_iter().find(|m| m["type"] == "reply").expect("应有应答");
+        assert_eq!((reply["id"].clone(), reply["ok"].clone(), reply["text"].clone()), (json!(3), json!(true), json!("内容")));
+        let (r, _) = b.req(app, &rx, json!({"type": "fs.list", "dir": "relative"}));
+        assert_eq!(r["error"]["code"], "bad_request");
+        let (r, _) = b.req(app, &rx, json!({"type": "fs.nope"}));
+        assert_eq!(r["error"]["code"], "unknown_type");
+        b.core.fs = None;
+        let (r, _) = b.req(app, &rx, json!({"type": "fs.list", "dir": "/"}));
+        assert_eq!(r["error"]["code"], "unavailable");
+    }
+
     /// Token 与周额度（M2 第 3 块）：token 有变化才推送 `usage.upsert`（带模型）；周额度按工具推送 `quota.upsert`，旧的不要、
     /// 没变化不满 1 分钟不推送；statusline 帧记 Claude 的周额度，`model.id` 按 session_id 记到正在运行的对话；快照带 `quotas`。
     #[test]
@@ -5582,6 +5697,18 @@ mod tests {
         assert!(drain(&rx).iter().all(|m| m["type"] != "usage.upsert"), "没有终端在运行的会话不记模型");
         b.core.handle(Cmd::Statusline { frame: frame("s1", "codex") });
         assert!(drain(&rx).is_empty(), "只认 claude");
+        // 上下文占用（右侧栏，2026-11-23）：statusline 帧的 `context_window` 与 title.rs 读到的都进 `usage.context`，相同不推。
+        let ctx = json!({"type": "statusline", "source": "claude", "payload": {"session_id": "s1", "context_window": {
+            "context_window_size": 200_000, "current_usage": {"input_tokens": 10, "cache_creation_input_tokens": 20, "cache_read_input_tokens": 30, "output_tokens": 5}}}});
+        b.core.handle(Cmd::Statusline { frame: ctx.clone() });
+        let us: Vec<Value> = drain(&rx).into_iter().filter(|m| m["type"] == "usage.upsert").collect();
+        assert_eq!(us[0]["usage"]["context"], json!({"used": 60, "limit": 200_000}));
+        assert_eq!(us[0]["usage"]["model"], "claude-opus-5-5", "没带模型的帧不清掉模型");
+        b.core.handle(Cmd::Statusline { frame: ctx });
+        assert!(drain(&rx).iter().all(|m| m["type"] != "usage.upsert"), "相同不推送");
+        b.core.handle(Cmd::ContextRead { conversation_id: cid, context: scyllaui_proto::adapters::usage::Context { used: 7, limit: 100 } });
+        let us: Vec<Value> = drain(&rx).into_iter().filter(|m| m["type"] == "usage.upsert").collect();
+        assert_eq!(us[0]["usage"]["context"], json!({"used": 7, "limit": 100}));
         let (snap, _) = b.req(app, &rx, json!({"type": "snapshot.get"}));
         let mut qs: Vec<String> = snap["snapshot"]["quotas"].as_array().unwrap().iter().map(|q| q["tool"].as_str().unwrap().to_owned()).collect();
         qs.sort();

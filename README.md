@@ -16,7 +16,7 @@ Currently supported: Claude Code, Codex, Kimi Code, Grok Build, OpenCode, GitHub
 
 **Download:** [scyllaui.github.io/scyllaui](https://scyllaui.github.io/scyllaui/) (always links to the latest version)
 
-![ScyllaUI main window: terminals grouped by project with live agent status, the status bar on top, and a terminal on the right](docs/images/overview-en.png)
+![ScyllaUI main window: terminals grouped by project with live agent status, the title bar with the four panel buttons on top, and a terminal on the right](docs/images/overview-en.png)
 
 ### Features
 
@@ -24,8 +24,10 @@ Currently supported: Claude Code, Codex, Kimi Code, Grok Build, OpenCode, GitHub
 - **See what every agent is doing**: one row per terminal shows Running, Waiting (with a "Needs approval" badge), Ready or Error; a finished turn you haven't looked at yet is marked "Unread". You get a notification when an agent needs your approval, and the Dock badge shows how many are waiting (turn-finished notifications are off by default and can be turned on in Settings › Notifications). When ScyllaUI has no reliable signal, it shows "Unknown" instead of guessing.
 - **Quitting doesn't stop anything**: terminals are kept by a background process. Quitting or updating ScyllaUI never ends a terminal; the agents keep running, and reopening ScyllaUI reattaches them.
 - **Recent tasks**: finished AI conversations are listed under "Recent". Double-click one to open a new terminal in its original folder with the resume command typed for you.
+- **Files and Diff beside the terminal**: browse the project's files and read them without leaving the window (Markdown is rendered, images and PDFs are previewed), and see everything an agent has changed since the last commit as a line-by-line diff. Both update by themselves as the agent works, and both are read-only.
+- **Status**: the terminal's full path and branch, how much of its context window the conversation has used, and a summary of the project's uncommitted changes.
 - **Prompt History**: a side panel lists the prompts you sent in a conversation, for review and copying.
-- **Status bar**: the current project's branch and changes, token usage, model and reasoning effort, your plan's usage limits, and ScyllaUI's own CPU and memory.
+- **Title bar**: token usage and your plan's usage limits, plus the CPU and memory used by the terminal's processes.
 - **Search and filter**: search by terminal name, task title, prompt, reply or folder, and show only the terminals that need you ("Pending only").
 
 ### Requirements
@@ -89,6 +91,19 @@ Codex normally runs in daemon mode: the `codex` command connects to one shared b
 - `Cmd+W` closes the current terminal; if a program is still running in it, ScyllaUI asks first.
 - `Cmd+Q` or closing the window only quits ScyllaUI; no terminal ends, and reopening reattaches them. To stop the background process as well, quit ScyllaUI, then on macOS 27 or later right-click its Dock icon and choose "Stop Running in Background"; on earlier versions run `/Applications/ScyllaUI.app/Contents/Helpers/scyllaui ctl shutdown --force` in a terminal. All terminals end with it.
 
+#### Status, Files, Diff and Prompt History
+
+Four buttons at the right end of the title bar open a panel beside the terminal, one at a time: Status (`Cmd+Shift+I`), Files (`Cmd+Shift+E`), Diff (`Cmd+Shift+D`) and Prompt History (`Cmd+Y`). The same commands are in the Terminal menu. Every panel follows the terminal you are looking at.
+
+- **Status**: the terminal's current folder (copy it or show it in Finder) and its branch; the conversation's context usage for Claude Code, Codex, Kimi Code, Grok Build and OpenCode (for Claude Code, connect its usage limits in Settings › Agent first); and one line with the project's added and removed lines, which opens Diff.
+- **Files**: the project's file tree, starting at the repository root. Type in the filter box to find files by name, or start with `?` to search file contents (for example `?TODO`). Click a file to read it next to the tree: text and code with line numbers, Markdown rendered (with a button to switch to the source), images and PDFs previewed. "Insert into Terminal" puts the file's path on the command line, like dragging the file in. Files that have changed are marked M or A.
+- **Diff**: everything that differs from the last commit (staged, unstaged and untracked together), listed by folder with added and removed line counts. Select a file to see its line-by-line diff; the arrows jump to the previous or next change.
+- Long lines are not wrapped by default: scroll sideways, drag the panel wider, or click the wrap button in the viewer's title row. The Maximize button lets the viewer cover the terminal area without resizing the terminal, so the agent's interface doesn't reflow; `Esc` brings it back.
+- Text is shown up to 1 MB per file; images up to 20 MB and PDFs up to 50 MB are previewed. For everything else, the "…" menu offers Open With and Show in Finder.
+- The panels are read-only: ScyllaUI never edits, stages or commits anything. When an agent changes files, the tree, the open file and the diff update within about a second. Diff and searching file contents need the Xcode Command Line Tools.
+
+![The Diff panel beside the terminal: changed files grouped by folder on the right, and the selected file's line-by-line diff](docs/images/panels-en.png)
+
 #### Recent tasks
 
 Finished AI conversations appear under "Recent" (up to 20 from the last 14 days). Click one to select it and review its prompts in Prompt History; double-click to resume. If the conversation is already running in a terminal, ScyllaUI switches to it.
@@ -146,7 +161,7 @@ Copyright © 2026 Siyuan Zhang. All rights reserved.
 
 **下载：** [scyllaui.github.io/scyllaui](https://scyllaui.github.io/scyllaui/) （始终指向最新版本）
 
-![ScyllaUI 主窗口：按项目分组的终端与实时状态，顶部是状态栏，右侧是终端](docs/images/overview-zh.png)
+![ScyllaUI 主窗口：按项目分组的终端与实时状态，顶部是标题栏和四个功能按钮，右侧是终端](docs/images/overview-zh.png)
 
 ### 功能
 
@@ -154,8 +169,10 @@ Copyright © 2026 Siyuan Zhang. All rights reserved.
 - **一眼看清 Agent 在做什么**：每个终端一行，显示运行中（Running）、需确认（Waiting，带「需确认」标记）、Ready、出错；一轮做完但您还没看过的，标「待查看」。需要您确认时发系统通知，程序坞角标显示待确认的数量（做完一轮的通知默认关闭，可在「设置 › 通知」打开）。拿不准时显示「未知」，不猜。
 - **退出不断线**：终端由后台保管。退出 App、更新 App 都不会结束终端，里面的 Agent 照常运行，重新打开即接回。
 - **最近任务**：已结束的 AI 对话列在「最近任务」里，双击就在原来的目录新开终端，并替您输入恢复命令，接着之前的对话继续。
+- **终端旁边看文件与更改**：不离开窗口就能浏览项目文件、查看内容（Markdown 会渲染，图片和 PDF 可预览），并逐行查看 Agent 相对上一次提交改了什么。两栏都随 Agent 的改动自动更新，都是只读的。
+- **状态**：这个终端的完整路径与分支、这段对话已占用多少上下文，以及项目里未提交更改的合计。
 - **历史提示词**：右侧可展开一栏，列出这段对话里您发过的提示词，方便回看和复制。
-- **标题栏状态行**：当前项目的分支与改动数、Token 用量、模型与推理强度、各家订阅的额度，以及 ScyllaUI 自身的 CPU 与内存。
+- **标题栏**：Token 用量与各家订阅的额度，以及这个终端里各进程占用的 CPU 与内存。
 - **搜索与筛选**：按终端名、任务标题、提示词、回复、目录搜索；可以「只看待处理」的终端。
 
 ### 运行要求
@@ -218,6 +235,19 @@ Codex 默认以守护进程模式运行：`codex` 命令会连上一个共享的
 - 双击终端行的第一行可以重命名。
 - `Cmd+W` 关闭当前终端，里面还有程序在运行时会先确认。
 - `Cmd+Q` 或关窗口只是退出 ScyllaUI，不结束任何终端；再次打开即接回。要连后台一起结束，先退出 ScyllaUI：macOS 27 及以后在程序坞右键 ScyllaUI 选「Stop Running in Background」，更早的系统在终端里运行 `/Applications/ScyllaUI.app/Contents/Helpers/scyllaui ctl shutdown --force`。所有终端会随之结束。
+
+#### 状态、文件、更改与历史提示词
+
+标题栏最右边的四个按钮各打开终端旁边的一栏，同一时间只开一栏：状态（`Cmd+Shift+I`）、文件（`Cmd+Shift+E`）、更改（`Cmd+Shift+D`，英文界面叫 Diff）、历史提示词（`Cmd+Y`）。菜单「终端」里有同名的命令。每一栏都跟着您正在看的终端走。
+
+- **状态**：终端此刻所在的文件夹（可拷贝、可在访达中显示）与分支；这段对话的上下文用量，支持 Claude Code、Codex、Kimi Code、Grok Build、OpenCode（Claude Code 要先在「设置 › Agent」里接入额度）；还有一行写项目增删了多少行，点它打开「更改」。
+- **文件**：项目的文件树，从仓库根开始。在筛选框里直接输入按名称找文件，以 `?` 开头则搜文件内容（如 `?TODO`）。点文件就在树旁边查看：文本和代码带行号，Markdown 显示渲染后的样子（可切到源码），图片和 PDF 直接预览。「插入到终端」把文件路径放进命令行，等于把文件拖进终端。有更改的文件标 M 或 A。
+- **更改**：相对上一次提交的全部更改，已暂存、未暂存和未跟踪的合在一起，按文件夹列出并写明增删行数。选中文件看它的逐行更改，上下箭头跳到上一处、下一处。
+- 长行默认不折行：可以横向滚动、把栏拖宽，或点查看器标题行里的折行按钮。「放大」让查看器盖住终端区，终端尺寸不变，Agent 的界面不会重排；按 `Esc` 缩回。
+- 文本每个文件最多显示 1 MB；图片 20 MB 以内、PDF 50 MB 以内可以预览。其余文件可用「…」菜单里的「打开方式」和「在访达中显示」。
+- 这几栏都是只读的：ScyllaUI 不改文件、不暂存、不提交。Agent 改了文件后，文件树、打开的文件和更改约 1 秒内自动更新。看更改与搜索文件内容需要 Xcode 命令行工具。
+
+![终端旁边的「更改」栏：右边按文件夹列出有更改的文件，左边是选中文件的逐行更改](docs/images/panels-zh.png)
 
 #### 最近任务
 

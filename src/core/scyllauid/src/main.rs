@@ -15,7 +15,9 @@ mod bridgepref;
 mod cliquota;
 mod conn;
 mod core;
+mod files;
 mod git;
+mod gitview;
 mod hooks;
 mod hooktime;
 mod procinfo;
@@ -156,6 +158,7 @@ fn main() {
         .listener(listen_fd, gate)
         .approvals(approval::ApprovalWatch::new(tx.clone()).unwrap_or_else(|e| fail(&format!("创建 kqueue 失败：{e}"))))
         .prompts(prompts::PromptWorker::new(tx.clone()))
+        .fs(files::FsWorker::new(tx.clone()))
         .workspace(workspace::WorkspaceDirs::load(data_dir.join("workspace.json")))
         .hook_times(hooktime::Timeline::load(data_dir.join("hook-timeline.json")))
         .bridge_pref(bridgepref::BridgePref::load(data_dir.join("statusline-bridge.json")));

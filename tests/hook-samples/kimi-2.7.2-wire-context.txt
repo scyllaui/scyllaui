@@ -1,0 +1,5 @@
+{"type":"profile.bind","agentId":"main","modelAlias":"kimi-code/kimi-for-coding","profileName":"agent","thinkingEffort":"low"}
+{"type":"usage.record","agentId":"main","model":"kimi-code/kimi-for-coding","usage":{"inputOther":11063,"output":155,"inputCacheRead":12288,"inputCacheCreation":0},"usageScope":"turn","time":1795276641384}
+{"type":"token_counting.measured","agentId":"main","length":3,"tokens":23506,"time":1795276641387}
+{"type":"turn.ended","agentId":"main","turnId":0,"reason":"completed","durationMs":4649,"requestId":"d226e2bfdf73a64161ebca429b6e059c","time":1795276641390}
+{"type":"token_counting.turn_recorded","agentId":"main","turnId":0,"length":3,"tokens":23506,"time":1795276641392}

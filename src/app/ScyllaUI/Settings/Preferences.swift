@@ -15,7 +15,10 @@ enum Prefs {
         static let restoreTerminals = "ScyllaUIRestoreTerminals"
         static let restoreAttempts = "ScyllaUIRestoreAttempts"
         static let lastTerminal = "ScyllaUILastTerminal"
-        static let promptPanelWidth = "ScyllaUIPromptPanelWidth"
+        static let promptPanelWidth = "ScyllaUIPromptPanelWidth2"
+        static let legacyPromptPanelWidth = "ScyllaUIPromptPanelWidth"
+        static let rightViewerWidth = "ScyllaUIRightViewerWidth"
+        static let filesTreeWidth = "ScyllaUIFilesTreeWidth"
         static let aliveAt = "ScyllaUIAliveAt"
     }
 
@@ -67,10 +70,27 @@ enum Prefs {
         set { d.set(newValue, forKey: Key.lastTerminal) }
     }
 
-    /// 历史提示词栏的宽度，0 为默认（docs/design.md 10.5 节决策 20）。
+    /// 历史提示词栏的宽度，0 为默认（docs/design.md 10.5 节决策 20）。0.4.58 起换了键：0.4.56 及以前铺满窗口时按旧比例
+    /// 自动算出的宽度（如 335）也存在旧键里，升级后被当成用户拖过的宽度，栏不按新的默认宽度打开（2026-11-22 用户实测），
+    /// 所以旧键不再读、读到即删。
     static var promptPanelWidth: Double {
-        get { d.double(forKey: Key.promptPanelWidth) }
+        get {
+            d.removeObject(forKey: Key.legacyPromptPanelWidth)
+            return d.double(forKey: Key.promptPanelWidth)
+        }
         set { d.set(newValue, forKey: Key.promptPanelWidth) }
+    }
+
+    /// 右侧栏查看文件时的宽度，0 为默认（docs/design.md 5.12 节「宽度」）。
+    static var rightViewerWidth: Double {
+        get { d.double(forKey: Key.rightViewerWidth) }
+        set { d.set(newValue, forKey: Key.rightViewerWidth) }
+    }
+
+    /// 「文件」打开文件后树栏的宽度，0 为默认（docs/design.md 5.12 节「宽度」，F3）。
+    static var filesTreeWidth: Double {
+        get { d.double(forKey: Key.filesTreeWidth) }
+        set { d.set(newValue, forKey: Key.filesTreeWidth) }
     }
 
     /// 运行中的心跳（M4b 块 7）：启动时写入并每 60 秒更新，正常退出时删除；启动时还在即上次意外退出。

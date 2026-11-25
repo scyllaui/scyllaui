@@ -274,7 +274,8 @@ fn send_statusline(buf: &[u8]) -> Option<()> {
     let sock = std::env::var("SCYLLAUI_SOCK").ok().filter(|s| !s.is_empty())?;
     let v: Value = serde_json::from_slice(buf).ok()?;
     let mut payload = serde_json::Map::new();
-    for k in ["session_id", "model", "rate_limits"] {
+    // `context_window`：右侧栏「状态」的上下文占用（2026-11-23）。
+    for k in ["session_id", "model", "rate_limits", "context_window"] {
         if let Some(x) = v.get(k) {
             payload.insert(k.to_owned(), x.clone());
         }

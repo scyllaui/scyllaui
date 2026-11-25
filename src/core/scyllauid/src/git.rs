@@ -11,7 +11,7 @@ use std::fs;
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::RawFd;
 use std::path::{Path, PathBuf};
-use std::io::Read;
+use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
 use std::time::{Duration, Instant};
@@ -81,7 +81,7 @@ pub fn parse_numstat(out: &[u8]) -> (u64, u64) {
 }
 
 /// 有没有可用的 git：没装命令行工具时 `/usr/bin/git` 会弹出安装提示，所以先问 `xcode-select -p`。
-fn git_available() -> bool {
+pub(crate) fn git_available() -> bool {
     Path::new("/usr/bin/git").exists()
         && Command::new("/usr/bin/xcode-select")
             .arg("-p")
@@ -127,6 +127,81 @@ fn run_git(dir: &Path, args: &[&str]) -> Option<Vec<u8>> {
     };
     let out = reader.join().ok()?;
     status.filter(|s| s.success()).map(|_| out)
+}
+
+/// `run_git_ex` 的结果：输出（超过上限时只有前一部分，`truncated` 为 true）与退出码（被信号结束时为 -1）；超时时结束进程，
+/// `timed_out` 为 true，输出为超时前读到的部分（内容搜索用它显示已找到的）。
+pub(crate) struct GitOut {
+    pub out: Vec<u8>,
+    pub code: i32,
+    pub truncated: bool,
+    pub timed_out: bool,
+}
+
+/// 同 `run_git`，另可给标准输入、限制输出大小（右侧栏，docs/design.md 5.12 节）：输出超过 `max_bytes` 时停止读取并结束进程，
+/// 返回已读部分；不看退出码是否成功，由调用方判断（`check-ignore` 没有匹配时以 1 退出）。启动失败为 None。
+pub(crate) fn run_git_ex(dir: &Path, args: &[&str], input: &[u8], max_bytes: usize) -> Option<GitOut> {
+    let mut child = Command::new("/usr/bin/git")
+        .args(["--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "core.quotePath=false"])
+        .args(args)
+        .current_dir(dir)
+        .env("GIT_OPTIONAL_LOCKS", "0")
+        .env("LC_ALL", "C")
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .stdin(if input.is_empty() { Stdio::null() } else { Stdio::piped() })
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .ok()?;
+    if let Some(mut stdin) = child.stdin.take() {
+        let data = input.to_vec();
+        std::thread::spawn(move || {
+            let _ = stdin.write_all(&data);
+        });
+    }
+    let mut stdout = child.stdout.take()?;
+    let full = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let flag = full.clone();
+    let reader = std::thread::spawn(move || {
+        let (mut buf, mut chunk, mut truncated) = (Vec::new(), vec![0u8; 64 << 10], false);
+        loop {
+            match stdout.read(&mut chunk) {
+                Ok(0) => break,
+                Ok(n) if buf.len() + n > max_bytes => {
+                    buf.extend_from_slice(&chunk[..max_bytes - buf.len()]);
+                    truncated = true;
+                    flag.store(true, std::sync::atomic::Ordering::Release);
+                    break;
+                }
+                Ok(n) => buf.extend_from_slice(&chunk[..n]),
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(_) => break,
+            }
+        }
+        (buf, truncated)
+    });
+    let deadline = Instant::now() + GIT_TIMEOUT;
+    let mut killed = false;
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(s)) => break Some(s),
+            Ok(None) if !killed && full.load(std::sync::atomic::Ordering::Acquire) => {
+                // 读到上限就不再读了：结束进程，不等它写完。
+                let _ = child.kill();
+                killed = true;
+            }
+            Ok(None) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(5)),
+            _ => {
+                let _ = child.kill();
+                let _ = child.wait();
+                log!("git 超时或失败（{}）：{}", args.join(" "), dir.display());
+                break None;
+            }
+        }
+    };
+    let (out, truncated) = reader.join().ok()?;
+    let timed_out = status.is_none() && !truncated;
+    Some(GitOut { out, code: status.and_then(|s| s.code()).unwrap_or(-1), truncated, timed_out })
 }
 
 /// 仓库配置里有没有会被 `status` / `diff` 执行的过滤器（clean、smudge、process），且命令不是 git-lfs 的：

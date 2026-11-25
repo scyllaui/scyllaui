@@ -33,7 +33,8 @@ final class CoreClient {
     private var terminals: [String: [String: Any]] = [:]
     private var nextID = 0
     /// 等待应答的请求（id → 回调，在读线程调用）；断线时丢弃。
-    private var pending: [Int: ([String: Any]) -> Void] = [:]
+    /// 等应答的回调；断线时逐个以 nil 回调（右侧栏的请求靠它不卡住，docs/design.md 5.12 节）。
+    private var pending: [Int: ([String: Any]?) -> Void] = [:]
     /// 最近一次 `terminal.focus`，重连后随 `sync` 重发。
     private var focused: String?
     /// 断开期间后台代答查询所用的外观（`appearance.set`，M3），重连后重发。
@@ -148,6 +149,14 @@ final class CoreClient {
     func request(_ obj: [String: Any], completion: @escaping ([String: Any]) -> Void) {
         queue.async {
             guard self.fd >= 0 else { return }
+            self.pending[self.send(obj)] = { if let r = $0 { completion(r) } }
+        }
+    }
+
+    /// 发请求，在读线程回调应答；未连接时立即、断线时也以 nil 回调（右侧栏的请求，docs/design.md 5.12 节）。
+    func ask(_ obj: [String: Any], completion: @escaping ([String: Any]?) -> Void) {
+        queue.async {
+            guard self.fd >= 0 else { return completion(nil) }
             self.pending[self.send(obj)] = completion
         }
     }
@@ -166,7 +175,7 @@ final class CoreClient {
             guard self.fd >= 0 else { return completion(nil) }
             var req: [String: Any] = ["type": "conversation.resume", "conversation_id": conversationID]
             if let typeInto { req["type_into"] = typeInto }
-            self.pending[self.send(req)] = { completion($0) }
+            self.pending[self.send(req)] = { if let r = $0 { completion(r) } }
         }
     }
 
@@ -174,7 +183,7 @@ final class CoreClient {
     func prompts(conversationID: Int64, completion: @escaping ([String: Any]?) -> Void) {
         queue.async {
             guard self.fd >= 0 else { return completion(nil) }
-            self.pending[self.send(["type": "prompts.list", "conversation_id": conversationID])] = { completion($0) }
+            self.pending[self.send(["type": "prompts.list", "conversation_id": conversationID])] = { if let r = $0 { completion(r) } }
         }
     }
 
@@ -285,10 +294,12 @@ final class CoreClient {
             }
             onMessage?(msg, received)
         }
-        queue.sync {
+        let dropped = queue.sync {
             self.fd = -1
-            self.pending.removeAll()
+            defer { self.pending.removeAll() }
+            return Array(self.pending.values)
         }
+        dropped.forEach { $0(nil) }
         close(fd)
     }
 
@@ -447,28 +458,5 @@ final class CoreClient {
         var one: Int32 = 1
         setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &one, socklen_t(MemoryLayout<Int32>.size))
         return fd
-    }
-}
-
-/// 从 socket 按行读取（阻塞，只在后台线程使用）。
-private final class LineReader {
-    private let fd: Int32
-    private var buffer = Data()
-    private var chunk = [UInt8](repeating: 0, count: 64 << 10)
-
-    init(fd: Int32) { self.fd = fd }
-
-    /// 下一行（不含换行符）；对端关闭或出错时返回 nil。
-    func next() -> Data? {
-        while true {
-            if let nl = buffer.firstIndex(of: 0x0A) {
-                let line = buffer.subdata(in: buffer.startIndex..<nl)
-                buffer.removeSubrange(buffer.startIndex...nl)
-                return line
-            }
-            let n = read(fd, &chunk, chunk.count)
-            if n <= 0 { return nil }
-            buffer.append(chunk, count: n)
-        }
     }
 }

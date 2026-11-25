@@ -170,6 +170,16 @@ pub enum UsageSource {
     AntigravityTranscript,
 }
 
+impl UsageSource {
+    /// 读得到上下文占用（右侧栏「状态」，2026-11-23）：Claude 来自 statusline 桥的 `context_window`，Codex 来自 rollout 的
+    /// `token_count`，Grok 来自 `usage.json` 与 `signals.json`，Kimi 来自 `wire.jsonl` 与它的 `config.toml`，OpenCode 来自它的库与模型资料；
+    /// Copilot、Antigravity 本机记录里没有可靠的上限，ScyllaUI 暂不读取（实现方案第 3 版的采样）。
+    pub fn has_context(self) -> bool {
+        matches!(self, UsageSource::ClaudeTranscript | UsageSource::CodexRollout | UsageSource::GrokUsageJson
+            | UsageSource::KimiWire | UsageSource::OpenCodeDb)
+    }
+}
+
 fn n(v: &Value) -> u64 {
     v.as_u64().unwrap_or(0)
 }
@@ -450,6 +460,115 @@ pub fn claude_statusline_quotas(payload: &Value, now: i64) -> Vec<Quota> {
         .collect()
 }
 
+/// 上下文占用（右侧栏「状态」，docs/design.md 5.12 节）：已用与上限都拿到才有，只在内存中。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Context {
+    pub used: u64,
+    pub limit: u64,
+}
+
+impl Context {
+    pub fn new(used: u64, limit: u64) -> Option<Context> {
+        (limit > 0).then_some(Context { used, limit })
+    }
+}
+
+/// Claude 官方 statusline stdin 的 `context_window`：已用为 `current_usage` 的输入、缓存写与缓存读之和（与 Claude 自己的
+/// `used_percentage` 同一算法，2026-11-23 按 Claude Code 2.1.330 包内代码核对），上限为 `context_window_size`。还没有
+/// 一次调用时 `current_usage` 为 null，不返回。
+pub fn claude_statusline_context(payload: &Value) -> Option<Context> {
+    let cw = &payload["context_window"];
+    let u = cw["current_usage"].as_object()?;
+    let used = ["input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"].iter().map(|k| n(&u[*k])).sum();
+    Context::new(used, cw["context_window_size"].as_u64()?)
+}
+
+/// Codex rollout（可以只是末尾一段完整行）中最后一条带 `info` 的 `token_count`：已用为 `last_token_usage.total_tokens`
+/// （最近一次调用的整个上下文），上限为 `model_context_window`（2026-11-23 本机 codex-cli 0.171.0 采样）。Codex 自己显示的
+/// 「% context left」另扣一段固定基线，所以两边的百分比可能略有出入。
+pub fn codex_last_context(text: &str) -> Option<Context> {
+    let v = text.lines().rev().filter_map(|l| serde_json::from_str::<Value>(l).ok()).find(|v| {
+        v["type"] == "event_msg" && v["payload"]["type"] == "token_count" && v["payload"]["info"].is_object()
+    })?;
+    let info = &v["payload"]["info"];
+    Context::new(info["last_token_usage"]["total_tokens"].as_u64()?, info["model_context_window"].as_u64()?)
+}
+
+/// Grok 的上下文：Grok 自己显示的是最近一次调用的输入 token 数（它 statusline 文档里的 `context_tokens`），上限为 `signals.json`
+/// 的 `contextWindowTokens`。会话目录里没有逐次调用的记录：`usage.json` 最近一轮只调了一次模型时，这一轮的 `inputTokens` 就是它；
+/// 调了多次时退回 `signals.json` 的 `contextTokensUsed`，它落后一次调用（倒数第二次调用的输入，同一轮里只差工具结果）。会话的第一次
+/// 调用时 `contextTokensUsed` 还是不含系统提示词与工具定义的估算，所以不单用它（2026-11-23 本机 grok 1.0.92 真实窗口里核对）。
+pub fn grok_context(signals: &Value, usage: Option<&Value>) -> Option<Context> {
+    let limit = signals["contextWindowTokens"].as_u64()?;
+    let last = usage.and_then(|u| u["turns"].as_array()?.last().cloned());
+    let used = match last {
+        Some(t) if t["modelCalls"].as_u64() == Some(1) => t["inputTokens"].as_u64()?,
+        _ => signals["contextTokensUsed"].as_u64()?,
+    };
+    Context::new(used, limit)
+}
+
+/// Kimi `wire.jsonl`（可以只是末尾一段完整行）的上下文已用与模型别名：已用为最后一条带 `tokens` 的 `token_counting.measured`、
+/// `token_counting.rebased` 或 `token_counting.truncated`（Kimi 实测的上下文 token 数，压缩或撤回后随之变小），别名取最后一条
+/// `usage.record` 的 `model`，没有时取 `profile.bind` 的 `modelAlias`。Kimi 自己的百分比在两轮之间还会加上新消息的估算，
+/// 两边可能略有差异（2026-11-23 按本机 kimi 2.7.2 包内代码与 wire 采样核对）。
+pub fn kimi_wire_context(text: &str) -> Option<(u64, String)> {
+    let records: Vec<Value> = text.lines().filter_map(|l| serde_json::from_str(l).ok()).collect();
+    let used = records.iter().rev().find_map(|v| {
+        matches!(v["type"].as_str(), Some("token_counting.measured" | "token_counting.rebased" | "token_counting.truncated"))
+            .then(|| v["tokens"].as_u64())
+            .flatten()
+    })?;
+    let alias = records.iter().rev().find_map(|v| match v["type"].as_str() {
+        Some("usage.record") => v["model"].as_str(),
+        Some("profile.bind") => v["modelAlias"].as_str(),
+        _ => None,
+    })?;
+    Some((used, alias.to_owned()))
+}
+
+/// Kimi `config.toml` 里这个模型别名的上限：`[models."<别名>"]` 一节的 `max_input_size`，没有时取 `max_context_size`（与 Kimi
+/// 自己的算法相同）。只认这一种写法，认不出为 None。
+pub fn kimi_model_limit(config: &str, alias: &str) -> Option<u64> {
+    let header = format!("[models.\"{alias}\"]");
+    let section = config.lines().skip_while(|l| l.trim() != header).skip(1).take_while(|l| !l.trim_start().starts_with('['));
+    let (mut input, mut context) = (None, None);
+    for line in section {
+        let Some((k, v)) = line.split_once('=') else { continue };
+        let v = v.trim().parse::<u64>().ok().filter(|n| *n > 0);
+        match k.trim() {
+            "max_input_size" => input = v,
+            "max_context_size" => context = v,
+            _ => {}
+        }
+    }
+    input.or(context)
+}
+
+/// OpenCode 一条助手消息的上下文已用与模型：已用为 `tokens` 的输入、输出、推理、缓存读、缓存写之和；模型为 OpenCode 2 的
+/// `model.{providerID, id}`，OpenCode 1 为 `providerID`、`modelID`（2026-11-23 按本机 opencode 2.3.0 包内代码核对：它取压缩之后
+/// 最后一条带 `tokens` 的助手消息，和为 0 时不显示）。
+pub fn opencode_message_context(msg: &Value) -> Option<(u64, String, String)> {
+    let t = &msg["tokens"];
+    let used = n(&t["input"]) + n(&t["output"]) + n(&t["reasoning"]) + n(&t["cache"]["read"]) + n(&t["cache"]["write"]);
+    let provider = msg["model"]["providerID"].as_str().or(msg["providerID"].as_str())?;
+    let model = msg["model"]["id"].as_str().or(msg["modelID"].as_str())?;
+    (used > 0).then(|| (used, provider.to_owned(), model.to_owned()))
+}
+
+/// OpenCode 的模型资料（`~/.cache/opencode/models.json`，按服务商分组）里每个模型的上下文上限，键为「服务商/模型」。
+pub fn opencode_model_limits(models: &Value) -> std::collections::HashMap<String, u64> {
+    let mut out = std::collections::HashMap::new();
+    for (provider, p) in models.as_object().into_iter().flatten() {
+        for (id, m) in p["models"].as_object().into_iter().flatten() {
+            if let Some(limit) = m["limit"]["context"].as_u64().filter(|n| *n > 0) {
+                out.insert(format!("{provider}/{id}"), limit);
+            }
+        }
+    }
+    out
+}
+
 /// Grok `summary.json` 的当前模型。
 pub fn grok_summary_model(summary: &Value) -> Option<String> {
     summary["current_model_id"].as_str().filter(|m| !m.is_empty()).map(str::to_owned)
@@ -459,6 +578,49 @@ pub fn grok_summary_model(summary: &Value) -> Option<String> {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    /// 上下文占用（右侧栏，2026-11-23）：样本取自 tests/hook-samples 下的采样。
+    #[test]
+    fn context_from_each_source() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../tests/hook-samples");
+        let read = |p: &str| std::fs::read_to_string(root.join(p)).unwrap();
+        let claude: Value = serde_json::from_str(&read("claude-2.1.330-statusline-context.json")).unwrap();
+        assert_eq!(claude_statusline_context(&claude), Some(Context { used: 8_000 + 2_000 + 30_000, limit: 200_000 }));
+        let mut fresh = claude.clone();
+        fresh["context_window"]["current_usage"] = Value::Null;
+        assert_eq!(claude_statusline_context(&fresh), None, "还没有调用时不给");
+        assert_eq!(codex_last_context(&read("codex-0.171.0-rollout-context.txt")), Some(Context { used: 36_417, limit: 475_000 }));
+        assert_eq!(codex_last_context("{\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":null}}"), None);
+        let grok: Value = serde_json::from_str(&read("grok-1.0.92-signals-context.json")).unwrap();
+        let multi = serde_json::json!({"turns": [{"inputTokens": 52_526, "modelCalls": 2}]});
+        assert_eq!(grok_context(&grok, Some(&multi)), Some(Context { used: 26_387, limit: 256_000 }), "一轮调了多次：取 signals");
+        assert_eq!(grok_context(&grok, None), Some(Context { used: 26_387, limit: 256_000 }), "没有 usage.json：取 signals");
+        let one: Value = serde_json::from_str(&read("grok-1.0.92-usage-context.json")).unwrap();
+        assert_eq!(grok_context(&one["signals"], Some(&one["usage"])), Some(Context { used: 25_538, limit: 256_000 }),
+                   "一轮只调一次：取这一轮的输入，与 Grok 界面的 25k / 256k 一致");
+        assert_eq!(grok_context(&serde_json::json!({"contextTokensUsed": 5, "contextWindowTokens": 0}), None), None, "上限为 0 不给");
+
+        let (used, alias) = kimi_wire_context(&read("kimi-2.7.2-wire-context.txt")).unwrap();
+        assert_eq!((used, alias.as_str()), (23_506, "kimi-code/kimi-for-coding"));
+        let config = read("kimi-2.7.2-config-models.toml");
+        assert_eq!(kimi_model_limit(&config, &alias), Some(1_048_576));
+        assert_eq!(kimi_model_limit(&config, "kimi-code/k3-256k"), Some(262_144), "只读这一节，不串到下一节");
+        assert_eq!(kimi_model_limit(&config, "nope/x"), None);
+        assert_eq!(kimi_model_limit("[models.\"a/b\"]\nmax_context_size = 100\nmax_input_size = 80\n", "a/b"), Some(80), "有输入上限先用它");
+        let truncated = "{\"type\":\"usage.record\",\"model\":\"a/b\"}\n{\"type\":\"token_counting.measured\",\"tokens\":900}\n{\"type\":\"token_counting.truncated\",\"tokens\":300}\n";
+        assert_eq!(kimi_wire_context(truncated), Some((300, "a/b".into())), "压缩或撤回后取变小的值");
+        assert_eq!(kimi_wire_context("{\"type\":\"usage.record\",\"model\":\"a/b\"}\n"), None, "还没测过不给");
+
+        let oc: Value = serde_json::from_str(&read("opencode-2.3.0-context.json")).unwrap();
+        let msg = oc["session_message"].as_array().unwrap().iter().rev().find(|m| m["type"] == "assistant").unwrap();
+        let (used, provider, model) = opencode_message_context(&msg["data"]).unwrap();
+        assert_eq!((used, provider.as_str(), model.as_str()), (155 + 9 + 12_928, "deepseek", "deepseek-flash"));
+        let limits = opencode_model_limits(&oc["models_json"]);
+        assert_eq!(limits.get("deepseek/deepseek-flash"), Some(&1_048_576));
+        let v1 = serde_json::json!({"providerID": "opencode", "modelID": "m", "tokens": {"input": 1, "output": 2, "reasoning": 3, "cache": {"read": 4, "write": 5}}});
+        assert_eq!(opencode_message_context(&v1), Some((15, "opencode".into(), "m".into())), "OpenCode 1 的写法");
+        assert_eq!(opencode_message_context(&serde_json::json!({"model": {"id": "m", "providerID": "p"}, "tokens": {"input": 0}})), None, "和为 0 不给");
+    }
 
     /// Antigravity `/usage` 的输出（结构取自 2026-11-01 本机 1.4.12）：按当前模型取组，周额度已用 = 1 − 剩余比例，没有的
     /// 5 小时窗口不补；对不上模型时取剩余最少的组；认不出时为空。

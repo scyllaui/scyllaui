@@ -136,7 +136,18 @@ fn startup_ends_quota_processes_left_by_previous_backend() {
     let sh = |script: &str| Command::new("/bin/sh").args(["-c", script]).stdin(Stdio::null()).spawn().unwrap();
     let mut polite = sh("exec /bin/sleep 60");
     // 都会在 60 秒内自己退出：测试中途失败时不留下长期运行的进程。
-    let mut stubborn = sh("trap '' TERM; i=0; while [ $i -lt 60 ]; do /bin/sleep 1; i=$((i+1)); done");
+    // 打印 ready 时 trap 已生效；读到这一行再起后台，否则 SIGTERM 可能先于 trap 到达（2026-11-23 偶发失败）。
+    // 读端留到测试结束：循环里不再写标准输出，不会卡住。
+    let mut stubborn = Command::new("/bin/sh")
+        .args(["-c", "trap '' TERM; echo ready; i=0; while [ $i -lt 60 ]; do /bin/sleep 1; i=$((i+1)); done"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut ready = std::io::BufReader::new(stubborn.stdout.take().unwrap());
+    let mut line = String::new();
+    std::io::BufRead::read_line(&mut ready, &mut line).unwrap();
+    assert_eq!(line, "ready\n", "不认 SIGTERM 的进程没有准备好");
     let mut stranger = sh("exec /bin/sleep 60");
     for (c, start) in [(&polite, start_ms(polite.id())), (&stubborn, start_ms(stubborn.id())), (&stranger, start_ms(stranger.id()) - 1000)] {
         std::fs::write(ledger.join(c.id().to_string()), start.to_string()).unwrap();

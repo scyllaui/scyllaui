@@ -23,6 +23,9 @@ struct SBUsage: Equatable {
     var billing: String? = nil
     /// 输入（不含缓存）、缓存读、缓存写、输出。
     var input: Int64 = 0, cacheRead: Int64 = 0, cacheWrite: Int64 = 0, output: Int64 = 0
+    /// 上下文占用（右侧栏「状态」，2026-11-23）：已用与上限都有才有。
+    var contextUsed: Int64?
+    var contextLimit: Int64?
 
     init(total: Int64? = nil) {
         self.total = total
@@ -31,6 +34,10 @@ struct SBUsage: Equatable {
     init(json d: [String: Any]) {
         total = int(d, "total_tokens")
         billing = str(d, "billing")
+        if let c = d["context"] as? [String: Any], let used = int(c, "used"), let limit = int(c, "limit"), limit > 0 {
+            contextUsed = used
+            contextLimit = limit
+        }
         if let t = d["tokens"] as? [String: Any] {
             input = int(t, "input") ?? 0
             cacheRead = int(t, "cache_read") ?? 0
@@ -97,6 +104,8 @@ struct StatusInfo: Equatable {
     var fgEntriesAtStart: Bool? = nil
     /// 这款 AI 能否读出 token 用量（快照的 `tools`）：不能时悬停提示写明「暂不支持」（docs/ui-methodology.md 1.7 节）。
     var usageSupported = true
+    /// 这款工具 ScyllaUI 读不读上下文占用（后台 `tools` 的 `context`，2026-11-23）。
+    var contextSupported = true
 
     /// 状态行一小段文字的用途，界面按它取色（docs/design.md 第 5 节「实现（M2 第 2 块）」位置与样式，2026-10-18 改版）。
     enum Role: Equatable { case muted, separator, value, quotaLow, quotaMid, quotaHigh }
@@ -546,6 +555,10 @@ struct TaskRow: Equatable {
     var syncNext = false
     /// 终端行：前台是 Claude、状态在同步，但额度桥被别的工具改掉了（2026-11-22）：也显示可点的「未同步」，点按重装桥。
     var quotaLost = false
+    /// 终端行：此刻所在目录（没上报时为启动目录）、所在项目的目录与分支（不是仓库为 nil）。右侧栏按它们取（docs/design.md 5.12 节）。
+    var currentDir: String? = nil
+    var projectDir: String? = nil
+    var branch: String? = nil
 }
 
 enum SidebarRow: Equatable {
@@ -731,7 +744,7 @@ final class SidebarModel {
         }
         unsupported = [:]
         for t in list("tools") {
-            if let tool = str(t, "tool") { unsupported[tool] = Set(["reply", "usage", "prompts"].filter { t[$0] as? Bool == false }) }
+            if let tool = str(t, "tool") { unsupported[tool] = Set(["reply", "usage", "prompts", "context"].filter { t[$0] as? Bool == false }) }
         }
         quotas = [:]
         for q in list("quotas") {
@@ -979,7 +992,8 @@ final class SidebarModel {
                 fgStartedAt: t.fgKind == "agent" ? t.fgStartedAt : nil,
                 fgSync: t.fgKind == "agent" ? t.fgSync : nil,
                 fgEntriesAtStart: t.fgKind == "agent" ? t.fgEntriesAtStart : nil,
-                usageSupported: !(tool.flatMap { unsupported[$0]?.contains("usage") } ?? false))
+                usageSupported: !(tool.flatMap { unsupported[$0]?.contains("usage") } ?? false),
+                contextSupported: !((t.fgTool ?? t.agentTool).flatMap { unsupported[$0]?.contains("context") } ?? false))
         }
         return out
     }
@@ -1052,6 +1066,9 @@ final class SidebarModel {
         }
         row.name = t.name
         row.conversationID = t.conversationID
+        row.currentDir = dir
+        row.projectDir = projects[t.projectID]?.dir
+        row.branch = projects[t.projectID]?.branch
         row.taskTitle = bound ? (conv?.title ?? conv?.lastPrompt).map(oneLine) : nil
         // 第 2 行照旧是最新提示词，各款规则一致：标题就是第一条提示词的（Kimi、Copilot）问第一句后两行相同，第二句起
         // 就不同了（2026-11-01 用户定，不另设特例）。

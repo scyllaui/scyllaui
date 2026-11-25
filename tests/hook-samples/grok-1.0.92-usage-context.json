@@ -1,0 +1,29 @@
+{
+ "note": "2026-11-23 本机 grok 1.0.92 一个只调一次模型的会话：signals.json 的 contextTokensUsed 落后一次调用（第一次调用时还是不含系统提示词与工具定义的估算），Grok 界面显示 25k / 256k，对应 usage.json 最近一轮的 inputTokens",
+ "signals": {
+  "contextTokensUsed": 1456,
+  "contextWindowTokens": 256000,
+  "contextWindowUsage": 0,
+  "totalTokensBeforeCompaction": 0
+ },
+ "usage": {
+  "session": {
+   "inputTokens": 25538,
+   "outputTokens": 76,
+   "cachedReadTokens": 640,
+   "totalTokens": 25614,
+   "modelCalls": 1,
+   "turnCount": 1
+  },
+  "turns": [
+   {
+    "turnNumber": 1,
+    "inputTokens": 25538,
+    "outputTokens": 76,
+    "cachedReadTokens": 640,
+    "totalTokens": 25614,
+    "modelCalls": 1
+   }
+  ]
+ }
+}

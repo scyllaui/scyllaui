@@ -1,0 +1,69 @@
+{
+ "note": "2026-11-23 本机 opencode 2.3.0：session_message 一个会话的消息（去掉正文），与 ~/.cache/opencode/models.json 里该模型的一项",
+ "session_message": [
+  {
+   "type": "user",
+   "seq": 4,
+   "data": {
+    "time": {
+     "created": 1795276759283
+    },
+    "files": [],
+    "agents": []
+   }
+  },
+  {
+   "type": "assistant",
+   "seq": 7,
+   "data": {
+    "time": {
+     "created": 1795276759299,
+     "firstToken": 1795276759834,
+     "streamed": 1795276759868,
+     "completed": 1795276759869
+    },
+    "agent": "build",
+    "model": {
+     "id": "deepseek-flash",
+     "providerID": "deepseek",
+     "variant": "default"
+    },
+    "finish": "stop",
+    "rawFinish": "stop",
+    "cost": 6.743399999999999e-05,
+    "tokens": {
+     "input": 155,
+     "output": 9,
+     "reasoning": 0,
+     "cache": {
+      "read": 12928,
+      "write": 0
+     }
+    }
+   }
+  },
+  {
+   "type": "idle",
+   "seq": 13,
+   "data": {
+    "time": {
+     "created": 1795276759871
+    },
+    "outcome": "succeeded"
+   }
+  }
+ ],
+ "models_json": {
+  "deepseek": {
+   "models": {
+    "deepseek-flash": {
+     "id": "deepseek-flash",
+     "limit": {
+      "context": 1048576,
+      "output": 393216
+     }
+    }
+   }
+  }
+ }
+}

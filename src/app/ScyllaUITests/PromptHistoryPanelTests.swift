@@ -11,7 +11,7 @@ final class PromptHistoryPanelTests: XCTestCase {
     }
 
     func testSegmentsAndTruncation() {
-        let p = PromptHistoryPanel(frame: NSRect(x: 0, y: 0, width: PromptHistoryPanel.defaultWidth, height: 600))
+        let p = PromptHistoryPanel(frame: NSRect(x: 0, y: 0, width: RightPanelHost.defaultWidth, height: 600))
         let t = NSTableView()
         p.show(reply: reply([["conversation_id": 1, "text": "第一段", "at": 1_792_856_847_912],
                              ["conversation_id": 2, "text": "修复登录", "at": NSNull()],
@@ -22,7 +22,7 @@ final class PromptHistoryPanelTests: XCTestCase {
     }
 
     func testEmptyStates() {
-        let p = PromptHistoryPanel(frame: NSRect(x: 0, y: 0, width: PromptHistoryPanel.defaultWidth, height: 600))
+        let p = PromptHistoryPanel(frame: NSRect(x: 0, y: 0, width: RightPanelHost.defaultWidth, height: 600))
         let t = NSTableView()
         func shows(_ text: String) -> Bool {
             p.subviews.compactMap { $0 as? NSTextField }.contains { !$0.isHidden && $0.stringValue == text }
@@ -55,7 +55,7 @@ final class PromptHistoryPanelTests: XCTestCase {
     /// 2026-10-25 改版（docs/design.md 10.5 节决策 19）：栏头为工具全名 · 已结束 · 最新一段的会话 ID；最新在上、编号最早为 1；
     /// 分段说明带更早那段的会话 ID；筛选计数「符合 / 全部」；长提示词收起时最多两行，点箭头展开全文；分段说明不能选中。
     func testHeaderOrderCountAndExpand() throws {
-        let p = PromptHistoryPanel(frame: NSRect(x: 0, y: 0, width: PromptHistoryPanel.defaultWidth, height: 600))
+        let p = PromptHistoryPanel(frame: NSRect(x: 0, y: 0, width: RightPanelHost.defaultWidth, height: 600))
         let t = NSTableView()
         let labels = { p.subviews.compactMap { $0 as? NSTextField }.filter { !$0.isHidden }.map(\.stringValue) }
         func texts(_ row: Int) -> [String] {

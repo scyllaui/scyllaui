@@ -110,6 +110,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         add(String(localized: "搜索"), #selector(WorkspaceController.focusSearch(_:)), "f")
         term.items.last?.isHidden = true
         term.items.last?.allowsKeyEquivalentWhenHidden = true
+        // 右侧栏四项（docs/design.md 5.12 节），顺序同标题栏按钮。Cmd+Shift+I、Cmd+Shift+E 没有默认绑定；Cmd+Shift+D 是
+        // libghostty 默认的向下分屏，已由包内 scyllaui.conf 解除，按键回到菜单。
+        add(String(localized: "状态"), #selector(WorkspaceController.toggleStatusPanel(_:)), "i")
+        term.items.last?.keyEquivalentModifierMask = [.command, .shift]
+        add(String(localized: "文件"), #selector(WorkspaceController.toggleFilesPanel(_:)), "e")
+        term.items.last?.keyEquivalentModifierMask = [.command, .shift]
+        add(String(localized: "更改"), #selector(WorkspaceController.toggleDiffPanel(_:)), "d")
+        term.items.last?.keyEquivalentModifierMask = [.command, .shift]
         // Cmd+Y：固定 commit 的 libghostty 没有默认绑定，直接走菜单（M4a 追加块 9）。
         add(String(localized: "历史提示词"), #selector(WorkspaceController.togglePromptHistory(_:)), "y")
         // Cmd+Shift+,：与 Ghostty 的默认绑定相同（M2 第 5 块）；只留快捷键，不在菜单里显示（docs/design.md 10.5 节决策 25）。
