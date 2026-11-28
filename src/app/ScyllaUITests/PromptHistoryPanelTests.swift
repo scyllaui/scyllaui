@@ -34,14 +34,16 @@ final class PromptHistoryPanelTests: XCTestCase {
         XCTAssertTrue(shows("这个终端还没有 AI 对话"))
         XCTAssertFalse(shows("会话记录已不在，读不到提示词"))
         // 没有对话时按场景说明（2026-10-30 用户要求）。
-        XCTAssertEqual(PromptHistoryPanel.noConversationMessage(tool: nil, unsynced: false, command: nil),
+        XCTAssertEqual(PromptHistoryPanel.noConversationMessage(terminal: true, tool: nil, unsynced: false, command: nil),
                        "当前是 Shell，在这个终端启动 Agent 后，这里显示它的历史提示词。")
-        XCTAssertEqual(PromptHistoryPanel.noConversationMessage(tool: "opencode", unsynced: false, command: nil),
+        XCTAssertEqual(PromptHistoryPanel.noConversationMessage(terminal: true, tool: "opencode", unsynced: false, command: nil),
                        "还没对上 OpenCode 的这次会话，发出一条提示词后显示。", "AI 在运行、还没收到这次会话的事件")
-        XCTAssertEqual(PromptHistoryPanel.noConversationMessage(tool: "claude", unsynced: true, command: nil),
+        XCTAssertEqual(PromptHistoryPanel.noConversationMessage(terminal: true, tool: "claude", unsynced: true, command: nil),
                        "Claude Code 的状态没在同步，对不上它的会话；点侧栏这一行的「未同步」处理。", "发提示词也对不上时不说「发出一条」")
-        XCTAssertEqual(PromptHistoryPanel.noConversationMessage(tool: nil, unsynced: false, command: "agy"),
+        XCTAssertEqual(PromptHistoryPanel.noConversationMessage(terminal: true, tool: nil, unsynced: false, command: "agy"),
                        "前台运行的 agy 不是 ScyllaUI 已接入的 Agent，没有历史提示词。", "不认识的命令不说成 Shell")
+        // 2026-11-28 补测（D14）：没有终端时与另三栏一样写「没有终端」，不写纯 Shell 那句。
+        XCTAssertEqual(PromptHistoryPanel.noConversationMessage(terminal: false, tool: nil, unsynced: false, command: nil), StatusPanel.noTerminal)
         // 不支持历史提示词的工具：写明不支持，不借用「记录已不在」（docs/ui-methodology.md 1.7 节）。
         p.show(reply: ["ok": true, "truncated": false, "items": [],
                        "segments": [["conversation_id": 3, "tool": "opencode", "available": false, "supported": false]]])

@@ -201,7 +201,9 @@ final class PromptHistoryPanel: NSView, NSTableViewDataSource, NSTableViewDelega
 
     /// 这个终端没有可读的对话时的说明，按场景分（2026-10-30 用户要求）：前台是 ScyllaUI 认识的 AI（`tool`）但
     /// 还没对上会话——状态同步未生效（`unsynced`）时对不上，否则发出一条提示词后就对上；前台是不认识的命令（`command`）；Shell。
-    static func noConversationMessage(tool: String?, unsynced: Bool, command: String?) -> String {
+    /// 根本没有终端时与另三栏一样写「没有终端」（2026-11-28 补测 D14）。
+    static func noConversationMessage(terminal: Bool, tool: String?, unsynced: Bool, command: String?) -> String {
+        if !terminal { return StatusPanel.noTerminal }
         if let tool, unsynced { return String(localized: "\(toolName(tool)) 的状态没在同步，对不上它的会话；点侧栏这一行的「未同步」处理。") }
         if let tool { return String(localized: "还没对上 \(toolName(tool)) 的这次会话，发出一条提示词后显示。") }
         if let command { return String(localized: "前台运行的 \(command) 不是 ScyllaUI 已接入的 Agent，没有历史提示词。") }

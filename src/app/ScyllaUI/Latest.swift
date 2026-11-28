@@ -41,3 +41,49 @@ final class Latest {
         }
     }
 }
+
+/// 右侧栏三栏（文件、更改、状态栏的「更改」）发往后台的请求共用的闸（docs/design.md 5.12 节「同时在途上限」）：
+/// 后台对 `fs.*`、`git.*` 同时在途超过 8 个回 `busy`，所以这里同时最多发 8 个，多出的按先后排队；仍回 `busy`
+/// （如重连后旧连接的请求还在做）时暂停 `retryDelay` 秒再从这一个起重发，`busy` 不交给调用方。只在主线程用。
+final class RequestGate {
+    typealias Send = ([String: Any], @escaping ([String: Any]?) -> Void) -> Void
+    /// 同后台 `files.rs` 的 `MAX_INFLIGHT`（docs/protocol.md 第 4 节）。
+    static let limit = 8
+    var retryDelay: TimeInterval = 0.2
+
+    private let send: Send
+    private var inflight = 0
+    private var paused = false
+    private var waiting: [(req: [String: Any], done: ([String: Any]?) -> Void)] = []
+
+    init(_ send: @escaping Send) { self.send = send }
+
+    func request(_ req: [String: Any], _ done: @escaping ([String: Any]?) -> Void) {
+        waiting.append((req, done))
+        pump()
+    }
+
+    private func pump() {
+        while !paused, inflight < Self.limit, !waiting.isEmpty {
+            let job = waiting.removeFirst()
+            inflight += 1
+            send(job.req) { [weak self] reply in
+                guard let self else { return job.done(reply) }
+                self.inflight -= 1
+                if (reply?["error"] as? [String: Any])?["code"] as? String == "busy" {
+                    self.waiting.insert(job, at: 0)
+                    if !self.paused {
+                        self.paused = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + self.retryDelay) { [weak self] in
+                            self?.paused = false
+                            self?.pump()
+                        }
+                    }
+                    return
+                }
+                job.done(reply)
+                self.pump()
+            }
+        }
+    }
+}

@@ -1,0 +1,36 @@
+{
+  "tool": "opencode",
+  "version": "2.4.2",
+  "date": "2026-11-28",
+  "runs": [
+    {
+      "cmd": "opencode run --server …",
+      "exit": 0,
+      "seconds": 1.7,
+      "stdout_tail": "OK",
+      "stderr_tail": "\u001b[0m\n> build · deepseek-flash"
+    },
+    {
+      "cmd": "opencode run --server …",
+      "exit": 0,
+      "seconds": 0.4,
+      "stdout_tail": "OK",
+      "stderr_tail": "\u001b[0m\n> build · deepseek-flash"
+    }
+  ],
+  "checks": {
+    "hooks_installed": true,
+    "frames": 7,
+    "missing_events": [],
+    "unknown_events": [],
+    "sessions": [
+      "ses_de1e1b123ffe6tDFes8tcJxEfr"
+    ],
+    "resume_keeps_id": true,
+    "preassigned_id_used": true,
+    "env_report_ok": true
+  },
+  "hooks_install_exit": 0,
+  "ok": true,
+  "sample": "tests/hook-samples/opencode-2.4.2-smoke.jsonl"
+}

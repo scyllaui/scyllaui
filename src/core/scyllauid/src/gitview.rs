@@ -20,7 +20,7 @@ const DIFF_MAX: usize = 2 << 20;
 const GREP_MAX_BYTES: usize = 1 << 20;
 const GREP_MAX_ITEMS: usize = 1000;
 const GREP_LINE_CHARS: usize = 300;
-const GREP_PER_FILE: &str = "50";
+const GREP_PER_FILE: usize = 50;
 /// 列表类命令（name-status 等）的输出上限：足够 2000 项以上，防止异常大的仓库占满内存。
 const LIST_MAX_BYTES: usize = 16 << 20;
 /// diff 的公共参数：不检测改名（只有 M、A、D）、不执行外部 diff 与 textconv、不进子模块。
@@ -229,22 +229,35 @@ pub fn file_diff(root: &Path, path: &str, untracked: bool) -> Result<Value, Fail
 // ---- fs.grep ----
 
 /// `git grep -z -n` 的输出：每行 `路径\0行号\0内容`；`truncated` 时丢掉最后一行（可能不完整）。内容超过 300 字符时围绕
-/// `query` 的第一处匹配取（见 `grep_snippet`）。
-pub fn parse_grep(out: &[u8], truncated: bool, query: &str) -> Vec<Value> {
+/// `query` 的第一处匹配取（见 `grep_snippet`）。git 每个文件多给一条（`-m 51`，同一个文件的行连在一起）：每个文件只留前 50 条，
+/// 有第 51 条的文件记进第二个返回值（`capped`）。
+pub fn parse_grep(out: &[u8], truncated: bool, query: &str) -> (Vec<Value>, Vec<String>) {
     let mut rows: Vec<&[u8]> = out.split(|b| *b == b'\n').collect();
     if truncated || rows.last().is_some_and(|r| r.is_empty()) {
         rows.pop();
     }
-    rows.into_iter()
-        .filter_map(|r| {
-            let mut p = r.splitn(3, |b| *b == 0);
-            let (path, no, text) = (p.next()?, p.next()?, p.next()?);
-            let no: u64 = std::str::from_utf8(no).ok()?.parse().ok()?;
-            let text = grep_snippet(&String::from_utf8_lossy(text), query);
-            Some(json!({"path": String::from_utf8_lossy(path), "line": no, "text": text}))
-        })
-        .take(GREP_MAX_ITEMS)
-        .collect()
+    let (mut items, mut capped, mut last, mut n) = (Vec::new(), Vec::<String>::new(), Vec::<u8>::new(), 0usize);
+    for r in rows {
+        if items.len() >= GREP_MAX_ITEMS {
+            break;
+        }
+        let mut p = r.splitn(3, |b| *b == 0);
+        let (Some(path), Some(no), Some(text)) = (p.next(), p.next(), p.next()) else { continue };
+        let Some(no) = std::str::from_utf8(no).ok().and_then(|s| s.parse::<u64>().ok()) else { continue };
+        if path != last.as_slice() {
+            (last, n) = (path.to_vec(), 0);
+        }
+        n += 1;
+        if n > GREP_PER_FILE {
+            if n == GREP_PER_FILE + 1 {
+                capped.push(String::from_utf8_lossy(path).into_owned());
+            }
+            continue;
+        }
+        let text = grep_snippet(&String::from_utf8_lossy(text), query);
+        items.push(json!({"path": String::from_utf8_lossy(path), "line": no, "text": text}));
+    }
+    (items, capped)
 }
 
 /// 命中行超过 `GREP_LINE_CHARS` 个字符时，围绕第一处匹配取这么多：匹配前留 60 个，前后被省掉处加 `…`（2026-11-25 起；
@@ -274,7 +287,7 @@ fn grep_snippet(line: &str, query: &str) -> String {
 }
 
 /// 搜文件内容（不区分大小写、按字面）：仓库里搜已跟踪与未跟踪的（遵守 `.gitignore`），不在仓库里用 `--no-index`。跳过二进制，
-/// 每个文件最多 50 条，总共最多 1000 条、1 MB 输出；超时时返回已找到的并标 `truncated`。
+/// 每个文件最多 50 条（超过的文件列在 `capped`），总共最多 1000 条、1 MB 输出；超时时返回已找到的并标 `truncated`。
 pub fn grep(root: &Path, query: &str) -> Result<Value, Fail> {
     if query.trim().is_empty() {
         return Err(("bad_request", "query 为空".to_owned()));
@@ -288,16 +301,17 @@ pub fn grep(root: &Path, query: &str) -> Result<Value, Fail> {
     if in_repo {
         args.push("--untracked");
     }
-    args.extend(["-m", GREP_PER_FILE, "-z", "-e", query]);
+    let per_file = (GREP_PER_FILE + 1).to_string();
+    args.extend(["-m", &per_file, "-z", "-e", query]);
     let o = run_git_ex(root, &args, &[], GREP_MAX_BYTES).ok_or(("internal", "启动 git 失败".to_owned()))?;
     // 找到为 0，一条也没有为 1；超时与读到上限时退出码不可信，按已读到的算。
     if !o.timed_out && !o.truncated && o.code != 0 && o.code != 1 {
         return Err(("internal", format!("git grep 以 {} 退出", o.code)));
     }
     let cut = o.truncated || o.timed_out;
-    let items = parse_grep(&o.out, cut, query);
+    let (items, capped) = parse_grep(&o.out, cut, query);
     let truncated = cut || items.len() >= GREP_MAX_ITEMS;
-    Ok(json!({"items": items, "truncated": truncated}))
+    Ok(json!({"items": items, "truncated": truncated, "capped": capped}))
 }
 
 #[cfg(test)]
@@ -334,7 +348,7 @@ mod tests {
         let (h, _) = parse_diff(b"@@ -5 +5,2 @@\n a\n+b\n+partial", true);
         assert_eq!(h[0]["lines"].as_array().unwrap().len(), 2, "截断时最后一行不要");
         assert_eq!(h[0]["lines"][0], json!([" ", 5, 5, "a"]), "`-5` 不带行数也认");
-        let g = parse_grep(b"a.txt\x001\x00Hello\nsub/b.md\x0012\x00x\x00y\n", false, "x");
+        let (g, _) = parse_grep(b"a.txt\x001\x00Hello\nsub/b.md\x0012\x00x\x00y\n", false, "x");
         assert_eq!(g, vec![json!({"path": "a.txt", "line": 1, "text": "Hello"}), json!({"path": "sub/b.md", "line": 12, "text": "x\u{0}y"})]);
         // 长行：围绕第一处匹配（不分大小写）取 300 字符，匹配前留 60 个，前后被省掉的加「…」；匹配在开头附近时从行首取、只有后面加「…」。
         let long = format!("{}P95 23.1 ms{}", "前".repeat(500), "后".repeat(500));
@@ -410,6 +424,25 @@ mod tests {
         assert_eq!(grep(&plain, "NEEDLE").unwrap()["items"], json!([{"path": "n.txt", "line": 1, "text": "needle"}]), "不在仓库里也能搜");
         let _ = fs::remove_dir_all(&d);
         let _ = fs::remove_dir_all(&plain);
+    }
+
+    /// 补测问题 1（2026-11-28）：某个文件命中超过 50 条，只给前 50 条，并在 `capped` 里写明是哪个文件；正好 50 条的不算。
+    #[test]
+    fn grep_marks_files_over_per_file_limit() {
+        if !git_ok() {
+            return;
+        }
+        let d = test_dir("gitview-capped");
+        let hits = |n: usize| (1..=n).map(|i| format!("zebra_marker {i}\n")).collect::<String>();
+        fs::write(d.join("many.txt"), hits(120)).unwrap();
+        fs::write(d.join("fifty.txt"), hits(50)).unwrap();
+        fs::write(d.join("few.txt"), hits(3)).unwrap();
+        let g = grep(&d, "zebra_marker").unwrap();
+        let count = |p: &str| g["items"].as_array().unwrap().iter().filter(|i| i["path"] == p).count();
+        assert_eq!((count("many.txt"), count("fifty.txt"), count("few.txt")), (50, 50, 3), "每个文件最多 50 条");
+        assert_eq!(g["capped"], json!(["many.txt"]), "超过 50 条的文件写明");
+        assert_eq!(g["truncated"], false, "总数没到上限");
+        let _ = fs::remove_dir_all(&d);
     }
 
     /// 带上限的运行函数：读到上限就停，标 `truncated`。

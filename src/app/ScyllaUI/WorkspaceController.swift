@@ -239,8 +239,9 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
             self?.currentRowConversation = row?.conversationID
             self?.currentRowForeground = (row?.toolKey, row?.unsynced ?? false, row?.fgCommand)
             // 没有对话时按前台的场景重排说明；有对话时最新提示词变了才重读。
+            // 没有终端单独一个键：最后一个终端是 Shell 时，关掉它前后的键原来相同，栏里一直留着 Shell 那句（2026-11-28 补测 D14）。
             let key = row?.conversationID.map { "\($0):\(row?.subtitle ?? "")" }
-                ?? "-1:\(row?.toolKey ?? ""):\(row?.unsynced ?? false):\(row?.fgCommand ?? "")"
+                ?? row.map { "-1:\($0.toolKey ?? ""):\($0.unsynced):\($0.fgCommand ?? "")" } ?? "none"
             self?.refreshPromptHistory(key: key)
             self?.reloadPromptsAtTurnEnd(row)
         }
@@ -252,10 +253,12 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         statusPanel.onClose = { [weak self] in self?.show(nil) }
         statusPanel.onOpenChanges = { [weak self] in self?.show(.diff) }
         filesPanel.onClose = { [weak self] in self?.show(nil) }
-        filesPanel.request = { [weak self] req, done in
+        // 三栏共用一道闸：同时在途不超过后台的上限，多出的排队（docs/design.md 5.12 节「同时在途上限」）。
+        let gate = RequestGate { [weak self] req, done in
             guard let self else { return done(nil) }
             self.core.ask(req) { reply in DispatchQueue.main.async { done(reply) } }
         }
+        filesPanel.request = gate.request
         filesPanel.treeWidth = Self.savedTreeWidth
         // 文件树宽与 Diff 的改动列表宽是同一个值（D2）：在哪一栏拖都两边一起改，来回切换时分隔线不跳。
         filesPanel.onTreeWidth = { [weak self] w in
@@ -275,12 +278,8 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         }
         filesPanel.onInsert = { [weak self] path in self?.insertIntoCurrent(GhosttyInput.shellEscape(path)) }
         diffPanel.onClose = { [weak self] in self?.show(nil) }
-        let ask: ([String: Any], @escaping ([String: Any]?) -> Void) -> Void = { [weak self] req, done in
-            guard let self else { return done(nil) }
-            self.core.ask(req) { reply in DispatchQueue.main.async { done(reply) } }
-        }
-        diffPanel.request = ask
-        changes.request = ask
+        diffPanel.request = gate.request
+        changes.request = gate.request
         diffPanel.listWidth = Self.savedTreeWidth
         diffPanel.onListWidth = { [weak self] w in
             Prefs.filesTreeWidth = Double(w)
@@ -476,9 +475,12 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         ])
         buttons.orientation = .horizontal
         buttons.spacing = 8
-        let hint = NSTextField(labelWithString: String(localized: "在终端里输入 claude、codex、kimi、grok（或 agent）、opencode、copilot 或 agy 启动 Agent"))
+        // 一行放不下时折行、居中，不超出终端区（2026-11-28 补测 D13：英文一行放不下，左端压到侧栏下、右端被截）。
+        let hint = NSTextField(wrappingLabelWithString: String(localized: "在终端里输入 claude、codex、kimi、grok（或 agent）、opencode、copilot 或 agy 启动 Agent"))
         hint.font = ScyllaUIStyle.detailFont
         hint.textColor = .tertiaryLabelColor
+        hint.alignment = .center
+        hint.isSelectable = false
         emptyState.orientation = .vertical
         emptyState.spacing = 10
         emptyState.addArrangedSubview(text)
@@ -490,6 +492,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         NSLayoutConstraint.activate([
             emptyState.centerXAnchor.constraint(equalTo: container.centerXAnchor),
             emptyState.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            hint.widthAnchor.constraint(lessThanOrEqualTo: container.widthAnchor, constant: -48),
         ])
     }
 
@@ -1915,7 +1918,7 @@ final class WorkspaceController: NSObject, NSWindowDelegate, NSSplitViewDelegate
         promptKey = full
         guard let target else {
             let fg = currentRowForeground
-            return promptPanel.showMessage(PromptHistoryPanel.noConversationMessage(tool: fg.tool, unsynced: fg.unsynced, command: fg.command))
+            return promptPanel.showMessage(PromptHistoryPanel.noConversationMessage(terminal: currentRow != nil, tool: fg.tool, unsynced: fg.unsynced, command: fg.command))
         }
         loadPrompts(target)
         // 最新提示词变了：CLI 可能在 Hook 之后才写会话记录（Copilot 晚约 1 ms，2026-10-30 实测），过一会儿补读一次；

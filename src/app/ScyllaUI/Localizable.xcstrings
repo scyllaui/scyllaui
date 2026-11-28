@@ -1910,7 +1910,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No finished tasks in the last %lld days"
+            "value": "No tasks in the past %lld days"
           }
         }
       }
@@ -4924,6 +4924,16 @@
         }
       }
     },
+    "这个文件只列出了前 50 条": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the first 50 matches in this file are listed"
+          }
+        }
+      }
+    },
     "在 ? 后输入要搜的内容": {
       "localizations": {
         "en": {
@@ -5099,7 +5109,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Filter, or type ? to search contents"
+            "value": "Filter, or type ? to search"
           }
         }
       }
@@ -5541,7 +5551,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Undecodable characters"
+            "value": "Not UTF-8"
           }
         }
       }

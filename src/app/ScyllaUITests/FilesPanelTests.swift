@@ -85,6 +85,256 @@ final class FilesPanelTests: XCTestCase {
         XCTAssertTrue(panel.viewerOpen, "切回原根恢复打开的文件")
     }
 
+    /// 第四轮长跑缺陷①（2026-11-28）：切到别的栏或关掉右侧栏期间文件被改、新增、删除，切回「文件」（文件栏回到窗口，
+    /// 工作区对同一个根再调一次 `setRoot`）时树和查看器要是新内容；展开状态、选中项、树与查看器的滚动位置、源码 / 折行选择不丢。
+    func testReturningToFilesRereadsTreeAndOpenFile() {
+        var fs: [String: [[String: Any]]] = [
+            "/p": [["name": "src", "kind": "dir"], ["name": "static.md", "kind": "file"]]
+                + (0..<60).map { ["name": String(format: "f%02d.txt", $0), "kind": "file"] },
+            "/p/src": [["name": "main.swift", "kind": "file"]],
+        ]
+        func doc(_ v: String) -> String { (0..<400).map { "\(v) line \($0)" }.joined(separator: "\n") }
+        var files: [String: String] = ["/p/static.md": doc("v1")]
+        let panel = FilesPanel(frame: NSRect(x: 0, y: 0, width: 700, height: 400))
+        panel.request = { req, done in
+            switch req["type"] as! String {
+            case "fs.list": done(["ok": true, "items": fs[req["dir"] as! String] ?? [], "more": 0])
+            default:
+                guard let text = files[req["path"] as! String] else { return done(["ok": false, "error": ["code": "not_found"]]) }
+                done(["ok": true, "size": text.utf8.count, "binary": false, "text": text, "truncated": false, "lossy": false])
+            }
+        }
+        let host = NSView(frame: panel.frame)
+        let w = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        w.contentView = host
+        host.addSubview(panel)
+        panel.setRoot("/p", gitRoot: nil, currentDir: "/p/src")
+        panel.openFile("/p/static.md")
+        panel.viewer.toggleRenderForTesting()
+        panel.viewer.clickWrapForTesting()
+        let wrapping = panel.viewer.isWrapping
+        panel.treeScrollYForTesting = 200
+        panel.viewer.scrollSourceForTesting(toChar: (doc("v1") as NSString).range(of: "v1 line 200").location)
+        let treeY = panel.treeScrollYForTesting
+        let topLine = { (panel.viewer.shownText.map { t in t.prefix(panel.viewer.sourceTopCharForTesting ?? 0) }?.filter { $0 == "\n" }.count) }
+        let line = topLine()
+        XCTAssertEqual(line, 200)
+        XCTAssertGreaterThan(treeY, 0)
+
+        // 两轮：从「状态」切回，再关掉右侧栏后打开；中间都有改动。
+        for (round, v) in ["v2", "v3"].enumerated() {
+            panel.removeFromSuperview()
+            files["/p/static.md"] = doc(v)
+            fs["/p"]!.append(["name": "added-\(round).txt", "kind": "file"])
+            fs["/p/src"]!.append(["name": "new-\(round).swift", "kind": "file"])
+            host.addSubview(panel)
+            panel.setRoot("/p", gitRoot: nil, currentDir: "/p/src")
+            XCTAssertTrue(panel.visibleRows.contains("added-\(round).txt"), "第 \(round + 1) 轮：根下新增的文件出现")
+            XCTAssertTrue(panel.visibleRows.contains("  new-\(round).swift"), "第 \(round + 1) 轮：展开着的子目录重读")
+            XCTAssertEqual(panel.viewer.shownText?.hasPrefix("\(v) line 0"), true, "第 \(round + 1) 轮：打开的文件是新内容，仍显示源码")
+            XCTAssertEqual(topLine(), line, "第 \(round + 1) 轮：查看器按顶部那一行保留位置")
+            XCTAssertEqual(panel.viewer.isWrapping, wrapping, "折行选择不丢")
+            XCTAssertEqual(panel.selectedTreePathForTesting, "/p/src", "选中项不丢")
+            XCTAssertEqual(panel.treeScrollYForTesting, treeY, "树的滚动位置不丢")
+        }
+
+        // 离开期间打开的文件被删了：写「文件已被删除」，不留旧内容。
+        panel.removeFromSuperview()
+        files["/p/static.md"] = nil
+        fs["/p"]!.removeAll { $0["name"] as? String == "static.md" }
+        host.addSubview(panel)
+        panel.setRoot("/p", gitRoot: nil, currentDir: "/p/src")
+        XCTAssertEqual(panel.viewer.noteText, String(localized: "文件已被删除"))
+        XCTAssertFalse(panel.visibleRows.contains("static.md"))
+
+        // 一直显示着时，同一个根再调 `setRoot`（切终端、状态更新）不重读。
+        var reads = 0
+        let inner = panel.request
+        panel.request = { req, done in reads += 1; inner?(req, done) }
+        panel.setRoot("/p", gitRoot: nil, currentDir: "/p/src")
+        XCTAssertEqual(reads, 0)
+    }
+
+    /// 切终端到另一个项目再切回（文件栏一直显示着，换根）：读过的子目录不能用缓存（2026-11-28 修缺陷①时发现：原来只重读根）。
+    /// 展开着的立即重读，读过但收着的下次展开时重读；展开状态不丢。
+    func testSwitchingBackToCachedRootRereadsSubdirs() {
+        var fs: [String: [[String: Any]]] = [
+            "/p": [["name": "lib", "kind": "dir"], ["name": "src", "kind": "dir"]],
+            "/p/lib": [["name": "a.swift", "kind": "file"]],
+            "/p/src": [["name": "main.swift", "kind": "file"]],
+            "/q": [["name": "x.txt", "kind": "file"]],
+        ]
+        var reads: [String] = []
+        let panel = FilesPanel(frame: NSRect(x: 0, y: 0, width: 300, height: 600))
+        panel.request = { req, done in
+            switch req["type"] as! String {
+            case "fs.list":
+                reads.append(req["dir"] as! String)
+                done(["ok": true, "items": fs[req["dir"] as! String] ?? [], "more": 0])
+            default: done(["ok": true, "size": 3, "binary": false, "text": "abc", "truncated": false, "lossy": false])
+            }
+        }
+        panel.setRoot("/p", gitRoot: nil, currentDir: "/p/lib")
+        panel.setRoot("/p", gitRoot: nil, currentDir: "/p/src")
+        panel.toggleExpandedForTesting("/p/lib")
+        XCTAssertEqual(panel.visibleRows, ["lib", "src", "  main.swift"], "lib 读过但收着，src 展开")
+        panel.setRoot("/q", gitRoot: nil, currentDir: "/q")
+        fs["/p/src"]!.append(["name": "new.swift", "kind": "file"])
+        fs["/p/lib"]!.append(["name": "b.swift", "kind": "file"])
+        reads = []
+        panel.setRoot("/p", gitRoot: nil, currentDir: "/p/src")
+        XCTAssertEqual(panel.visibleRows, ["lib", "src", "  main.swift", "  new.swift"], "展开着的子目录重读")
+        XCTAssertFalse(reads.contains("/p/lib"), "收着的不立即读")
+        panel.toggleExpandedForTesting("/p/lib")
+        XCTAssertEqual(panel.visibleRows, ["lib", "  a.swift", "  b.swift", "src", "  main.swift", "  new.swift"], "收着的展开时重读")
+    }
+
+    /// 补测返工（2026-11-28，X3）：后台对右侧栏的请求同时在途超过 8 个回 `busy`。展开 22 个目录再打开一个文件，
+    /// 切回「文件」、换根再回来、FSEvents 一次报全部目录，三条路都要每一层读到新内容，`busy` 不写进树和查看器。
+    func testRereadManyDirsUnderBackendLimit() {
+        let names = (0..<22).map { String(format: "d%02d", $0) }
+        let backend = LimitedBackend()
+        backend.fs["/p"] = names.map { ["name": $0, "kind": "dir"] }
+        for n in names { backend.fs["/p/\(n)"] = [["name": "a.txt", "kind": "file"]] }
+        backend.fs["/q"] = [["name": "x.txt", "kind": "file"]]
+        backend.files["/p/d00/a.txt"] = "v0"
+        let panel = FilesPanel(frame: NSRect(x: 0, y: 0, width: 700, height: 600))
+        panel.request = wireForTesting(backend.send)
+        let host = NSView(frame: panel.frame)
+        let w = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        w.contentView = host
+        host.addSubview(panel)
+        panel.setRoot("/p", gitRoot: nil, currentDir: nil)
+        backend.flush()
+        for n in names { panel.toggleExpandedForTesting("/p/\(n)") }
+        backend.flush()
+        panel.openFile("/p/d00/a.txt")
+        backend.flush()
+        XCTAssertEqual(panel.visibleRows.filter { $0 == "  a.txt" }.count, 22)
+
+        func change(_ v: Int) {
+            for n in names { backend.fs["/p/\(n)"]!.append(["name": "new\(v).txt", "kind": "file"]) }
+            backend.files["/p/d00/a.txt"] = "v\(v)"
+        }
+        func check(_ v: Int, _ how: String) {
+            let rows = panel.visibleRows
+            XCTAssertEqual(rows.filter { $0 == "  new\(v).txt" }.count, 22, "\(how)：每一层都读到新内容")
+            XCTAssertFalse(rows.contains { $0.contains(String(localized: "暂时读不到这个文件夹")) }, "\(how)：busy 不写进树")
+            XCTAssertEqual(panel.viewer.shownText, "v\(v)", "\(how)：打开的文件读到新内容")
+        }
+        panel.removeFromSuperview()
+        change(1)
+        host.addSubview(panel)
+        panel.setRoot("/p", gitRoot: nil, currentDir: nil)
+        backend.flush()
+        check(1, "切回")
+
+        panel.setRoot("/q", gitRoot: nil, currentDir: nil)
+        backend.flush()
+        change(2)
+        panel.setRoot("/p", gitRoot: nil, currentDir: nil)
+        backend.flush()
+        check(2, "换根再回来")
+
+        change(3)
+        panel.refresh(dirs: ["/p"] + names.map { "/p/\($0)" })
+        backend.flush()
+        check(3, "FSEvents 一次报全部目录")
+        XCTAssertEqual(backend.busyReplies, 0, "不超过后台的在途上限")
+
+        // 真的读不到（断线）：写「暂时读不到」，收起再展开能重读。
+        backend.down = true
+        panel.toggleExpandedForTesting("/p/d05")
+        panel.refresh(dirs: ["/p/d05"])
+        panel.toggleExpandedForTesting("/p/d05")
+        backend.flush()
+        XCTAssertTrue(panel.visibleRows.contains("  " + String(localized: "暂时读不到这个文件夹")))
+        backend.down = false
+        panel.toggleExpandedForTesting("/p/d05")
+        panel.toggleExpandedForTesting("/p/d05")
+        backend.flush()
+        XCTAssertFalse(panel.visibleRows.contains("  " + String(localized: "暂时读不到这个文件夹")), "收起再展开重读")
+    }
+
+    /// 各栏发请求的接法，同 WorkspaceController。
+    private func wireForTesting(_ send: @escaping ([String: Any], @escaping ([String: Any]?) -> Void) -> Void) -> ([String: Any], @escaping ([String: Any]?) -> Void) -> Void {
+        RequestGate(send).request
+    }
+
+    /// 右侧栏请求的闸：最多 8 个在途，多出的按先后排队；后台仍回 `busy` 时暂停后从这一个起重发，`busy` 不交给调用方。
+    func testRequestGateQueuesAndRetriesBusy() {
+        var sent: [Int] = []
+        var dones: [Int: ([String: Any]?) -> Void] = [:]
+        var busyLeft = 1
+        let gate = RequestGate { req, done in
+            let i = req["i"] as! Int
+            sent.append(i)
+            if i == 9, busyLeft > 0 {
+                busyLeft -= 1
+                return done(["ok": false, "error": ["code": "busy"]])
+            }
+            dones[i] = done
+        }
+        gate.retryDelay = 0
+        var got: [Int] = []
+        for i in 0..<10 { gate.request(["i": i]) { _ in got.append(i) } }
+        XCTAssertEqual(sent, Array(0..<8), "最多 8 个在途")
+        dones[0]!(["ok": true])
+        XCTAssertEqual(sent.last, 8, "回来一个补发一个")
+        dones[1]!(["ok": true])
+        XCTAssertEqual(sent.last, 9)
+        XCTAssertFalse(got.contains(9), "busy 不交给调用方")
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(sent.filter { $0 == 9 }.count, 2, "暂停后重发")
+        dones[9]!(["ok": true])
+        XCTAssertEqual(got, [0, 1, 9])
+    }
+
+    /// 补测 X2（2026-11-28）：切回「文件」时文件栏先按别的栏的宽度排一次版、查看器没有宽度，横向位置被夹到 0；
+    /// 加宽后要回到离开时的位置（行首不被行号栏挡住），在最左边和往右滚过一段都一样。0.4.58 就有。
+    func testViewerKeepsHorizontalPositionAfterSqueezed() {
+        let text = (0..<300).map { "line \($0) " + String(repeating: "abcdefghij", count: 30) }.joined(separator: "\n")
+        let panel = FilesPanel(frame: NSRect(x: 0, y: 0, width: 700, height: 400))
+        panel.request = { req, done in
+            switch req["type"] as! String {
+            case "fs.list": done(["ok": true, "items": [["name": "a.txt", "kind": "file"]], "more": 0])
+            default: done(["ok": true, "size": text.utf8.count, "binary": false, "text": text, "truncated": false, "lossy": false])
+            }
+        }
+        let host = NSView(frame: panel.frame)
+        let w = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        w.contentView = host
+        host.addSubview(panel)
+        panel.setRoot("/p", gitRoot: nil, currentDir: nil)
+        panel.openFile("/p/a.txt")
+        w.layoutIfNeeded()
+        let v = panel.viewer
+        let left = v.sourceClipMinXForTesting
+        XCTAssertEqual(v.sourceTextLeft, v.rulerRight, "打开时行首紧挨行号栏")
+        panel.translatesAutoresizingMaskIntoConstraints = false
+        let width = panel.widthAnchor.constraint(equalToConstant: 700)
+        NSLayoutConstraint.activate([width, panel.topAnchor.constraint(equalTo: host.topAnchor),
+                                     panel.bottomAnchor.constraint(equalTo: host.bottomAnchor),
+                                     panel.leadingAnchor.constraint(equalTo: host.leadingAnchor)])
+        for dx in [CGFloat(0), 100] {
+            v.scrollSourceForTesting(toChar: 5000, x: left + dx)
+            w.layoutIfNeeded()
+            panel.removeFromSuperview()
+            width.isActive = false
+            host.addSubview(panel)
+            NSLayoutConstraint.activate([width, panel.topAnchor.constraint(equalTo: host.topAnchor),
+                                         panel.bottomAnchor.constraint(equalTo: host.bottomAnchor),
+                                         panel.leadingAnchor.constraint(equalTo: host.leadingAnchor)])
+            width.constant = 280
+            w.layoutIfNeeded()
+            width.constant = 700
+            w.layoutIfNeeded()
+            panel.setRoot("/p", gitRoot: nil, currentDir: nil)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+            XCTAssertEqual(v.sourceClipMinXForTesting, left + dx, "往右滚过 \(dx) 时切回，横向位置不变")
+        }
+    }
+
     /// 内容搜索的结果行只占一行、放不下截断（2026-11-25 测试版：长行折成两行，第二行只露出半截字）。
     func testContentHitRowIsSingleLine() {
         let panel = FilesPanel(frame: NSRect(x: 0, y: 0, width: 300, height: 600))
@@ -103,6 +353,27 @@ final class FilesPanelTests: XCTestCase {
         let h = panel.resultTextHeightForTesting(row: 1, width: 240)
         XCTAssertGreaterThan(h, 0)
         XCTAssertLessThanOrEqual(h, 22, "结果行只占一行：排出来高 \(h)")
+    }
+
+    /// 补测问题 1（2026-11-28）：某个文件命中超过 50 条（后台 `capped`），在它的结果下面写明只列了前 50 条；别的文件不写。
+    func testContentHitsNoteFileOverPerFileLimit() {
+        let panel = FilesPanel(frame: NSRect(x: 0, y: 0, width: 300, height: 600))
+        let many: [[String: Any]] = (1...50).map { ["path": "search/many-hits.txt", "line": $0, "text": "zebra_marker \($0)"] }
+        panel.request = { req, done in
+            switch req["type"] as! String {
+            case "fs.list": done(["ok": true, "items": [["name": "search", "kind": "dir"]], "more": 0])
+            case "fs.grep": done(["ok": true, "items": many + [["path": "b.txt", "line": 7, "text": "zebra_marker"]],
+                                  "truncated": false, "capped": ["search/many-hits.txt"]])
+            default: done(["ok": true, "size": 3, "binary": false, "text": "abc", "truncated": false, "lossy": false])
+            }
+        }
+        panel.setRoot("/p", gitRoot: nil, currentDir: nil)
+        panel.setFilterForTesting("?zebra_marker")
+        RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+        let rows = panel.resultRows
+        XCTAssertEqual(rows.count, 1 + 50 + 1 + 1 + 1, rows.suffix(4).joined(separator: " | "))
+        XCTAssertEqual(rows[51], String(localized: "这个文件只列出了前 50 条"), "超过 50 条的文件，结果下面写明")
+        XCTAssertEqual(Array(rows.suffix(2)), ["[b.txt]", "7: zebra_marker"], "别的文件不写")
     }
 
     /// 内容搜索结果从匹配处附近显示、标出匹配的字（2026-11-25 方案会话定：原来显示行首，分不清各条）。
@@ -401,6 +672,56 @@ final class FilesPanelTests: XCTestCase {
         XCTAssertEqual(v.revealedLine, 3)
     }
 
+    /// 补测问题 2（2026-11-28）：打开开头是中文的文件后，再打开别的文本文件仍用等宽字体，不跟着上一个文件的首字变成中文字体。
+    func testSourceFontStaysMonoAfterFileStartingWithChinese() {
+        let v = FileViewer(frame: NSRect(x: 0, y: 0, width: 600, height: 400))
+        let w = NSWindow(contentRect: v.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        w.contentView = v
+        func show(_ path: String, _ text: String) {
+            v.begin(path: path, root: "/p")
+            v.show(reply: ["ok": true, "size": text.utf8.count, "binary": false, "text": text, "truncated": false, "lossy": false], keepScroll: false)
+            w.layoutIfNeeded()
+        }
+        let mono = ScyllaUIStyle.mono(12)
+        show("/p/a.txt", "abc def\nline 2\n")
+        XCTAssertEqual(v.sourceFontForTesting(at: 0)?.fontName, mono.fontName, "第一次打开是等宽")
+        show("/p/cn.txt", "中文笔记\nwidget abc\n")
+        XCTAssertEqual(v.sourceFontForTesting(at: 5)?.fontName, mono.fontName, "中文文件里的英文也是等宽")
+        show("/p/a.txt", "abc def\nline 2\n")
+        XCTAssertEqual(v.sourceFontForTesting(at: 0)?.fontName, mono.fontName, "再打开英文文件仍是等宽")
+        XCTAssertEqual(v.sourceFontForTesting(at: 8)?.fontName, mono.fontName)
+    }
+
+    /// 补测问题 3（2026-11-28）：先打开超过 1 MB 的文件（跳的行在前 1 MB 之外、没跳），再从内容搜索跳到 Markdown 第 289 行，
+    /// 要停在第 289 行，不能落到文件末尾。
+    func testRevealLineAfterHugeFileDoesNotFallToEnd() {
+        let v = FileViewer(frame: NSRect(x: 0, y: 0, width: 600, height: 500))
+        let w = NSWindow(contentRect: v.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        w.contentView = v
+        w.layoutIfNeeded()
+        let huge = (1...19000).map { String(format: "%07d", $0) + " filler filler filler filler filler filler filler" }.joined(separator: "\n")
+        v.begin(path: "/p/huge.txt", root: "/p")
+        v.reveal(line: 21000)
+        v.show(reply: ["ok": true, "size": 1254026, "binary": false, "text": huge, "truncated": true, "lossy": false], keepScroll: false)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        var lines = ["# Long Markdown Guide", "", "Intro paragraph.", ""]
+        let para = String(repeating: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ", count: 4)
+        for i in 1...30 {
+            lines += ["## Section \(i)", "", "Paragraph \(i). " + para, "", "- item \(i).1", "- item \(i).2", "  - nested \(i).2.1",
+                      "1. first", "", "| Col A | Col B | Col C |", "|:---|:---:|---:|", "| a\(i) | b\(i) | c\(i) |", "", "> quote in section \(i)", ""]
+            if i < 30 { lines += ["---", ""] }
+        }
+        let md = lines.joined(separator: "\n")
+        let line = lines.firstIndex(of: "## Section 22")! + 1
+        v.begin(path: "/p/guide.md", root: "/p")
+        v.reveal(line: line)
+        v.show(reply: ["ok": true, "size": md.utf8.count, "binary": false, "text": md, "truncated": false, "lossy": false], keepScroll: false)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        XCTAssertEqual(v.revealedLine, line)
+        let target = (md as NSString).range(of: "## Section 22").location
+        XCTAssertTrue(NSLocationInRange(target, v.sourceVisibleRangeForTesting), "停在第 \(line) 行，看得见的是 \(v.sourceVisibleRangeForTesting)，共 \((md as NSString).length)")
+    }
+
     private func viewerPanel(width: CGFloat = 700) -> FilesPanel {
         let panel = FilesPanel(frame: NSRect(x: 0, y: 0, width: width, height: 600))
         panel.request = { req, done in
@@ -528,5 +849,43 @@ final class FilesPanelTests: XCTestCase {
         panel.contentCollapsed = true
         panel.treeHidden = false
         XCTAssertTrue(panel.contentCollapsed)
+    }
+}
+
+/// 假后台：应答先攒着、`flush` 时才回（模拟在途）；同时在途超过 8 个回 `busy`（同 `files.rs` 的 `MAX_INFLIGHT`）；`down` 时回 nil（断线）。
+private final class LimitedBackend {
+    var fs: [String: [[String: Any]]] = [:]
+    var files: [String: String] = [:]
+    var down = false
+    private(set) var busyReplies = 0
+    private var inflight = 0
+    private var pending: [() -> Void] = []
+
+    func send(_ req: [String: Any], _ done: @escaping ([String: Any]?) -> Void) {
+        if down { return done(nil) }
+        guard inflight < 8 else {
+            busyReplies += 1
+            return done(["ok": false, "error": ["code": "busy"]])
+        }
+        inflight += 1
+        let reply: [String: Any]
+        switch req["type"] as! String {
+        case "fs.list": reply = ["ok": true, "items": fs[req["dir"] as! String] ?? [], "more": 0]
+        default:
+            let text = files[req["path"] as! String] ?? ""
+            reply = ["ok": true, "size": text.utf8.count, "binary": false, "text": text, "truncated": false, "lossy": false]
+        }
+        pending.append { [weak self] in
+            self?.inflight -= 1
+            done(reply)
+        }
+    }
+
+    /// 把攒着的应答（以及应答回来后补发的请求的应答）都回完。
+    func flush() {
+        while !pending.isEmpty {
+            let p = pending.removeFirst()
+            p()
+        }
     }
 }

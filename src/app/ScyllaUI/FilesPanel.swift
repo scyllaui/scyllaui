@@ -331,6 +331,15 @@ final class FilesPanel: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate, 
     /// 查看器此刻显示着（打开了文件且没收起）：工作区按它用查看宽。
     var contentShown: Bool { viewerOpen && !contentCollapsed }
 
+    /// 离开过窗口（切到别的栏、关掉右侧栏）还没补读：这期间 FSEvents 收不到或不处理，
+    /// 下一次同一个根的 `setRoot`（切回时）补读一次（docs/design.md 5.12 节「自动刷新」）。
+    private var away = false
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window == nil { away = true }
+    }
+
     /// 换到另一个项目根（或同一根下终端换了目录）。nil 为没有终端。
     func setRoot(_ root: String?, gitRoot: String?, currentDir: String?) {
         guard let root else {
@@ -343,7 +352,10 @@ final class FilesPanel: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate, 
             return
         }
         let cwd = currentDir.map(Self.realPath)
-        if tree?.root.path != root {
+        let returning = away
+        away = false
+        let changed = tree?.root.path != root
+        if changed {
             let t = trees[root] ?? FileTree(root: root, gitRoot: gitRoot)
             trees[root] = t
             tree = t
@@ -358,13 +370,15 @@ final class FilesPanel: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate, 
             if t.root.children == nil {
                 load(t.root)
             } else {
+                // 切回读过的根：离开期间没有监视，读过的目录都按变了重读（原来只重读根，子目录一直用缓存）。
                 restoreExpansion(t.root)
-                load(t.root)
+                refresh(dirs: Self.loadedDirs(t.root), file: false)
             }
             if let f = t.openFile { openFile(f, expand: false) } else { closeViewerOnly() }
             applyLayout()
         }
         guard let t = tree else { return }
+        if returning, !changed { refresh(dirs: Self.loadedDirs(t.root) + (t.openFile.map { [($0 as NSString).deletingLastPathComponent] } ?? [])) }
         t.gitRoot = gitRoot
         t.cwd = cwd
         if let cwd, cwd != t.revealed {
@@ -374,7 +388,8 @@ final class FilesPanel: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate, 
     }
 
     /// FSEvents 报来的有变化的目录：重读已读过的（展开着的立即读，收着的下次展开再读）；打开的文件所在目录变了就重读它。
-    func refresh(dirs: [String]) {
+    /// `file`：false 时不重读打开的文件（换根时由 `openFile` 读）。
+    func refresh(dirs: [String], file: Bool = true) {
         guard let t = tree else { return }
         for raw in Set(dirs) {
             let dir = raw.count > 1 && raw.hasSuffix("/") ? String(raw.dropLast()) : raw
@@ -386,10 +401,16 @@ final class FilesPanel: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate, 
                     outline.reloadItem(node, reloadChildren: true)
                 }
             }
-            if let f = t.openFile, (f as NSString).deletingLastPathComponent == dir, !FileViewer.usesQuickLook(f) {
+            if file, let f = t.openFile, (f as NSString).deletingLastPathComponent == dir, !FileViewer.usesQuickLook(f) {
                 read(f, keepScroll: true)
             }
         }
+    }
+
+    /// 读过的目录（含根）：切回时按它们都变了补读。
+    private static func loadedDirs(_ node: FileNode) -> [String] {
+        guard node.isDir, let children = node.children else { return [] }
+        return [node.path] + children.flatMap(loadedDirs)
     }
 
     /// 解析符号链接后的真实路径（`/tmp` → `/private/tmp`），与后台的项目目录同一写法；解析失败按原样。
@@ -423,8 +444,14 @@ final class FilesPanel: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate, 
         } else {
             node.children = [FileNode(name: FileTree.failure(reply), path: node.path + "/\u{0}error", kind: .note, parent: node)]
         }
+        // 重读会清掉选中（2026-11-28 切回补读时发现）；按名字合并保留了节点对象，还在就重新选中。
+        let selected = outline.item(atRow: outline.selectedRow) as? FileNode
         outline.reloadItem(node === t.root ? nil : node, reloadChildren: true)
         restoreExpansion(node)
+        if let selected, outline.selectedRow < 0 {
+            let row = outline.row(forItem: selected)
+            if row >= 0 { outline.selectRowIndexes([row], byExtendingSelection: false) }
+        }
         if node === t.root { showNote(nil) }
     }
 
@@ -535,6 +562,9 @@ final class FilesPanel: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate, 
     @objc private func expandContent(_ sender: Any?) { contentCollapsed = false }
 
     /// 测试用：过渡进行中、树此刻的宽度。
+    /// 测试用：筛选框里能放文字的宽度（占位文字放不下即被截断）与它的字体。
+    var filterTextWidthForTesting: CGFloat { (filter.cell as? NSSearchFieldCell)?.searchTextRect(forBounds: filter.bounds).width ?? 0 }
+    var filterFontForTesting: NSFont? { filter.font }
     var slidingForTesting: Bool { split.sliding }
     func stepSlideForTesting() { split.step() }
     var treeColumnWidthForTesting: CGFloat { column.frame.width }
@@ -632,14 +662,19 @@ final class FilesPanel: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate, 
         }
         var out: [Result] = []
         var last: String?
+        // 命中超过 50 条、只给了前 50 条的文件（后台的 `capped`，老后台没有）：在它的结果下面写明（2026-11-28 补测问题 1）。
+        let capped = Set(r["capped"] as? [String] ?? [])
+        let noteCapped = { if let last, capped.contains(last) { out.append(.note(String(localized: "这个文件只列出了前 50 条"))) } }
         for d in r["items"] as? [[String: Any]] ?? [] {
             guard let p = d["path"] as? String, let n = (d["line"] as? NSNumber)?.intValue else { continue }
             if p != last {
+                noteCapped()
                 out.append(.group(path: p))
                 last = p
             }
             out.append(.hit(path: p, line: n, text: d["text"] as? String ?? ""))
         }
+        noteCapped()
         if out.isEmpty {
             out = [.note(String(localized: "没有文件包含这段内容"))]
         } else if r["truncated"] as? Bool == true {
@@ -751,6 +786,8 @@ final class FilesPanel: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate, 
     func outlineViewItemDidCollapse(_ notification: Notification) {
         guard let node = notification.userInfo?["NSObject"] as? FileNode else { return }
         tree?.expanded.remove(node.path)
+        // 读不到（断线等）的这一层不算读过：收起时清掉，再展开时重读（不在展开时判断：重读失败后程序自己重新展开会再触发，转成死循环）。
+        if node.children?.first?.path.hasSuffix("/\u{0}error") == true { node.children = nil }
     }
 
     func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
@@ -840,6 +877,19 @@ final class FilesPanel: NSView, NSOutlineViewDataSource, NSOutlineViewDelegate, 
     func clickResultForTesting(_ row: Int) { openResult(row) }
     /// 测试用：树里选中的那一行的路径。
     var selectedTreePathForTesting: String? { (outline.item(atRow: outline.selectedRow) as? FileNode)?.path }
+    /// 测试用：展开或收起树里某个文件夹（同点它前面的三角）。
+    func toggleExpandedForTesting(_ path: String) {
+        guard let n = tree?.node(at: path) else { return }
+        outline.isItemExpanded(n) ? outline.collapseItem(n) : outline.expandItem(n)
+    }
+    /// 测试用：树的纵向滚动位置。
+    var treeScrollYForTesting: CGFloat {
+        get { outlineScroll.contentView.bounds.minY }
+        set {
+            outlineScroll.contentView.scroll(to: NSPoint(x: 0, y: newValue))
+            outlineScroll.reflectScrolledClipView(outlineScroll.contentView)
+        }
+    }
     func clearFilterForTesting() {
         filter.stringValue = ""
         filterChanged(nil)

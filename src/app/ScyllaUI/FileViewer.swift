@@ -162,6 +162,11 @@ final class FileViewer: NSView, NSTextViewDelegate {
             guard let self else { return }
             self.follower.scrolled(self.textView, self.scroll)
             self.sourceMarker.markVisible()
+            self.keepSourceX()
+        }
+        NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: scroll, queue: nil) { [weak self] _ in
+            guard let self, self.sourceXLost, self.sourceHasRoom else { return }
+            DispatchQueue.main.async { [weak self] in self?.restoreSourceX() }
         }
         textView.postsFrameChangedNotifications = true
         NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: textView, queue: nil) { [weak self] _ in
@@ -355,8 +360,12 @@ final class FileViewer: NSView, NSTextViewDelegate {
         let length = (textView.string as NSString).length
         let end = n < starts.count ? starts[n] - 1 : length
         let range = NSRange(location: starts[n - 1], length: max(0, end - starts[n - 1]))
-        textView.layoutManager?.ensureLayout(forCharacterRange: range)
-        textView.scrollRangeToVisible(range)
+        // 跳行是程序自己定位：只排可见部分时跳之前估的总高度可能比目标行还矮，不包在 `positioning` 里，这一跳会被当成
+        // 用户往下滚到了底、再补到文件末尾（2026-11-28 补测问题 3：第一次从内容搜索点 Markdown 第 289 行，停在末尾）。
+        follower.positioning(textView, scroll) {
+            textView.layoutManager?.ensureLayout(forCharacterRange: range)
+            textView.scrollRangeToVisible(range)
+        }
         textView.setSelectedRange(range)
         textView.showFindIndicator(for: range)
         revealedLine = n
@@ -476,6 +485,7 @@ final class FileViewer: NSView, NSTextViewDelegate {
     func sourceColorForTesting(at i: Int) -> NSColor? { textView.layoutManager?.temporaryAttribute(.foregroundColor, atCharacterIndex: i, effectiveRange: nil) as? NSColor }
     func renderColorForTesting(at i: Int) -> NSColor? { renderView.layoutManager?.temporaryAttribute(.foregroundColor, atCharacterIndex: i, effectiveRange: nil) as? NSColor }
     var shownText: String? { bodyView === scroll ? textView.string : nil }
+    func sourceFontForTesting(at i: Int) -> NSFont? { textView.textStorage?.attribute(.font, at: i, effectiveRange: nil) as? NSFont }
     func selectSourceRangeForTesting(_ r: NSRange) { textView.setSelectedRange(r) }
     var sourceSelectionForTesting: NSRange { textView.selectedRange() }
     /// 渲染后的文字（没在渲染时为 nil）与顶上那句「暂不支持」是否显示。
@@ -530,7 +540,37 @@ final class FileViewer: NSView, NSTextViewDelegate {
 
     /// 源码滚回左上角。行号栏盖在可滚区域左边，左上角不是 (0, 0)，而是滚动视图允许的最小位置（让出行号栏）；
     /// 源码视图从渲染等别的内容换回来时先重新排版，否则行首会压在行号栏下面（2026-11-23 F2 实测）。
+    /// 源码视图离最左边的横向距离（有宽度时记下）；`sourceXLost`：其间被挤到没有宽度，位置被系统夹掉了，等宽度回来复原。
+    private var sourceX: CGFloat = 0
+    private var sourceXLost = false
+
+    /// 查看器被挤到没有宽度时（切回「文件」时先按别的栏的宽度排一次；收起查看器），行号栏的让位跟着变成 0，系统把横向位置夹到 0，
+    /// 加宽后让位回来、位置不回来，正文往右偏一个行号栏宽、行首被挡住（0.4.58 就有，2026-11-28 补测 X2）。
+    private var sourceHasRoom: Bool { scroll.frame.width > ruler.ruleThickness }
+
+    private func sourceLeftmostX() -> CGFloat {
+        let clip = scroll.contentView
+        return clip.constrainBoundsRect(NSRect(origin: NSPoint(x: -1e6, y: clip.bounds.minY), size: clip.bounds.size)).minX
+    }
+
+    private func keepSourceX() {
+        guard sourceHasRoom else { return sourceXLost = true }
+        guard !sourceXLost else { return }
+        sourceX = scroll.contentView.bounds.minX - sourceLeftmostX()
+    }
+
+    /// 宽度回来后（这一轮排版做完再看，行号栏的让位才是新的）复原横向位置。
+    private func restoreSourceX() {
+        guard sourceXLost, sourceHasRoom else { return }
+        sourceXLost = false
+        let clip = scroll.contentView
+        let r = clip.constrainBoundsRect(NSRect(origin: NSPoint(x: sourceLeftmostX() + sourceX, y: clip.bounds.minY), size: clip.bounds.size))
+        clip.scroll(to: r.origin)
+        scroll.reflectScrolledClipView(clip)
+    }
+
     private func scrollSourceToTop() {
+        sourceXLost = false
         layoutSubtreeIfNeeded()
         scroll.tile()
         let clip = scroll.contentView
@@ -541,13 +581,15 @@ final class FileViewer: NSView, NSTextViewDelegate {
 
     /// 源码视图换上新文字：行号、不折行时的宽度一并算好（都不依赖排版）。
     private func setSourceText(_ text: String, path: String) {
-        textView.string = text
+        // 带上字体与颜色整段换掉，不用 `textView.string =`：那样新文字沿用被替换的第一个字符的属性，
+        // 上一个文件以中文开头时首字已被字体回退换成苹方，之后打开的文件整篇变成比例字体（2026-11-28 补测问题 2）。
+        let font = ScyllaUIStyle.mono(12)
+        textView.textStorage?.setAttributedString(NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: NSColor.labelColor]))
         sourceMarker.enabled = lossy
         sourceMarker.reset()
         textPath = path
         sourceText = text
         ruler.textChanged()
-        let font = textView.font ?? ScyllaUIStyle.mono(12)
         let narrow = ("M" as NSString).size(withAttributes: [.font: font]).width
         let wide = ("中" as NSString).size(withAttributes: [.font: font]).width
         let padding = (textView.textContainer?.lineFragmentPadding ?? 0) * 2 + textView.textContainerInset.width * 2
